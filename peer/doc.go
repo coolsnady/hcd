@@ -1,5 +1,5 @@
 // Copyright (c) 2015-2016 The btcsuite developers
-// Copyright (c) 2016 The Decred developers
+// Copyright (c) 2016-2018 The Decred developers
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
@@ -30,17 +30,13 @@ A quick overview of the major features peer provides are as follows:
      they see fit (proxies, etc)
    - User agent name and version
    - Decred network
-   - Service support signalling (full nodes, bloom filters, etc)
+   - Service support signalling (full nodes, etc)
    - Maximum supported protocol version
    - Ability to register callbacks for handling Decred protocol messages
  - Inventory message batching and send trickling with known inventory detection
    and avoidance
  - Automatic periodic keep-alive pinging and pong responses
  - Random nonce generation and self connection detection
- - Proper handling of bloom filter related commands when the caller does not
-   specify the related flag to signal support
-   - Disconnects the peer when the protocol version is high enough
-   - Does not invoke the related callbacks for older protocol versions
  - Snapshottable peer statistics such as the total number of bytes read and
    written, the remote address, user agent, and negotiated protocol version
  - Helper functions pushing addresses, getblocks, getheaders, and reject
@@ -138,7 +134,7 @@ written, the remote address, user agent, and negotiated protocol version.
 Logging
 
 This package provides extensive logging capabilities through the UseLogger
-function which allows a btclog.Logger to be specified.  For example, logging at
+function which allows a slog.Logger to be specified.  For example, logging at
 the debug level provides summaries of every message sent and received, and
 logging at the trace level provides full dumps of parsed messages as well as the
 raw message bytes using a format similar to hexdump -C.

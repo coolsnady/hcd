@@ -1,5 +1,5 @@
 // Copyright (c) 2013-2016 The btcsuite developers
-// Copyright (c) 2015-2017 The Decred developers
+// Copyright (c) 2015-2018 The Decred developers
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
@@ -21,7 +21,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/btcsuite/btclog"
 	"github.com/btcsuite/go-socks/socks"
 	"github.com/coolsnady/hxd/connmgr"
 	"github.com/coolsnady/hxd/database"
@@ -29,6 +28,7 @@ import (
 	"github.com/coolsnady/hxd/dcrutil"
 	"github.com/coolsnady/hxd/mempool"
 	"github.com/coolsnady/hxd/sampleconfig"
+	"github.com/decred/slog"
 	flags "github.com/jessevdk/go-flags"
 )
 
@@ -146,7 +146,6 @@ type config struct {
 	BlockMaxSize         uint32        `long:"blockmaxsize" description:"Maximum block size in bytes to be used when creating a block"`
 	BlockPrioritySize    uint32        `long:"blockprioritysize" description:"Size in bytes for high-priority/low-fee transactions when creating a block"`
 	GetWorkKeys          []string      `long:"getworkkey" description:"DEPRECATED -- Use the --miningaddr option instead"`
-	NoPeerBloomFilters   bool          `long:"nopeerbloomfilters" description:"Disable bloom filtering support"`
 	SigCacheMaxSize      uint          `long:"sigcachemaxsize" description:"The maximum number of entries in the signature verification cache"`
 	NonAggressive        bool          `long:"nonaggressive" description:"Disable mining off of the parent block of the blockchain if there aren't enough voters"`
 	NoMiningStateSync    bool          `long:"nominingstatesync" description:"Disable synchronizing the mining state with other nodes"`
@@ -183,6 +182,11 @@ type serviceOptions struct {
 // cleanAndExpandPath expands environment variables and leading ~ in the
 // passed path, cleans the result, and returns it.
 func cleanAndExpandPath(path string) string {
+	// Nothing to do when no path is given.
+	if path == "" {
+		return path
+	}
+
 	// NOTE: The os.ExpandEnv doesn't work with Windows cmd.exe-style
 	// %VARIABLE%, but the variables can still be expanded via POSIX-style
 	// $VARIABLE.
@@ -231,7 +235,7 @@ func cleanAndExpandPath(path string) string {
 
 // validLogLevel returns whether or not logLevel is a valid debug log level.
 func validLogLevel(logLevel string) bool {
-	_, ok := btclog.LevelFromString(logLevel)
+	_, ok := slog.LevelFromString(logLevel)
 	return ok
 }
 

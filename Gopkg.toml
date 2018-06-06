@@ -5,19 +5,11 @@
 
 [[constraint]]
   branch = "master"
-  name = "github.com/btcsuite/btclog"
-
-[[constraint]]
-  branch = "master"
   name = "github.com/btcsuite/go-socks"
 
 [[constraint]]
   branch = "master"
   name = "github.com/btcsuite/goleveldb"
-
-[[constraint]]
-  branch = "master"
-  name = "github.com/btcsuite/websocket"
 
 [[constraint]]
   branch = "master"
@@ -34,6 +26,14 @@
 [[constraint]]
   branch = "master"
   name = "github.com/decred/base58"
+
+[[constraint]]
+  name = "github.com/decred/slog"
+  version = "1.0.0"
+
+[[constraint]]
+  name = "github.com/gorilla/websocket"
+  version = "1.2.0"
 
 [[constraint]]
   name = "github.com/jessevdk/go-flags"

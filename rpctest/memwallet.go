@@ -13,8 +13,8 @@ import (
 
 	"github.com/coolsnady/hxd/blockchain"
 	"github.com/coolsnady/hxd/chaincfg"
-	"github.com/coolsnady/hxd/chaincfg/chainec"
 	"github.com/coolsnady/hxd/chaincfg/chainhash"
+	"github.com/coolsnady/hxd/dcrec/secp256k1"
 	"github.com/coolsnady/hxd/dcrutil"
 	"github.com/coolsnady/hxd/hdkeychain"
 	"github.com/coolsnady/hxd/rpcclient"
@@ -71,7 +71,7 @@ type undoEntry struct {
 // wallet functionality to the harness. The wallet uses a hard-coded HD key
 // hierarchy which promotes reproducibility between harness test runs.
 type memWallet struct {
-	coinbaseKey  chainec.PrivateKey
+	coinbaseKey  *secp256k1.PrivateKey
 	coinbaseAddr dcrutil.Address
 
 	// hdRoot is the root master private key for the wallet.
@@ -551,8 +551,8 @@ func (m *memWallet) ConfirmedBalance() dcrutil.Amount {
 }
 
 // keyToAddr maps the passed private to corresponding p2pkh address.
-func keyToAddr(key chainec.PrivateKey, net *chaincfg.Params) (dcrutil.Address, error) {
-	pubKey := chainec.Secp256k1.NewPublicKey(key.Public())
+func keyToAddr(key *secp256k1.PrivateKey, net *chaincfg.Params) (dcrutil.Address, error) {
+	pubKey := (*secp256k1.PublicKey)(&key.PublicKey)
 	serializedKey := pubKey.SerializeCompressed()
 	pubKeyAddr, err := dcrutil.NewAddressSecpPubKey(serializedKey, net)
 	if err != nil {

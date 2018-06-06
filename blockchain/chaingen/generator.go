@@ -78,15 +78,15 @@ func (s *SpendableOut) Amount() dcrutil.Amount {
 	return s.amount
 }
 
-// MakeSpendableOutForTx returns a spendable output for the given transaction
-// block height, transaction index within the block, and transaction output
-// index within the transaction.
-func MakeSpendableOutForTx(tx *wire.MsgTx, blockHeight, txIndex, txOutIndex uint32) SpendableOut {
+// makeSpendableOutForTxInternal returns a spendable output for the given
+// transaction block height, transaction index within the block, transaction
+// tree and transaction output index within the transaction.
+func makeSpendableOutForTxInternal(tx *wire.MsgTx, blockHeight, txIndex, txOutIndex uint32, tree int8) SpendableOut {
 	return SpendableOut{
 		prevOut: wire.OutPoint{
 			Hash:  *tx.CachedTxHash(),
 			Index: txOutIndex,
-			Tree:  wire.TxTreeRegular,
+			Tree:  tree,
 		},
 		blockHeight: blockHeight,
 		blockIndex:  txIndex,
@@ -94,11 +94,29 @@ func MakeSpendableOutForTx(tx *wire.MsgTx, blockHeight, txIndex, txOutIndex uint
 	}
 }
 
+// MakeSpendableOutForTx returns a spendable output for a regular transaction.
+func MakeSpendableOutForTx(tx *wire.MsgTx, blockHeight, txIndex, txOutIndex uint32) SpendableOut {
+	return makeSpendableOutForTxInternal(tx, blockHeight, txIndex, txOutIndex, wire.TxTreeRegular)
+}
+
+// MakeSpendableOutForSTx returns a spendable output for a stake transaction.
+func MakeSpendableOutForSTx(tx *wire.MsgTx, blockHeight, txIndex, txOutIndex uint32) SpendableOut {
+	return makeSpendableOutForTxInternal(tx, blockHeight, txIndex, txOutIndex, wire.TxTreeStake)
+}
+
 // MakeSpendableOut returns a spendable output for the given block, transaction
 // index within the block, and transaction output index within the transaction.
 func MakeSpendableOut(block *wire.MsgBlock, txIndex, txOutIndex uint32) SpendableOut {
 	tx := block.Transactions[txIndex]
 	return MakeSpendableOutForTx(tx, block.Header.Height, txIndex, txOutIndex)
+}
+
+// MakeSpendableStakeOut returns a spendable stake output for the given block,
+// transaction index within the block, and transaction output index within the
+// transaction.
+func MakeSpendableStakeOut(block *wire.MsgBlock, txIndex, txOutIndex uint32) SpendableOut {
+	tx := block.STransactions[txIndex]
+	return MakeSpendableOutForSTx(tx, block.Header.Height, txIndex, txOutIndex)
 }
 
 // stakeTicket represents a transaction that is an sstx along with the height of
@@ -455,7 +473,7 @@ func PurchaseCommitmentScript(addr dcrutil.Address, amount, voteFeeLimit, revoca
 	return script
 }
 
-// createTicketPurchaseTx creates a new transaction that spends the provided
+// CreateTicketPurchaseTx creates a new transaction that spends the provided
 // output to purchase a stake submission ticket (sstx) at the given ticket
 // price.  Both the ticket and the change will go to a p2sh script that is
 // composed with a single OP_TRUE.
@@ -464,7 +482,7 @@ func PurchaseCommitmentScript(addr dcrutil.Address, amount, voteFeeLimit, revoca
 // - First output is an OP_SSTX followed by the OP_TRUE p2sh script hash
 // - Second output is an OP_RETURN followed by the commitment script
 // - Third output is an OP_SSTXCHANGE followed by the OP_TRUE p2sh script hash
-func (g *Generator) createTicketPurchaseTx(spend *SpendableOut, ticketPrice, fee dcrutil.Amount) *wire.MsgTx {
+func (g *Generator) CreateTicketPurchaseTx(spend *SpendableOut, ticketPrice, fee dcrutil.Amount) *wire.MsgTx {
 	// The first output is the voting rights address.  This impl uses the
 	// standard pay-to-script-hash to an OP_TRUE.
 	pkScript, err := txscript.PayToSStx(g.p2shOpTrueAddr)
@@ -596,7 +614,7 @@ func voteBitsScript(bits uint16, voteVersion uint32) []byte {
 	return script
 }
 
-// createVoteTx returns a new transaction (ssgen) paying an appropriate subsidy
+// CreateVoteTx returns a new transaction (ssgen) paying an appropriate subsidy
 // for the given block height (and the number of votes per block) as well as the
 // original commitments.
 //
@@ -605,15 +623,15 @@ func voteBitsScript(bits uint16, voteVersion uint32) []byte {
 // - Second output is an OP_RETURN followed by the vote bits
 // - Third and subsequent outputs are the payouts according to the ticket
 //   commitments and the appropriate proportion of the vote subsidy.
-func (g *Generator) createVoteTx(parentBlock *wire.MsgBlock, ticket *stakeTicket) *wire.MsgTx {
+func (g *Generator) CreateVoteTx(voteBlock *wire.MsgBlock, ticketTx *wire.MsgTx, ticketBlockHeight, ticketBlockIndex uint32) *wire.MsgTx {
 	// Calculate the proof-of-stake subsidy proportion based on the block
 	// height.
-	posSubsidy := g.calcPoSSubsidy(parentBlock.Header.Height)
+	posSubsidy := g.calcPoSSubsidy(voteBlock.Header.Height)
 	voteSubsidy := posSubsidy / dcrutil.Amount(g.params.TicketsPerBlock)
-	ticketPrice := dcrutil.Amount(ticket.tx.TxOut[0].Value)
+	ticketPrice := dcrutil.Amount(ticketTx.TxOut[0].Value)
 
 	// The first output is the block (hash and height) the vote is for.
-	blockScript := voteBlockScript(parentBlock)
+	blockScript := voteBlockScript(voteBlock)
 
 	// The second output is the vote bits.
 	voteScript := voteBitsScript(voteBitYes, 0)
@@ -629,7 +647,7 @@ func (g *Generator) createVoteTx(parentBlock *wire.MsgBlock, ticket *stakeTicket
 	// Generate and return the transaction with the proof-of-stake subsidy
 	// coinbase and spending from the provided ticket along with the
 	// previously described outputs.
-	ticketHash := ticket.tx.CachedTxHash()
+	ticketHash := ticketTx.CachedTxHash()
 	tx := wire.NewMsgTx()
 	tx.AddTxIn(&wire.TxIn{
 		PreviousOutPoint: *wire.NewOutPoint(&chainhash.Hash{},
@@ -645,8 +663,8 @@ func (g *Generator) createVoteTx(parentBlock *wire.MsgBlock, ticket *stakeTicket
 			wire.TxTreeStake),
 		Sequence:        wire.MaxTxInSequenceNum,
 		ValueIn:         int64(ticketPrice),
-		BlockHeight:     ticket.blockHeight,
-		BlockIndex:      ticket.blockIndex,
+		BlockHeight:     ticketBlockHeight,
+		BlockIndex:      ticketBlockIndex,
 		SignatureScript: opTrueRedeemScript,
 	})
 	tx.AddTxOut(wire.NewTxOut(0, blockScript))
@@ -655,7 +673,14 @@ func (g *Generator) createVoteTx(parentBlock *wire.MsgBlock, ticket *stakeTicket
 	return tx
 }
 
-// createRevocationTx returns a new transaction (ssrtx) refunding the ticket
+// createVoteTxFromTicket returns a new transaction (ssgen) paying an appropriate subsidy
+// for the given block height (and the number of votes per block) as well as the
+// original commitments. It requires a stake ticket as a parameter.
+func (g *Generator) createVoteTxFromTicket(voteBlock *wire.MsgBlock, ticket *stakeTicket) *wire.MsgTx {
+	return g.CreateVoteTx(voteBlock, ticket.tx, ticket.blockHeight, ticket.blockIndex)
+}
+
+// CreateRevocationTx returns a new transaction (ssrtx) refunding the ticket
 // price for a ticket which either missed its vote or expired.
 //
 // The transaction consists of the following inputs:
@@ -663,7 +688,7 @@ func (g *Generator) createVoteTx(parentBlock *wire.MsgBlock, ticket *stakeTicket
 //
 // The transaction consists of the following outputs:
 // - The payouts according to the ticket commitments.
-func (g *Generator) createRevocationTx(ticket *stakeTicket) *wire.MsgTx {
+func (g *Generator) CreateRevocationTx(ticketTx *wire.MsgTx, ticketBlockHeight, ticketBlockIndex uint32) *wire.MsgTx {
 	// The outputs pay the original commitment amounts.  This impl uses the
 	// standard pay-to-script-hash to an OP_TRUE.
 	revokeScript, err := txscript.PayToSSRtx(g.p2shOpTrueAddr)
@@ -673,20 +698,27 @@ func (g *Generator) createRevocationTx(ticket *stakeTicket) *wire.MsgTx {
 
 	// Generate and return the transaction spending from the provided ticket
 	// along with the previously described outputs.
-	ticketPrice := ticket.tx.TxOut[0].Value
-	ticketHash := ticket.tx.CachedTxHash()
+	ticketPrice := ticketTx.TxOut[0].Value
+	ticketHash := ticketTx.CachedTxHash()
 	tx := wire.NewMsgTx()
 	tx.AddTxIn(&wire.TxIn{
 		PreviousOutPoint: *wire.NewOutPoint(ticketHash, 0,
 			wire.TxTreeStake),
 		Sequence:        wire.MaxTxInSequenceNum,
 		ValueIn:         ticketPrice,
-		BlockHeight:     ticket.blockHeight,
-		BlockIndex:      ticket.blockIndex,
+		BlockHeight:     ticketBlockHeight,
+		BlockIndex:      ticketBlockIndex,
 		SignatureScript: opTrueRedeemScript,
 	})
 	tx.AddTxOut(wire.NewTxOut(ticketPrice, revokeScript))
 	return tx
+}
+
+// CreateRevocationTxFromTicket returns a new transaction (ssrtx) refunding
+// the ticket price for a ticket which either missed its vote or expired.
+// It requires a stake ticket as a parameter.
+func (g *Generator) createRevocationTxFromTicket(ticket *stakeTicket) *wire.MsgTx {
+	return g.CreateRevocationTx(ticket.tx, ticket.blockHeight, ticket.blockIndex)
 }
 
 // ancestorBlock returns the ancestor block at the provided height by following
@@ -856,47 +888,15 @@ func (g *Generator) CalcNextRequiredDifficulty() uint32 {
 	return uint32(nextDiff)
 }
 
-// CalcNextRequiredStakeDifficulty returns the required stake difficulty (aka
-// ticket price) for the block after the current tip block the generator is
+// CalcNextReqStakeDifficulty returns the required stake difficulty (aka
+// ticket price) for the block after the provided block the generator is
 // associated with.
 //
-// An overview of the algorithm is as follows:
-// 1) Use the minimum value for any blocks before any tickets could have
-//    possibly been purchased due to coinbase maturity requirements
-// 2) Return 0 if the current tip block stake difficulty is 0.  This is a
-//    safety check against a condition that should never actually happen.
-// 3) Use the previous block's difficulty if the next block is not at a retarget
-//    interval
-// 4) Calculate the ideal retarget difficulty for each window based on the
-//    actual pool size in the window versus the target pool size skewed by a
-//    constant factor to weight the ticket pool size instead of the tickets per
-//    block and exponentially weight each difficulty such that the most recent
-//    window has the highest weight
-// 5) Calculate the pool size retarget difficulty based on the exponential
-//    weighted average and ensure it is limited to the max retarget adjustment
-//    factor -- This is the first metric used to calculate the final difficulty
-// 6) Calculate the ideal retarget difficulty for each window based on the
-//    actual new tickets in the window versus the target new tickets per window
-//    and exponentially weight each difficulty such that the most recent window
-//    has the highest weight
-// 7) Calculate the tickets per window retarget difficulty based on the
-//    exponential weighted average and ensure it is limited to the max retarget
-//    adjustment factor
-// 8) Calculate the final difficulty by averaging the pool size retarget
-//    difficulty from #5 and the tickets per window retarget difficulty from #7
-//    using scaled multiplication and ensure it is limited to the max retarget
-//    adjustment factor
-//
-// NOTE: In order to simplify the test code, this implementation does not use
-// big integers so it will NOT match the actual consensus code for really big
-// numbers.  However, the parameters on simnet and the pool sizes used in these
-// tests are low enough that this is not an issue for the tests.  Anyone looking
-// at this code should NOT use it for mainnet calculations as is since it will
-// not always yield the correct results.
-func (g *Generator) CalcNextRequiredStakeDifficulty() int64 {
+// See the documentation of CalcNextRequiredStakeDifficulty for more details.
+func (g *Generator) CalcNextReqStakeDifficulty(prevBlock *wire.MsgBlock) int64 {
 	// Stake difficulty before any tickets could possibly be purchased is
 	// the minimum value.
-	nextHeight := g.tip.Header.Height + 1
+	nextHeight := prevBlock.Header.Height + 1
 	stakeDiffStartHeight := uint32(g.params.CoinbaseMaturity) + 1
 	if nextHeight < stakeDiffStartHeight {
 		return g.params.MinimumStakeDiff
@@ -928,9 +928,9 @@ func (g *Generator) CalcNextRequiredStakeDifficulty() int64 {
 	var weightedPoolSizeSum, weightSum uint64
 	ticketsPerBlock := int64(g.params.TicketsPerBlock)
 	targetPoolSize := ticketsPerBlock * int64(g.params.TicketPoolSize)
+	block := prevBlock
 	numWindows := g.params.StakeDiffWindows
 	weightAlpha := g.params.StakeDiffAlpha
-	block := g.tip
 	for i := int64(0); i < numWindows; i++ {
 		// Get the pool size for the block at the start of the window.
 		// Use zero if there are not yet enough blocks left to cover the
@@ -988,7 +988,7 @@ func (g *Generator) CalcNextRequiredStakeDifficulty() int64 {
 	// per window and exponentially weight them.
 	var weightedTicketsSum uint64
 	targetTicketsPerWindow := ticketsPerBlock * windowSize
-	block = g.tip
+	block = prevBlock
 	for i := int64(0); i < numWindows; i++ {
 		// Since the difficulty for the next block after the current tip
 		// is being calculated and there is no such block yet, the sum
@@ -1044,6 +1044,47 @@ func (g *Generator) CalcNextRequiredStakeDifficulty() int64 {
 		return g.params.MinimumStakeDiff
 	}
 	return nextDiff
+}
+
+// CalcNextRequiredStakeDifficulty returns the required stake difficulty (aka
+// ticket price) for the block after the current tip block the generator is
+// associated with.
+//
+// An overview of the algorithm is as follows:
+// 1) Use the minimum value for any blocks before any tickets could have
+//    possibly been purchased due to coinbase maturity requirements
+// 2) Return 0 if the current tip block stake difficulty is 0.  This is a
+//    safety check against a condition that should never actually happen.
+// 3) Use the previous block's difficulty if the next block is not at a retarget
+//    interval
+// 4) Calculate the ideal retarget difficulty for each window based on the
+//    actual pool size in the window versus the target pool size skewed by a
+//    constant factor to weight the ticket pool size instead of the tickets per
+//    block and exponentially weight each difficulty such that the most recent
+//    window has the highest weight
+// 5) Calculate the pool size retarget difficulty based on the exponential
+//    weighted average and ensure it is limited to the max retarget adjustment
+//    factor -- This is the first metric used to calculate the final difficulty
+// 6) Calculate the ideal retarget difficulty for each window based on the
+//    actual new tickets in the window versus the target new tickets per window
+//    and exponentially weight each difficulty such that the most recent window
+//    has the highest weight
+// 7) Calculate the tickets per window retarget difficulty based on the
+//    exponential weighted average and ensure it is limited to the max retarget
+//    adjustment factor
+// 8) Calculate the final difficulty by averaging the pool size retarget
+//    difficulty from #5 and the tickets per window retarget difficulty from #7
+//    using scaled multiplication and ensure it is limited to the max retarget
+//    adjustment factor
+//
+// NOTE: In order to simplify the test code, this implementation does not use
+// big integers so it will NOT match the actual consensus code for really big
+// numbers.  However, the parameters on simnet and the pool sizes used in these
+// tests are low enough that this is not an issue for the tests.  Anyone looking
+// at this code should NOT use it for mainnet calculations as is since it will
+// not always yield the correct results.
+func (g *Generator) CalcNextRequiredStakeDifficulty() int64 {
+	return g.CalcNextReqStakeDifficulty(g.tip)
 }
 
 // hash256prng is a determinstic pseudorandom number generator that uses a
@@ -1484,7 +1525,7 @@ func (g *Generator) ReplaceWithNVotes(numVotes uint16) func(*wire.MsgBlock) {
 		numExisting := len(b.STransactions) - defaultNumVotes
 		stakeTxns := make([]*wire.MsgTx, 0, numExisting+int(numVotes))
 		for _, ticket := range winners {
-			voteTx := g.createVoteTx(parentBlock, ticket)
+			voteTx := g.createVoteTxFromTicket(parentBlock, ticket)
 			stakeTxns = append(stakeTxns, voteTx)
 		}
 
@@ -2006,7 +2047,7 @@ func (g *Generator) NextBlock(blockName string, spend *SpendableOut, ticketSpend
 			}
 			ticketWinners = winners
 			for _, ticket := range winners {
-				voteTx := g.createVoteTx(g.tip, ticket)
+				voteTx := g.createVoteTxFromTicket(g.tip, ticket)
 				stakeTxns = append(stakeTxns, voteTx)
 			}
 
@@ -2021,7 +2062,7 @@ func (g *Generator) NextBlock(blockName string, spend *SpendableOut, ticketSpend
 			const ticketFee = dcrutil.Amount(2)
 			for i := 0; i < len(ticketSpends); i++ {
 				out := &ticketSpends[i]
-				purchaseTx := g.createTicketPurchaseTx(out,
+				purchaseTx := g.CreateTicketPurchaseTx(out,
 					ticketPrice, ticketFee)
 				stakeTxns = append(stakeTxns, purchaseTx)
 			}
@@ -2030,7 +2071,7 @@ func (g *Generator) NextBlock(blockName string, spend *SpendableOut, ticketSpend
 		// Generate and add revocations for any missed tickets.
 		for _, missedVotes := range g.missedVotes {
 			for _, missedVote := range missedVotes {
-				revocationTx := g.createRevocationTx(missedVote)
+				revocationTx := g.createRevocationTxFromTicket(missedVote)
 				stakeTxns = append(stakeTxns, revocationTx)
 			}
 		}
@@ -2464,12 +2505,32 @@ func (g *Generator) AssertStakeVersion(expected uint32) {
 }
 
 // AssertBlockVersion panics if the current tip block associated with the
-// generator does not have the specified version.
+// generator does not have the specified block version in the header.
 func (g *Generator) AssertBlockVersion(expected int32) {
 	blockVersion := g.tip.Header.Version
 	if blockVersion != expected {
 		panic(fmt.Sprintf("block version for block %q is %d instead of "+
 			"expected %d", g.tipName, blockVersion, expected))
+	}
+}
+
+// AssertPoolSize panics if the current tip block associated with the generator
+// does not indicate the specified pool size.
+func (g *Generator) AssertPoolSize(expected uint32) {
+	poolSize := g.tip.Header.PoolSize
+	if poolSize != expected {
+		panic(fmt.Sprintf("pool size for block %q is %d instead of expected "+
+			"%d", g.tipName, poolSize, expected))
+	}
+}
+
+// AssertBlockRevocationTx panics if the current tip block associated with the
+// generator does not have a revocation at the specified transaction index
+// provided.
+func (g *Generator) AssertBlockRevocationTx(b *wire.MsgBlock, txIndex uint32) {
+	if !isRevocationTx(b.STransactions[txIndex]) {
+		panic(fmt.Sprintf("stake transaction at index %d in block %q is "+
+			" not a revocation", txIndex, g.tipName))
 	}
 }
 

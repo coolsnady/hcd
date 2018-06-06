@@ -1,5 +1,5 @@
 // Copyright (c) 2013-2014 The btcsuite developers
-// Copyright (c) 2015-2016 The Decred developers
+// Copyright (c) 2015-2018 The Decred developers
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
@@ -368,12 +368,13 @@ out:
 // savePeers saves all the known addresses to a file so they can be read back
 // in at next run.
 func (a *AddrManager) savePeers() {
+	a.mtx.Lock()
+	defer a.mtx.Unlock()
+
 	if !a.addrChanged {
 		// Nothing changed since last savePeers call.
 		return
 	}
-	a.mtx.Lock()
-	defer a.mtx.Unlock()
 
 	// First we make a serialisable datastructure so we can encode it to JSON.
 	sam := new(serializedAddrManager)
@@ -612,9 +613,9 @@ func (a *AddrManager) AddAddress(addr, srcAddr *wire.NetAddress) {
 	a.updateAddress(addr, srcAddr)
 }
 
-// AddAddressByIP adds an address where we are given an ip:port and not a
+// addAddressByIP adds an address where we are given an ip:port and not a
 // wire.NetAddress.
-func (a *AddrManager) AddAddressByIP(addrIP string) error {
+func (a *AddrManager) addAddressByIP(addrIP string) error {
 	// Split IP and port
 	addr, portStr, err := net.SplitHostPort(addrIP)
 	if err != nil {
@@ -634,17 +635,9 @@ func (a *AddrManager) AddAddressByIP(addrIP string) error {
 	return nil
 }
 
-// NumAddresses returns the number of addresses known to the address manager.
+// numAddresses returns the number of addresses known to the address manager.
 func (a *AddrManager) numAddresses() int {
 	return a.nTried + a.nNew
-}
-
-// NumAddresses returns the number of addresses known to the address manager.
-func (a *AddrManager) NumAddresses() int {
-	a.mtx.Lock()
-	defer a.mtx.Unlock()
-
-	return a.numAddresses()
 }
 
 // NeedMoreAddresses returns whether or not the address manager needs more
@@ -662,31 +655,39 @@ func (a *AddrManager) AddressCache() []*wire.NetAddress {
 	a.mtx.Lock()
 	defer a.mtx.Unlock()
 
-	addrIndexLen := len(a.addrIndex)
-	if addrIndexLen == 0 {
+	// Determine length of all addresses in index.
+	addrLen := len(a.addrIndex)
+	if addrLen == 0 {
 		return nil
 	}
 
-	allAddr := make([]*wire.NetAddress, 0, addrIndexLen)
+	allAddr := make([]*wire.NetAddress, 0, addrLen)
 	// Iteration order is undefined here, but we randomise it anyway.
 	for _, v := range a.addrIndex {
+		// Skip low quality addresses.
+		if v.isBad() {
+			continue
+		}
 		allAddr = append(allAddr, v.na)
 	}
 
-	numAddresses := addrIndexLen * getAddrPercent / 100
+	// Adjust length, we only deal with high quality addresses now.
+	addrLen = len(allAddr)
+
+	numAddresses := addrLen * getAddrPercent / 100
 	if numAddresses > getAddrMax {
 		numAddresses = getAddrMax
 	}
 
 	// Fisher-Yates shuffle the array. We only need to do the first
-	// `numAddresses' since we are throwing the rest.
+	// numAddresses since we are throwing away the rest.
 	for i := 0; i < numAddresses; i++ {
-		// pick a number between current index and the end
-		j := a.rand.Intn(addrIndexLen-i) + i
+		// Pick a number between current index and the end.
+		j := a.rand.Intn(addrLen-i) + i
 		allAddr[i], allAddr[j] = allAddr[j], allAddr[i]
 	}
 
-	// slice off the limit we are willing to share.
+	// Slice off the limit we are willing to share.
 	return allAddr[0:numAddresses]
 }
 
@@ -867,9 +868,11 @@ func (a *AddrManager) Connected(addr *wire.NetAddress) {
 	now := time.Now()
 	if now.After(ka.na.Timestamp.Add(time.Minute * 20)) {
 		// ka.na is immutable, so replace it.
+		ka.mtx.Lock()
 		naCopy := *ka.na
 		naCopy.Timestamp = time.Now()
 		ka.na = &naCopy
+		ka.mtx.Unlock()
 	}
 }
 
@@ -962,6 +965,27 @@ func (a *AddrManager) Good(addr *wire.NetAddress) {
 
 	// We made sure there is space here just above.
 	a.addrNew[newBucket][rmkey] = rmka
+}
+
+// SetServices sets the services for the giiven address to the provided value.
+func (a *AddrManager) SetServices(addr *wire.NetAddress, services wire.ServiceFlag) {
+	a.mtx.Lock()
+	defer a.mtx.Unlock()
+
+	ka := a.find(addr)
+	if ka == nil {
+		return
+	}
+
+	// Update the services if needed.
+	if ka.na.Services != services {
+		// ka.na is immutable, so replace it.
+		ka.mtx.Lock()
+		naCopy := *ka.na
+		naCopy.Services = services
+		ka.na = &naCopy
+		ka.mtx.Unlock()
+	}
 }
 
 // AddLocalAddress adds na to the list of known local addresses to advertise

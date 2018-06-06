@@ -15,6 +15,7 @@ import (
 	"github.com/coolsnady/hxd/chaincfg"
 	"github.com/coolsnady/hxd/chaincfg/chainec"
 	"github.com/coolsnady/hxd/chaincfg/chainhash"
+	"github.com/coolsnady/hxd/dcrec/secp256k1"
 	"github.com/coolsnady/hxd/dcrutil"
 	"github.com/coolsnady/hxd/txscript"
 	"github.com/coolsnady/hxd/wire"
@@ -40,13 +41,13 @@ func TestCalcMinRequiredTxRelayFee(t *testing.T) {
 			"1000 bytes with default minimum relay fee",
 			1000,
 			DefaultMinRelayTxFee,
-			1e5,
+			1e4,
 		},
 		{
 			"max standard tx size with default minimum relay fee",
 			maxStandardTxSize,
 			DefaultMinRelayTxFee,
-			1e7,
+			1e6,
 		},
 		{
 			"max standard tx size with max relay fee",
@@ -101,8 +102,8 @@ func TestCalcMinRequiredTxRelayFee(t *testing.T) {
 func TestCheckPkScriptStandard(t *testing.T) {
 	var pubKeys [][]byte
 	for i := 0; i < 4; i++ {
-		pk := chainec.Secp256k1.NewPrivateKey(big.NewInt(int64(chainec.ECTypeSecp256k1)))
-		pubKeys = append(pubKeys, chainec.Secp256k1.NewPublicKey(pk.Public()).SerializeCompressed())
+		pk := secp256k1.NewPrivateKey(big.NewInt(0))
+		pubKeys = append(pubKeys, (*secp256k1.PublicKey)(&pk.PublicKey).SerializeCompressed())
 	}
 
 	tests := []struct {
@@ -250,6 +251,18 @@ func TestDust(t *testing.T) {
 			"25 byte public key script with value 60300, relay fee 1e5",
 			wire.TxOut{Value: 60300, Version: 0, PkScript: pkScript},
 			1e5,
+			false,
+		},
+		{
+			"25 byte public key script with value 6029, relay fee 1e4",
+			wire.TxOut{Value: 6029, Version: 0, PkScript: pkScript},
+			1e4,
+			true,
+		},
+		{
+			"25 byte public key script with value 6030, relay fee 1e4",
+			wire.TxOut{Value: 6030, Version: 0, PkScript: pkScript},
+			1e4,
 			false,
 		},
 		{

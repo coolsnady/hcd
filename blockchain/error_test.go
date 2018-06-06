@@ -88,7 +88,7 @@ func TestErrorCodeStringer(t *testing.T) {
 		{ErrSSRtxPayeesMismatch, "ErrSSRtxPayeesMismatch"},
 		{ErrSSRtxPayees, "ErrSSRtxPayees"},
 		{ErrTxSStxOutSpend, "ErrTxSStxOutSpend"},
-		{ErrRegTxSpendStakeOut, "ErrRegTxSpendStakeOut"},
+		{ErrRegTxCreateStakeOut, "ErrRegTxCreateStakeOut"},
 		{ErrInvalidFinalState, "ErrInvalidFinalState"},
 		{ErrPoolSize, "ErrPoolSize"},
 		{ErrForceReorgWrongChain, "ErrForceReorgWrongChain"},
@@ -111,6 +111,7 @@ func TestErrorCodeStringer(t *testing.T) {
 		{ErrInvalidEarlyVoteBits, "ErrInvalidEarlyVoteBits"},
 		{ErrInvalidEarlyFinalState, "ErrInvalidEarlyFinalState"},
 		{ErrInvalidAncestorBlock, "ErrInvalidAncestorBlock"},
+		{ErrInvalidTemplateParent, "ErrInvalidTemplateParent"},
 		{0xffff, "Unknown ErrorCode (65535)"},
 	}
 

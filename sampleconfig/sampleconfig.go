@@ -13,14 +13,14 @@ const FileContents = `[Application Options]
 
 ; The directory to store data such as the block chain and peer addresses.  The
 ; block chain takes several GB, so this location must have a lot of free space.
-; The default is ~/.hxd/data on POSIX OSes, $LOCALAPPDATA/Dcrd/data on Windows,
-; ~/Library/Application Support/Dcrd/data on macOS, and $homed/hxd/data on
+; The default is ~/.hxd/data on POSIX OSes, $LOCALAPPDATA/Hxd/data on Windows,
+; ~/Library/Application Support/Hxd/data on macOS, and $homed/hxd/data on
 ; Plan9.  Environment variables are expanded so they may be used.  NOTE: Windows
 ; environment variables are typically %VARIABLE%, but they must be accessed with
 ; $VARIABLE here.
 ; datadir=~/.hxd/data                            ; Unix
-; datadir=$LOCALAPPDATA/Dcrd/data                 ; Windows
-; datadir=~/Library/Application Support/Dcrd/data ; macOS
+; datadir=$LOCALAPPDATA/Hxd/data                 ; Windows
+; datadir=~/Library/Application Support/Hxd/data ; macOS
 
 
 ; ------------------------------------------------------------------------------
@@ -169,9 +169,6 @@ const FileContents = `[Application Options]
 ; Disable listening for incoming connections.  This will override all listeners.
 ; nolisten=1
 
-; Disable peer bloom filtering.
-; nopeerbloomfilters=1
-
 
 ; ------------------------------------------------------------------------------
 ; RPC server options - The following options control the built-in RPC server
@@ -234,7 +231,7 @@ const FileContents = `[Application Options]
 ; ------------------------------------------------------------------------------
 
 ; Set the minimum transaction fee to be considered a non-zero fee,
-; minrelaytxfee=0.001
+; minrelaytxfee=0.0001
 
 ; Rate-limit free transactions to the value 15 * 1000 bytes per
 ; minute.

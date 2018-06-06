@@ -69,7 +69,7 @@ func main() {
 	}
 
 	// Write cert and key files.
-	if err = ioutil.WriteFile(certFile, cert, 0666); err != nil {
+	if err = ioutil.WriteFile(certFile, cert, 0644); err != nil {
 		fmt.Fprintf(os.Stderr, "cannot write cert: %v\n", err)
 		os.Exit(1)
 	}
@@ -83,6 +83,11 @@ func main() {
 // cleanAndExpandPath expands environment variables and leading ~ in the
 // passed path, cleans the result, and returns it.
 func cleanAndExpandPath(path string) string {
+	// Nothing to do when no path is given.
+	if path == "" {
+		return path
+	}
+
 	// NOTE: The os.ExpandEnv doesn't work with Windows cmd.exe-style
 	// %VARIABLE%, but the variables can still be expanded via POSIX-style
 	// $VARIABLE.

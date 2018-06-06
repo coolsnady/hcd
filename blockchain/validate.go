@@ -139,6 +139,25 @@ func IsCoinBase(tx *dcrutil.Tx) bool {
 	return IsCoinBaseTx(tx.MsgTx())
 }
 
+// IsExpiredTx returns where or not the passed transaction is expired according
+// to the given block height.
+//
+// This function only differs from IsExpired in that it works with a raw wire
+// transaction as opposed to a higher level util transaction.
+func IsExpiredTx(tx *wire.MsgTx, blockHeight int64) bool {
+	expiry := tx.Expiry
+	return expiry != wire.NoExpiryValue && blockHeight >= int64(expiry)
+}
+
+// IsExpired returns where or not the passed transaction is expired according to
+// the given block height.
+//
+// This function only differs from IsExpiredTx in that it works with a higher
+// level util transaction as opposed to a raw wire transaction.
+func IsExpired(tx *dcrutil.Tx, blockHeight int64) bool {
+	return IsExpiredTx(tx.MsgTx(), blockHeight)
+}
+
 // SequenceLockActive determines if all of the inputs to a given transaction
 // have achieved a relative age that surpasses the requirements specified by
 // their respective sequence locks as calculated by CalcSequenceLock.  A single
@@ -862,11 +881,7 @@ func (b *BlockChain) checkBlockHeaderContext(header *wire.BlockHeader, prevNode 
 
 		// Ensure the timestamp for the block header is after the
 		// median time of the last several blocks (medianTimeBlocks).
-		medianTime, err := b.index.CalcPastMedianTime(prevNode)
-		if err != nil {
-			log.Errorf("CalcPastMedianTime: %v", err)
-			return err
-		}
+		medianTime := prevNode.CalcPastMedianTime()
 		if !header.Timestamp.After(medianTime) {
 			str := "block timestamp of %v is not after expected %v"
 			str = fmt.Sprintf(str, header.Timestamp, medianTime)
@@ -897,17 +912,16 @@ func (b *BlockChain) checkBlockHeaderContext(header *wire.BlockHeader, prevNode 
 
 	// Find the previous checkpoint and prevent blocks which fork the main
 	// chain before it.  This prevents storage of new, otherwise valid,
-	// blocks which build off of old blocks that are likely at a much
-	// easier difficulty and therefore could be used to waste cache and
-	// disk space.
-	checkpointBlock, err := b.findPreviousCheckpoint()
+	// blocks which build off of old blocks that are likely at a much easier
+	// difficulty and therefore could be used to waste cache and disk space.
+	checkpointNode, err := b.findPreviousCheckpoint()
 	if err != nil {
 		return err
 	}
-	if checkpointBlock != nil && blockHeight < checkpointBlock.Height() {
+	if checkpointNode != nil && blockHeight < checkpointNode.height {
 		str := fmt.Sprintf("block at height %d forks the main chain "+
 			"before the previous checkpoint at height %d",
-			blockHeight, checkpointBlock.Height())
+			blockHeight, checkpointNode.height)
 		return ruleError(ErrForkTooOld, str)
 	}
 
@@ -1112,24 +1126,28 @@ func (b *BlockChain) checkBlockContext(block *dcrutil.Block, prevNode *blockNode
 			return err
 		}
 		if lnFeaturesActive {
-			medianTime, err := b.index.CalcPastMedianTime(prevNode)
-			if err != nil {
-				return err
-			}
-
-			blockTime = medianTime
+			blockTime = prevNode.CalcPastMedianTime()
 		}
 
 		// The height of this block is one more than the referenced
 		// previous block.
 		blockHeight := prevNode.height + 1
 
-		// Ensure all transactions in the block are finalized.
+		// Ensure all transactions in the block are finalized and are
+		// not expired.
 		for _, tx := range block.Transactions() {
 			if !IsFinalizedTransaction(tx, blockHeight, blockTime) {
 				str := fmt.Sprintf("block contains unfinalized regular "+
 					"transaction %v", tx.Hash())
 				return ruleError(ErrUnfinalizedTx, str)
+			}
+
+			// The transaction must not be expired.
+			if IsExpired(tx, blockHeight) {
+				errStr := fmt.Sprintf("block contains expired regular "+
+					"transaction %v (expiration height %d)", tx.Hash(),
+					tx.MsgTx().Expiry)
+				return ruleError(ErrExpiredTx, errStr)
 			}
 		}
 		for _, stx := range block.STransactions() {
@@ -1137,6 +1155,14 @@ func (b *BlockChain) checkBlockContext(block *dcrutil.Block, prevNode *blockNode
 				str := fmt.Sprintf("block contains unfinalized stake "+
 					"transaction %v", stx.Hash())
 				return ruleError(ErrUnfinalizedTx, str)
+			}
+
+			// The transaction must not be expired.
+			if IsExpired(stx, blockHeight) {
+				errStr := fmt.Sprintf("block contains expired stake "+
+					"transaction %v (expiration height %d)", stx.Hash(),
+					stx.MsgTx().Expiry)
+				return ruleError(ErrExpiredTx, errStr)
 			}
 		}
 
@@ -1229,16 +1255,6 @@ func (b *BlockChain) checkDupTxs(txSet []*dcrutil.Tx, view *UtxoViewpoint) error
 // CheckTransactionSanity function prior to calling this function.
 func CheckTransactionInputs(subsidyCache *SubsidyCache, tx *dcrutil.Tx, txHeight int64, utxoView *UtxoViewpoint, checkFraudProof bool, chainParams *chaincfg.Params) (int64, error) {
 	msgTx := tx.MsgTx()
-
-	// Expired transactions are not allowed.
-	if msgTx.Expiry != wire.NoExpiryValue {
-		if txHeight >= int64(msgTx.Expiry) {
-			errStr := fmt.Sprintf("Transaction indicated an "+
-				"expiry of %v while the current height is %v",
-				tx.MsgTx().Expiry, txHeight)
-			return 0, ruleError(ErrExpiredTx, errStr)
-		}
-	}
 
 	ticketMaturity := int64(chainParams.TicketMaturity)
 	stakeEnabledHeight := chainParams.StakeEnabledHeight
@@ -1482,7 +1498,6 @@ func CheckTransactionInputs(subsidyCache *SubsidyCache, tx *dcrutil.Tx, txHeight
 	// Save whether or not this is an SSRtx tx; if it is, we need to know
 	// this later input check for OP_SSTX outs.
 	isSSRtx := stake.IsSSRtx(msgTx)
-
 	if isSSRtx {
 		// Cursory check to see if we've even reach stake-enabled
 		// height.  Note for an SSRtx to be valid a vote must be
@@ -1823,7 +1838,7 @@ func CheckTransactionInputs(subsidyCache *SubsidyCache, tx *dcrutil.Tx, txHeight
 					"included stake output type %v at in "+
 					"txout at position %v", txHash,
 					scriptClass, i)
-				return 0, ruleError(ErrRegTxSpendStakeOut, errStr)
+				return 0, ruleError(ErrRegTxCreateStakeOut, errStr)
 			}
 
 			// Check to make sure that non-stake transactions also
@@ -2299,15 +2314,14 @@ func (b *BlockChain) consensusScriptVerifyFlags(node *blockNode) (txscript.Scrip
 // connected and consequently the best hash for the view is also updated to
 // passed block.
 //
-// The CheckConnectBlock function makes use of this function to perform the
-// bulk of its work.  The only difference is this function accepts a node which
-// may or may not require reorganization to connect it to the main chain
-// whereas CheckConnectBlock creates a new node which specifically connects to
-// the end of the current main chain and then calls this function with that
-// node.
+// An example of some of the checks performed are ensuring connecting the block
+// would not cause any duplicate transaction hashes for old transactions that
+// aren't already fully spent, double spends, exceeding the maximum allowed
+// signature operations per block, invalid values in relation to the expected
+// block subsidy, or fail transaction script validation.
 //
-// See the comments for CheckConnectBlock for some examples of the type of
-// checks performed by this function.
+// The CheckConnectBlockTemplate function makes use of this function to perform
+// the bulk of its work.
 //
 // This function MUST be called with the chain state lock held (for writes).
 func (b *BlockChain) checkConnectBlock(node *blockNode, block, parent *dcrutil.Block, utxoView *UtxoViewpoint, stxos *[]spentTxOut) error {
@@ -2325,11 +2339,11 @@ func (b *BlockChain) checkConnectBlock(node *blockNode, block, parent *dcrutil.B
 	}
 
 	// Ensure the view is for the node being checked.
-	if !utxoView.BestHash().IsEqual(&node.parentHash) {
+	parentHash := &block.MsgBlock().Header.PrevBlock
+	if !utxoView.BestHash().IsEqual(parentHash) {
 		return AssertError(fmt.Sprintf("inconsistent view when "+
 			"checking block connection: best hash is %v instead "+
-			"of expected %v", utxoView.BestHash(),
-			node.parentHash))
+			"of expected %v", utxoView.BestHash(), parentHash))
 	}
 
 	// Check that the coinbase pays the tax, if applicable.
@@ -2427,10 +2441,7 @@ func (b *BlockChain) checkConnectBlock(node *blockNode, block, parent *dcrutil.B
 		// Use the past median time of the *previous* block in order
 		// to determine if the transactions in the current block are
 		// final.
-		prevMedianTime, err = b.index.CalcPastMedianTime(node.parent)
-		if err != nil {
-			return err
-		}
+		prevMedianTime = node.parent.CalcPastMedianTime()
 
 		// Skip the coinbase since it does not have any inputs and thus
 		// lock times do not apply.
@@ -2542,33 +2553,44 @@ func (b *BlockChain) checkConnectBlock(node *blockNode, block, parent *dcrutil.B
 	return nil
 }
 
-// CheckConnectBlock performs several checks to confirm connecting the passed
-// block to the main chain does not violate any rules.  An example of some of
-// the checks performed are ensuring connecting the block would not cause any
-// duplicate transaction hashes for old transactions that aren't already fully
-// spent, double spends, exceeding the maximum allowed signature operations per
-// block, invalid values in relation to the expected block subsidy, or fail
-// transaction script validation.
-//
-// The flags modify the behavior of this function as follows:
-//  - BFNoPoWCheck: The check to ensure the block hash is less than the target
-//    difficulty is not performed.
-//  - BFFastAdd: The transactions are not checked to see if they are finalized
-//    and the somewhat expensive duplication transaction check is not performed.
+// CheckConnectBlockTemplate fully validates that connecting the passed block to
+// either the tip of the main chain or its parent does not violate any consensus
+// rules, aside from the proof of work requirement.  The block must connect to
+// the current tip of the main chain or its parent.
 //
 // This function is safe for concurrent access.
-func (b *BlockChain) CheckConnectBlock(block *dcrutil.Block, flags BehaviorFlags) error {
+func (b *BlockChain) CheckConnectBlockTemplate(block *dcrutil.Block) error {
 	b.chainLock.Lock()
 	defer b.chainLock.Unlock()
 
+	// Skip the proof of work check as this is just a block template.
+	flags := BFNoPoWCheck
+
+	// The block template must build off the current tip of the main chain
+	// or its parent.
+	tip := b.bestNode
+	var prevNode *blockNode
 	parentHash := block.MsgBlock().Header.PrevBlock
-	prevNode, err := b.findNode(&parentHash, maxSearchDepth)
-	if err != nil {
-		return ruleError(ErrMissingParent, err.Error())
+	if parentHash == tip.hash {
+		prevNode = tip
+	} else if tip.parent != nil && parentHash == tip.parent.hash {
+		prevNode = tip.parent
+	}
+	if prevNode == nil {
+		var str string
+		if tip.parent != nil {
+			str = fmt.Sprintf("previous block must be the current chain tip "+
+				"%s or its parent %s, but got %s", tip.hash, tip.parent.hash,
+				parentHash)
+		} else {
+			str = fmt.Sprintf("previous block must be the current chain tip "+
+				"%s, but got %s", tip.hash, parentHash)
+		}
+		return ruleError(ErrInvalidTemplateParent, str)
 	}
 
 	// Perform context-free sanity checks on the block and its transactions.
-	err = checkBlockSanity(block, b.timeSource, flags, b.chainParams)
+	err := checkBlockSanity(block, b.timeSource, flags, b.chainParams)
 	if err != nil {
 		return err
 	}
@@ -2583,20 +2605,17 @@ func (b *BlockChain) CheckConnectBlock(block *dcrutil.Block, flags BehaviorFlags
 	newNode := newBlockNode(&block.MsgBlock().Header, prevNode)
 	newNode.populateTicketInfo(stake.FindSpentTicketsInBlock(block.MsgBlock()))
 
-	// If we are extending the main (best) chain with a new block, just use
-	// the ticket database we already have.
-	if b.bestNode == nil || (prevNode != nil &&
-		prevNode.hash == b.bestNode.hash) {
-
+	// Use the ticket database as is when extending the main (best) chain.
+	if prevNode.hash == tip.hash {
 		// Grab the parent block since it is required throughout the block
 		// connection process.
-		parent, err := b.fetchMainChainBlockByHash(&parentHash)
+		parent, err := b.fetchMainChainBlockByHash(&prevNode.hash)
 		if err != nil {
 			return ruleError(ErrMissingParent, err.Error())
 		}
 
 		view := NewUtxoViewpoint()
-		view.SetBestHash(&prevNode.hash)
+		view.SetBestHash(&tip.hash)
 		return b.checkConnectBlock(newNode, block, parent, view, nil)
 	}
 
@@ -2605,15 +2624,11 @@ func (b *BlockChain) CheckConnectBlock(block *dcrutil.Block, flags BehaviorFlags
 	// the transactions and spend information for the blocks which would be
 	// disconnected during a reorganize to the point of view of the node
 	// just before the requested node.
-	detachNodes, attachNodes, err := b.getReorganizeNodes(prevNode)
-	if err != nil {
-		return err
-	}
+	detachNodes, attachNodes := b.getReorganizeNodes(prevNode)
 
 	view := NewUtxoViewpoint()
-	view.SetBestHash(&b.bestNode.hash)
+	view.SetBestHash(&tip.hash)
 	view.SetStakeViewpoint(ViewpointPrevValidInitial)
-	var stxos []spentTxOut
 	var nextBlockToDetach *dcrutil.Block
 	for e := detachNodes.Front(); e != nil; e = e.Next() {
 		// Grab the block to detach based on the node.  Use the fact that the
@@ -2629,18 +2644,19 @@ func (b *BlockChain) CheckConnectBlock(block *dcrutil.Block, flags BehaviorFlags
 			}
 		}
 		if n.hash != *block.Hash() {
-			return AssertError(fmt.Sprintf("detach block node hash %v (height "+
-				"%v) does not match previous parent block hash %v", &n.hash,
-				n.height, block.Hash()))
+			panicf("detach block node hash %v (height %v) does not match "+
+				"previous parent block hash %v", &n.hash, n.height,
+				block.Hash())
 		}
 
-		parent, err := b.fetchMainChainBlockByHash(&n.parentHash)
+		parent, err := b.fetchMainChainBlockByHash(&n.parent.hash)
 		if err != nil {
 			return err
 		}
 		nextBlockToDetach = parent
 
 		// Load all of the spent txos for the block from the spend journal.
+		var stxos []spentTxOut
 		err = b.db.View(func(dbTx database.Tx) error {
 			stxos, err = dbFetchSpendJournalEntry(dbTx, block, parent)
 			return err
@@ -2664,12 +2680,11 @@ func (b *BlockChain) CheckConnectBlock(block *dcrutil.Block, flags BehaviorFlags
 	if attachNodes.Len() == 0 {
 		// Grab the parent block since it is required throughout the block
 		// connection process.
-		parent, err := b.fetchMainChainBlockByHash(&parentHash)
+		parent, err := b.fetchMainChainBlockByHash(&prevNode.hash)
 		if err != nil {
 			return ruleError(ErrMissingParent, err.Error())
 		}
 
-		view.SetBestHash(&parentHash)
 		return b.checkConnectBlock(newNode, block, parent, view, nil)
 	}
 
@@ -2689,21 +2704,21 @@ func (b *BlockChain) CheckConnectBlock(block *dcrutil.Block, flags BehaviorFlags
 		parent := prevAttachBlock
 		if parent == nil {
 			var err error
-			parent, err = b.fetchMainChainBlockByHash(&n.parentHash)
+			parent, err = b.fetchMainChainBlockByHash(&n.parent.hash)
 			if err != nil {
 				return err
 			}
 		}
-		if n.parentHash != *parent.Hash() {
-			return AssertError(fmt.Sprintf("attach block node hash %v (height "+
-				"%v) parent hash %v does not match previous parent block "+
-				"hash %v", &n.hash, n.height, &n.parentHash, parent.Hash()))
+		if n.parent.hash != *parent.Hash() {
+			panicf("attach block node hash %v (height %v) parent hash %v does "+
+				"not match previous parent block hash %v", &n.hash, n.height,
+				&n.parent.hash, parent.Hash())
 		}
 
 		// Store the loaded block for the next iteration.
 		prevAttachBlock = block
 
-		err = b.connectTransactions(view, block, parent, &stxos)
+		err = b.connectTransactions(view, block, parent, nil)
 		if err != nil {
 			return err
 		}
@@ -2711,11 +2726,13 @@ func (b *BlockChain) CheckConnectBlock(block *dcrutil.Block, flags BehaviorFlags
 
 	// Grab the parent block since it is required throughout the block
 	// connection process.
-	parent, err := b.fetchBlockByHash(&parentHash)
+	parent, err := b.fetchBlockByHash(&prevNode.hash)
 	if err != nil {
 		return ruleError(ErrMissingParent, err.Error())
 	}
 
-	view.SetBestHash(&parentHash)
-	return b.checkConnectBlock(newNode, block, parent, view, &stxos)
+	// Notice the spent txout details are not requested here and thus will not
+	// be generated.  This is done because the state will not be written to the
+	// database, so it is not needed.
+	return b.checkConnectBlock(newNode, block, parent, view, nil)
 }

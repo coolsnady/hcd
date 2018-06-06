@@ -37,9 +37,9 @@ const (
 	MinHighPriority = dcrutil.AtomsPerCoin * 144.0 / 250
 
 	// maxRelayFeeMultiplier is the factor that we disallow fees / kB above the
-	// minimum tx fee.  At the current default minimum relay fee of 0.001
+	// minimum tx fee.  At the current default minimum relay fee of 0.0001
 	// DCR/kB, this results in a maximum allowed high fee of 1 DCR/kB.
-	maxRelayFeeMultiplier = 1000
+	maxRelayFeeMultiplier = 1e4
 
 	// maxSSGensDoubleSpends is the maximum number of SSGen double spends
 	// allowed in the pool.
@@ -808,6 +808,13 @@ func (mp *TxPool) maybeAcceptTransaction(tx *dcrutil.Tx, isNew, rateLimit, allow
 	bestHeight := mp.cfg.BestHeight()
 	nextBlockHeight := bestHeight + 1
 
+	// Don't accept transactions that will be expired as of the next block.
+	if blockchain.IsExpired(tx, nextBlockHeight) {
+		str := fmt.Sprintf("transaction %v expired at height %d",
+			txHash, msgTx.Expiry)
+		return nil, txRuleError(wire.RejectInvalid, str)
+	}
+
 	// Determine what type of transaction we're dealing with (regular or stake).
 	// Then, be sure to set the tx tree correctly as it's possible a use submitted
 	// it to the network with TxTreeUnknown.
@@ -1315,25 +1322,29 @@ func (mp *TxPool) pruneStakeTx(requiredStakeDifficulty, height int64) {
 	}
 }
 
+// pruneExpiredTx prunes expired transactions from the mempool that may no longer
+// be able to be included into a block.
+//
+// This function MUST be called with the mempool lock held (for writes).
+func (mp *TxPool) pruneExpiredTx(height int64) {
+	for _, tx := range mp.pool {
+		if blockchain.IsExpired(tx.Tx, height) {
+			log.Debugf("Pruning expired transaction %v from the mempool",
+				tx.Tx.Hash())
+			mp.removeTransaction(tx.Tx, true)
+		}
+	}
+}
+
 // PruneExpiredTx prunes expired transactions from the mempool that may no longer
 // be able to be included into a block.
+//
+// This function is safe for concurrent access.
 func (mp *TxPool) PruneExpiredTx(height int64) {
 	// Protect concurrent access.
 	mp.mtx.Lock()
 	mp.pruneExpiredTx(height)
 	mp.mtx.Unlock()
-}
-
-func (mp *TxPool) pruneExpiredTx(height int64) {
-	for _, tx := range mp.pool {
-		if tx.Tx.MsgTx().Expiry != 0 {
-			if height >= int64(tx.Tx.MsgTx().Expiry) {
-				log.Debugf("Pruning expired transaction %v "+
-					"from the mempool", tx.Tx.Hash())
-				mp.removeTransaction(tx.Tx, true)
-			}
-		}
-	}
 }
 
 // ProcessOrphans determines if there are any orphans which depend on the passed

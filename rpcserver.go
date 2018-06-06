@@ -33,7 +33,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/btcsuite/websocket"
+	"github.com/gorilla/websocket"
 
 	"github.com/coolsnady/hxd/blockchain"
 	"github.com/coolsnady/hxd/blockchain/stake"
@@ -621,6 +621,11 @@ func messageToHex(msg wire.Message) (string, error) {
 func handleCreateRawTransaction(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	c := cmd.(*dcrjson.CreateRawTransactionCmd)
 
+	// Validate expiry, if given.
+	if c.Expiry != nil && *c.Expiry < 0 {
+		return nil, rpcInvalidError("Expiry out of range")
+	}
+
 	// Validate the locktime, if given.
 	if c.LockTime != nil &&
 		(*c.LockTime < 0 ||
@@ -701,6 +706,11 @@ func handleCreateRawTransaction(s *rpcServer, cmd interface{}, closeChan <-chan 
 	// Set the Locktime, if given.
 	if c.LockTime != nil {
 		mtx.LockTime = uint32(*c.LockTime)
+	}
+
+	// Set the Expiry, if given.
+	if c.Expiry != nil {
+		mtx.Expiry = uint32(*c.Expiry)
 	}
 
 	// Return the serialized and hex-encoded transaction.  Note that this
@@ -2972,8 +2982,7 @@ func handleGetBlockTemplateProposal(s *rpcServer, request *dcrjson.TemplateReque
 		return "bad-prevblk", nil
 	}
 
-	flags := blockchain.BFNoPoWCheck
-	err = s.server.blockManager.chain.CheckConnectBlock(block, flags)
+	err = s.server.blockManager.chain.CheckConnectBlockTemplate(block)
 	if err != nil {
 		if _, ok := err.(blockchain.RuleError); !ok {
 			errStr := fmt.Sprintf("Failed to process block "+
@@ -3159,35 +3168,24 @@ func handleGetHeaders(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) 
 				"hashstop: %v", err)
 		}
 	}
+
 	// Until wire.MsgGetHeaders uses []Hash instead of the []*Hash, this
 	// conversion is necessary.  The wire protocol getheaders is (probably)
-	// called much more often than this RPC, so server.locateBlocks is
+	// called much more often than this RPC, so chain.LocateHeaders is
 	// optimized for that and this is given the performance penality.
-	pBlockLocators := make([]*chainhash.Hash, len(blockLocators))
+	locators := make(blockchain.BlockLocator, len(blockLocators))
 	for i := range blockLocators {
-		pBlockLocators[i] = &blockLocators[i]
-	}
-	blockHashes, err := s.server.locateBlocks(pBlockLocators, &hashStop)
-	if err != nil {
-		return nil, &dcrjson.RPCError{
-			Code: dcrjson.ErrRPCDatabase,
-			Message: "Failed to fetch hashes of block " +
-				"headers: " + err.Error(),
-		}
-	}
-	blockHeaders, err := fetchHeaders(s.chain, blockHashes)
-	if err != nil {
-		return nil, &dcrjson.RPCError{
-			Code: dcrjson.ErrRPCDatabase,
-			Message: "Failed to fetch headers of located blocks: " +
-				err.Error(),
-		}
+		locators[i] = &blockLocators[i]
 	}
 
-	hexBlockHeaders := make([]string, len(blockHeaders))
+	chain := s.server.blockManager.chain
+	headers := chain.LocateHeaders(locators, &hashStop)
+
+	// Return the serialized block headers as hex-encoded strings.
+	hexBlockHeaders := make([]string, len(headers))
 	var buf bytes.Buffer
 	buf.Grow(wire.MaxBlockHeaderPayload)
-	for i, h := range blockHeaders {
+	for i, h := range headers {
 		err := h.Serialize(&buf)
 		if err != nil {
 			return nil, rpcInternalError(err.Error(),
@@ -4468,7 +4466,7 @@ func handleRebroadcastMissed(s *rpcServer, cmd interface{}, closeChan <-chan str
 
 // handleRebroadcastWinners implements the rebroadcastwinners command.
 func handleRebroadcastWinners(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	hash, height := s.server.blockManager.chainState.Best()
+	_, height := s.server.blockManager.chainState.Best()
 	blocks, err := s.server.blockManager.TipGeneration()
 	if err != nil {
 		return nil, rpcInternalError("Could not get generation "+
@@ -4483,7 +4481,7 @@ func handleRebroadcastWinners(s *rpcServer, cmd interface{}, closeChan <-chan st
 				"failed: "+err.Error(), "")
 		}
 		ntfnData := &WinningTicketsNtfnData{
-			BlockHash:   *hash,
+			BlockHash:   blocks[i],
 			BlockHeight: height,
 			Tickets:     winningTickets,
 		}
@@ -6307,6 +6305,11 @@ func (s *rpcServer) jsonRPCRead(w http.ResponseWriter, r *http.Request, isAdmin 
 	if _, err := buf.Write(msg); err != nil {
 		rpcsLog.Errorf("Failed to write marshalled reply: %v", err)
 	}
+
+	// Terminate with newline to maintain compatibility with Bitcoin Core.
+	if err := buf.WriteByte('\n'); err != nil {
+		rpcsLog.Errorf("Failed to append terminating newline to reply: %v", err)
+	}
 }
 
 // jsonAuthFail sends a message back to the client if the http auth is rejected.
@@ -6403,7 +6406,7 @@ func genCertPair(certFile, keyFile string) error {
 	}
 
 	// Write cert and key files.
-	if err = ioutil.WriteFile(certFile, cert, 0666); err != nil {
+	if err = ioutil.WriteFile(certFile, cert, 0644); err != nil {
 		return err
 	}
 	if err = ioutil.WriteFile(keyFile, key, 0600); err != nil {

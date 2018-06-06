@@ -48,6 +48,10 @@ var (
 	// opcode.  It is defined here to reduce garbage creation.
 	opTrueScript = []byte{txscript.OP_TRUE}
 
+	// invalidP2SHRedeemScript is a script that evaluates to false. This makes
+	// it an invalid P2SH redeem script.
+	invalidP2SHRedeemScript = []byte{0x01, txscript.OP_FALSE}
+
 	// lowFee is a single atom and exists to make the test code more
 	// readable.
 	lowFee = dcrutil.Amount(1)
@@ -499,7 +503,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	g.SetTip("genesis")
 	g.CreatePremineBlock("bpbad2", 0, func(b *wire.MsgBlock) {
 		scriptSize := len(b.Transactions[0].TxOut[0].PkScript)
-		badScript := repeatOpcode(0x00, scriptSize)
+		badScript := repeatOpcode(txscript.OP_0, scriptSize)
 		b.Transactions[0].TxOut[0].PkScript = badScript
 	})
 	rejected(blockchain.ErrBlockOneOutputs)
@@ -521,10 +525,32 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	g.AssertTipHeight(1)
 	accepted()
 
-	// TODO:
-	// - Try to spend premine output before maturity in the regular tree
-	// - Try to spend premine output before maturity in the stake tree by
-	//   creating a ticket purchase
+	// Create block that tries to spend premine output before
+	// maturity in the regular tree
+	//
+	// genesis -> bp
+	//              \-> bpi0
+	g.NextBlock("bpi0", nil, nil, func(b *wire.MsgBlock) {
+		spendOut := chaingen.MakeSpendableOut(g.Tip(), 0, 0)
+		tx := g.CreateSpendTx(&spendOut, lowFee)
+		b.AddTransaction(tx)
+	})
+	rejected(blockchain.ErrImmatureSpend)
+
+	// Create block that tries to spend premine output before
+	// maturity in the stake tree by creating a ticket purchase
+	//
+	// genesis -> bp
+	//              \-> bpi1
+	g.SetTip("bp")
+	g.NextBlock("bpi1", nil, nil, func(b *wire.MsgBlock) {
+		spendOut := chaingen.MakeSpendableOut(g.Tip(), 0, 0)
+		ticketPrice := dcrutil.Amount(g.CalcNextRequiredStakeDifficulty())
+		tx := g.CreateTicketPurchaseTx(&spendOut, ticketPrice, lowFee)
+		b.AddSTransaction(tx)
+		b.Header.FreshStake++
+	})
+	rejected(blockchain.ErrImmatureSpend)
 
 	// ---------------------------------------------------------------------
 	// Generate enough blocks to have mature coinbase outputs to work with.
@@ -532,6 +558,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	//   genesis -> bp -> bm0 -> bm1 -> ... -> bm#
 	// ---------------------------------------------------------------------
 
+	g.SetTip("bp")
 	var testInstances []TestInstance
 	for i := uint16(0); i < coinbaseMaturity; i++ {
 		blockName := fmt.Sprintf("bm%d", i)
@@ -544,16 +571,18 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	g.AssertTipHeight(uint32(coinbaseMaturity) + 1)
 
 	// ---------------------------------------------------------------------
-	// Generate enough blocks to reach the stake enabled height while
-	// creating ticket purchases that spend from the coinbases matured
-	// above.  This will also populate the pool of immature tickets.
+	// Generate enough blocks to reach the stake enabled height as well as the
+	// first set of live tickets while creating ticket purchases that spend
+	// from the coinbases matured above. This will also populate the
+	// pool of immature tickets.
 	//
 	//   ... -> bm# ... -> bse0 -> bse1 -> ... -> bse#
 	// ---------------------------------------------------------------------
 
 	testInstances = nil
 	var ticketsPurchased int
-	for i := int64(0); int64(g.Tip().Header.Height) < stakeEnabledHeight; i++ {
+	beforeLiveTickets := stakeEnabledHeight + 2
+	for i := int64(0); int64(g.Tip().Header.Height) < beforeLiveTickets; i++ {
 		outs := g.OldestCoinbaseOuts()
 		ticketOuts := outs[1:]
 		ticketsPurchased += len(ticketOuts)
@@ -564,18 +593,27 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 			g.Tip(), true, false))
 	}
 	tests = append(tests, testInstances)
-	g.AssertTipHeight(uint32(stakeEnabledHeight))
+	g.AssertTipHeight(uint32(beforeLiveTickets))
+	bseTipName := g.TipName()
 
-	// TODO: Modify the above to generate a few less so this section can
-	// test negative validation failures such as the following items and
-	// then finish generating the rest after to reach the stake enabled
-	// height.
-	//
-	// - Ticket purchase with various malformed transactions such as
-	//   incorrectly ordered txouts, scripts that do not involve p2pkh or
-	//   p2sh addresses, etc
-	// - Try to vote with an immature ticket
-	// - Try to vote before stake validation height
+	// Create block that tries to vote before stake validation height.
+	//   bse#
+	//       \ -> bis1
+	g.NextBlock("bis1", nil, nil, func(b *wire.MsgBlock) {
+		// block bse0 being the first block to purchase tickets will be the
+		// first block with mature tickets.
+		ticketBlock := g.BlockByName("bse0")
+		voteBlock := g.BlockByName(bseTipName)
+		ticketIdx := uint32(1)
+		ticketTx := ticketBlock.STransactions[ticketIdx]
+		voteTx := g.CreateVoteTx(voteBlock, ticketTx,
+			ticketBlock.Header.Height, ticketIdx)
+		b.AddSTransaction(voteTx)
+		b.Header.Voters++
+	})
+	g.AssertPoolSize(5)
+	rejected(blockchain.ErrInvalidEarlyStakeTx)
+	g.SetTip(bseTipName)
 
 	// ---------------------------------------------------------------------
 	// Generate enough blocks to reach the stake validation height while
@@ -1300,13 +1338,53 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	g.SetTip("bsl5")
 	g.NextBlock("bv15", outs[9], ticketOuts[9], func(b *wire.MsgBlock) {
 		ticketFee := dcrutil.Amount(2)
-		ticketPrice := dcrutil.Amount(g.CalcNextRequiredStakeDifficulty())
+		ticketPrice := dcrutil.Amount(g.CalcNextReqStakeDifficulty(g.Tip()))
 		ticketPrice--
 		b.STransactions[5].TxOut[1].PkScript =
 			chaingen.PurchaseCommitmentScript(g.P2shOpTrueAddr(),
 				ticketPrice+ticketFee, 0, ticketPrice)
 	})
 	rejected(blockchain.ErrSStxCommitment)
+
+	// Attempt to add block with a ticket purchase using output from
+	// disapproved block.
+	//
+	//   ... -> bsl5(8)
+	//                 \-> bv16(9)
+	g.SetTip("bsl5")
+	g.NextBlock("bv16", outs[9], ticketOuts[9], func(b *wire.MsgBlock) {
+		b.Header.VoteBits &^= voteBitYes
+		for i := 0; i < 5; i++ {
+			g.ReplaceVoteBitsN(i, voteBitNo)(b)
+		}
+
+		prevBlock := g.Tip()
+		spend := chaingen.MakeSpendableOut(prevBlock, 1, 0)
+		ticketPrice := dcrutil.Amount(g.CalcNextReqStakeDifficulty(g.Tip()))
+		ticket := g.CreateTicketPurchaseTx(&spend, ticketPrice, lowFee)
+		b.AddSTransaction(ticket)
+		b.Header.FreshStake++
+	})
+	rejected(blockchain.ErrMissingTxOut)
+
+	// Attempt to add block with a regular transaction using output
+	// from disapproved block.
+	//
+	//   ... -> bsl5(8)
+	//                 \-> bv17(9)
+	g.SetTip("bsl5")
+	g.NextBlock("bv17", outs[9], ticketOuts[9], func(b *wire.MsgBlock) {
+		b.Header.VoteBits &^= voteBitYes
+		for i := 0; i < 5; i++ {
+			g.ReplaceVoteBitsN(i, voteBitNo)(b)
+		}
+
+		prevBlock := g.Tip()
+		spend := chaingen.MakeSpendableOut(prevBlock, 1, 0)
+		tx := g.CreateSpendTx(&spend, lowFee)
+		b.AddTransaction(tx)
+	})
+	rejected(blockchain.ErrMissingTxOut)
 
 	// ---------------------------------------------------------------------
 	// Stake ticket difficulty tests.
@@ -1478,6 +1556,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	//   ... -> bmo5(11)
 	//                  \-> bsp1(12)
 	//                  \-> bsp2(bsp1.tx[1])
+	//                  \-> bsp3(bsp1.tx[1])
 	//
 	g.SetTip("bmo5")
 	doubleSpendTx := g.CreateSpendTx(outs[12], lowFee)
@@ -1874,7 +1953,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	})
 	rejected(blockchain.ErrFraudAmountIn)
 
-	// Create block with an expired transaction.
+	// Create block with an expired transaction in the regular tx tree.
 	//
 	//   ... -> brs3(14)
 	//                  \-> bmf20(15)
@@ -1882,8 +1961,18 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	g.NextBlock("bmf20", outs[15], ticketOuts[15], func(b *wire.MsgBlock) {
 		txOut := chaingen.MakeSpendableOut(b, 1, 0)
 		tx := g.CreateSpendTx(&txOut, lowFee)
-		tx.Expiry = 1
+		tx.Expiry = b.Header.Height
 		b.AddTransaction(tx)
+	})
+	rejected(blockchain.ErrExpiredTx)
+
+	// Create block with an expired transaction in the stake tx tree.
+	//
+	//   ... -> brs3(14)
+	//                  \-> bmf20b(15)
+	g.SetTip("brs3")
+	g.NextBlock("bmf20b", outs[15], ticketOuts[15], func(b *wire.MsgBlock) {
+		b.STransactions[5].Expiry = b.Header.Height
 	})
 	rejected(blockchain.ErrExpiredTx)
 
@@ -1930,6 +2019,181 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 		b.AddTransaction(tx)
 	})
 	rejected(blockchain.ErrScriptMalformed)
+
+	// Create block that spends immature stakebase from a vote in
+	// a ticket purchase.
+	//
+	//   ... -> brs3(14)
+	//                  \-> bmf25(15)
+	g.SetTip("brs3")
+	g.NextBlock("bmf25", outs[15], ticketOuts[15], func(b *wire.MsgBlock) {
+		spendOut := chaingen.MakeSpendableStakeOut(b, 0, 2)
+		ticketPrice := dcrutil.Amount(g.CalcNextReqStakeDifficulty(g.Tip()))
+		ticket := g.CreateTicketPurchaseTx(&spendOut, ticketPrice, lowFee)
+		b.AddSTransaction(ticket)
+		b.Header.FreshStake++
+	})
+	rejected(blockchain.ErrImmatureSpend)
+
+	// Create block with an invalid stake transaction signature script.
+	//
+	//   ... -> brs3(14)
+	//                  \-> bmf26(15)
+	g.SetTip("brs3")
+	g.NextBlock("bmf26", outs[15], ticketOuts[15], func(b *wire.MsgBlock) {
+		b.STransactions[5].TxIn[0].SignatureScript = invalidP2SHRedeemScript
+	})
+	rejected(blockchain.ErrScriptValidation)
+
+	// Create block with an invalid regular transaction signature script.
+	//
+	//   ... -> brs3(14)
+	//                  \-> bmf27(15)
+	g.SetTip("brs3")
+	g.NextBlock("bmf27", outs[15], ticketOuts[15], func(b *wire.MsgBlock) {
+		b.Transactions[1].TxIn[0].SignatureScript = invalidP2SHRedeemScript
+	})
+	rejected(blockchain.ErrScriptValidation)
+
+	// Create block that tries to spend an input expected to be in a different
+	// tx tree than the one given in the TxIn outpoint.
+	//
+	//   ... -> brs3(14)
+	//                  \-> bmf28(15)
+	g.SetTip("brs3")
+	g.NextBlock("bmf28", outs[15], ticketOuts[15], func(b *wire.MsgBlock) {
+		tx := g.CreateSpendTxForTx(b.Transactions[1], b.Header.Height, 1, lowFee)
+		tx.TxIn[0].PreviousOutPoint.Tree = wire.TxTreeStake
+		b.AddTransaction(tx)
+	})
+	rejected(blockchain.ErrDiscordantTxTree)
+
+	// Create block with no dev subsidy for coinbase transaction.
+	//
+	//   ... -> brs3(14)
+	//                  \-> bmf29(15)
+	g.SetTip("brs3")
+	g.NextBlock("bmf29", outs[15], ticketOuts[15], func(b *wire.MsgBlock) {
+		b.Transactions[0].TxOut[0] = b.Transactions[0].TxOut[1]
+	})
+	rejected(blockchain.ErrNoTax)
+
+	// Create block with an incorrect dev subsidy output amount.
+	//
+	//   ... -> brs3(14)
+	//                  \-> bmf30(15)
+	g.SetTip("brs3")
+	g.NextBlock("bmf30", outs[15], ticketOuts[15], func(b *wire.MsgBlock) {
+		b.Transactions[0].TxOut[0].Value--
+	})
+	rejected(blockchain.ErrNoTax)
+
+	// Create block that tries to buy a ticket with the block's coinbase
+	// transaction.
+	//
+	//   ... -> brs3(14)
+	//                  \-> bmf31(15)
+	g.SetTip("brs3")
+	g.NextBlock("bmf31", outs[15], ticketOuts[15], func(b *wire.MsgBlock) {
+		spend := chaingen.MakeSpendableOut(b, 0, 0)
+		ticketPrice := dcrutil.Amount(g.CalcNextReqStakeDifficulty(g.Tip()))
+		ticket := g.CreateTicketPurchaseTx(&spend, ticketPrice, lowFee)
+		b.AddSTransaction(ticket)
+		b.Header.FreshStake++
+	})
+	rejected(blockchain.ErrMissingTxOut)
+
+	// Create block that attempts to spend a zero value output.
+	//
+	//   ... -> brs3(14)
+	//                  \-> bmf32(15)
+	g.SetTip("brs3")
+	g.NextBlock("bmf32", outs[15], ticketOuts[15], func(b *wire.MsgBlock) {
+		// Create tx with zero value output.
+		spend := chaingen.MakeSpendableOut(b, 1, 0)
+		zeroOutputTx := g.CreateSpendTx(&spend, spend.Amount())
+		b.AddTransaction(zeroOutputTx)
+
+		// Spend from zero value output that was just created.
+		zeroSpend := chaingen.MakeSpendableOut(b, 2, 0)
+		zeroSpendTx := g.CreateSpendTx(&zeroSpend, 0)
+		b.AddTransaction(zeroSpendTx)
+	})
+	rejected(blockchain.ErrMissingTxOut)
+
+	// Create block with a vote that attempts to spend a ticket on a side chain.
+	//
+	//   ... -> brs3(14)
+	//                  \-> bmf33(15)
+	g.SetTip("brs3")
+	g.NextBlock("bmf33", outs[15], ticketOuts[15], func(b *wire.MsgBlock) {
+		bsp1 := g.BlockByName("bsp1")
+		b.STransactions[4].TxIn[1] = bsp1.STransactions[4].TxIn[1]
+	})
+	rejected(blockchain.ErrTicketUnavailable)
+
+	// Create block that tries to spend a ticket purchase output as a regular
+	// transaction.
+	//
+	//   ... -> brs3(14)
+	//                  \-> bmf34(15)
+	g.SetTip("brs3")
+	g.NextBlock("bmf34", outs[15], ticketOuts[15], func(b *wire.MsgBlock) {
+		brs3 := g.BlockByName("brs3")
+		spendOut := chaingen.MakeSpendableOutForSTx(brs3.STransactions[5],
+			brs3.Header.Height, 5, 0)
+		tx := g.CreateSpendTx(&spendOut, lowFee)
+		b.AddTransaction(tx)
+	})
+	rejected(blockchain.ErrTxSStxOutSpend)
+
+	// Create block that spends immature change from one ticket purchase in
+	// another ticket purchase.
+	//
+	//   ... -> brs3(14)
+	//                  \-> bmf35(15)
+	g.SetTip("brs3")
+	g.NextBlock("bmf35", outs[15], ticketOuts[15], func(b *wire.MsgBlock) {
+		spend := chaingen.MakeSpendableStakeOut(b, 5, 2)
+		ticketPrice := dcrutil.Amount(g.CalcNextReqStakeDifficulty(g.Tip()))
+		ticket := g.CreateTicketPurchaseTx(&spend, ticketPrice, lowFee)
+		b.AddSTransaction(ticket)
+		b.Header.FreshStake++
+	})
+	rejected(blockchain.ErrImmatureSpend)
+
+	// Create block with a malformed outputs order for a ticket purchase.
+	//
+	//   ... -> brs3(14)
+	//                  \-> bmf36(15)
+	g.SetTip("brs3")
+	g.NextBlock("bmf36", outs[15], ticketOuts[15], func(b *wire.MsgBlock) {
+		prevBlock := g.Tip()
+		spendOut := chaingen.MakeSpendableOut(prevBlock, 1, 0)
+		ticketPrice := dcrutil.Amount(g.CalcNextRequiredStakeDifficulty())
+		ticket := g.CreateTicketPurchaseTx(&spendOut, ticketPrice, lowFee)
+		ticket.TxOut[0], ticket.TxOut[2] = ticket.TxOut[2], ticket.TxOut[0]
+		b.AddSTransaction(ticket)
+		b.Header.FreshStake++
+	})
+	rejected(blockchain.ErrRegTxInStakeTree)
+
+	// Create block with scripts that do not involve p2pkh or
+	// p2sh addresses for a ticket purchase.
+	//
+	//   ... -> brs3(14)
+	//                  \-> bmf37(15)
+	g.SetTip("brs3")
+	g.NextBlock("bmf37", outs[15], ticketOuts[15], func(b *wire.MsgBlock) {
+		prevBlock := g.Tip()
+		spendOut := chaingen.MakeSpendableOut(prevBlock, 1, 0)
+		ticketPrice := dcrutil.Amount(g.CalcNextRequiredStakeDifficulty())
+		ticket := g.CreateTicketPurchaseTx(&spendOut, ticketPrice, lowFee)
+		ticket.TxOut[0].PkScript = opTrueScript
+		b.AddSTransaction(ticket)
+		b.Header.FreshStake++
+	})
+	rejected(blockchain.ErrRegTxInStakeTree)
 
 	// ---------------------------------------------------------------------
 	// Block header median time tests.
@@ -2124,6 +2388,46 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 		b.AddTransaction(tx4)
 	})
 	rejected(blockchain.ErrMissingTxOut)
+
+	// Create block that spends the same output twice in stake tree.
+	//
+	//   ... -> bts1(17)
+	//                  \-> bts4(18)
+	g.SetTip("bts1")
+	g.NextBlock("bts4", outs[18], ticketOuts[18], func(b *wire.MsgBlock) {
+		b.STransactions[6].AddTxIn(b.STransactions[5].TxIn[0])
+		b.STransactions[6].AddTxOut(b.STransactions[5].TxOut[1])
+		b.STransactions[6].AddTxOut(b.STransactions[5].TxOut[2])
+	})
+	rejected(blockchain.ErrMissingTxOut)
+
+	// Create block that spends an output in regular tree that is also spent
+	// in stake tree.
+	//
+	//   ... -> bts1(17)
+	//                  \-> bts5(18)
+	g.SetTip("bts1")
+	g.NextBlock("bts5", outs[18], ticketOuts[18], func(b *wire.MsgBlock) {
+		spend := chaingen.MakeSpendableOut(b, 1, 0)
+		tx := g.CreateSpendTx(&spend, lowFee)
+		tx.AddTxIn(b.STransactions[5].TxIn[0])
+		b.AddTransaction(tx)
+	})
+	rejected(blockchain.ErrMissingTxOut)
+
+	// Create block that attempts to produce a stake output in a regular
+	// transaction.
+	//
+	//   ... -> bts1(17)
+	//                  \-> bts6(18)
+	g.SetTip("bts1")
+	g.NextBlock("bts6", outs[18], ticketOuts[18], func(b *wire.MsgBlock) {
+		spend := chaingen.MakeSpendableOut(b, 1, 0)
+		tx := g.CreateSpendTx(&spend, lowFee)
+		tx.AddTxOut(b.STransactions[5].TxOut[0])
+		b.AddTransaction(tx)
+	})
+	rejected(blockchain.ErrRegTxCreateStakeOut)
 
 	// ---------------------------------------------------------------------
 	// Extra subsidy tests.
@@ -2538,11 +2842,72 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	g.AssertTipNumRevocations(2)
 	rejected(blockchain.ErrRevocationsMismatch)
 
+	// Create block that has a revocation with more payees than expected.
+	//   ... -> brt1(24)
+	//                  \-> brt3(25)
+	g.SetTip("brt1")
+	g.NextBlock("brt3", outs[25], ticketOuts[25], func(b *wire.MsgBlock) {
+		g.AssertBlockRevocationTx(b, 10)
+		b.STransactions[10].TxOut = append(b.STransactions[10].TxOut,
+			b.STransactions[10].TxOut[0])
+	})
+	g.AssertTipNumRevocations(1)
+	rejected(blockchain.ErrSSRtxPayeesMismatch)
+
+	// Create block that has a revocation paying more than the original
+	// amount to the committed address.
+	//   ... -> brt1(24)
+	//                  \-> brt4(25)
+	g.SetTip("brt1")
+	g.NextBlock("brt4", outs[25], ticketOuts[25], func(b *wire.MsgBlock) {
+		g.AssertBlockRevocationTx(b, 10)
+		b.STransactions[10].TxOut[0].Value++
+	})
+	g.AssertTipNumRevocations(1)
+	rejected(blockchain.ErrSSRtxPayees)
+
+	// Create block that has a revocation using a corrupted pay-to-address
+	// script.
+	//   ... -> brt1(24)
+	//                  \-> brt5(25)
+	g.SetTip("brt1")
+	g.NextBlock("brt5", outs[25], ticketOuts[25], func(b *wire.MsgBlock) {
+		g.AssertBlockRevocationTx(b, 10)
+		b.STransactions[10].TxOut[0].PkScript[8] ^= 0x55
+	})
+	g.AssertTipNumRevocations(1)
+	rejected(blockchain.ErrSSRtxPayees)
+
+	// Create block that has a revocation for a voted ticket.
+	//
+	//   ... -> brt1(24)
+	//                  \-> brt6(25)
+	g.SetTip("brt1")
+	g.NextBlock("brt6", outs[25], ticketOuts[25], func(b *wire.MsgBlock) {
+		// Loop backwards to get the ticket transaction associated with the
+		// first vote in the block.
+		voteTx := b.STransactions[0]
+		ticketTxIn := voteTx.TxIn[1]
+		ticketBlk := g.BlockByHash(&b.Header.PrevBlock)
+		for ticketBlk.Header.Height != ticketTxIn.BlockHeight {
+			ticketBlk = g.BlockByHash(&ticketBlk.Header.PrevBlock)
+		}
+		ticketTx := ticketBlk.STransactions[ticketTxIn.BlockIndex]
+
+		// Create new revocation for the same ticket.
+		revocation := g.CreateRevocationTx(ticketTx, ticketTxIn.BlockHeight,
+			ticketTxIn.BlockIndex)
+		b.AddSTransaction(revocation)
+		b.Header.Revocations++
+	})
+	g.AssertTipNumRevocations(2)
+	rejected(blockchain.ErrInvalidSSRtx)
+
 	// Create block that contains a revocation due to previous missed vote.
 	//
-	//   ... -> brt1(24) -> brt3(25)
+	//   ... -> brt1(24) -> brtfinal(25)
 	g.SetTip("brt1")
-	g.NextBlock("brt3", outs[25], ticketOuts[25])
+	g.NextBlock("brtfinal", outs[25], ticketOuts[25])
 	g.AssertTipNumRevocations(1)
 	accepted()
 
@@ -2556,8 +2921,8 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 
 	// Ensure the tip the re-org test builds on is the best chain tip.
 	//
-	//   ... -> brt3(25) -> ...
-	g.SetTip("brt3")
+	//   ... -> brtfinal(25) -> ...
+	g.SetTip("brtfinal")
 	spendableOutOffset := int32(26) // Next spendable offset.
 
 	// Collect all of the spendable coinbase outputs from the previous

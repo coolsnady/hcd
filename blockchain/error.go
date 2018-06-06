@@ -364,9 +364,9 @@ const (
 	// an OP_SSTX tagged output from an SStx.
 	ErrTxSStxOutSpend
 
-	// ErrRegTxSpendStakeOut indicates that a regular tx attempted to spend to
-	// outputs tagged with stake tags, e.g. OP_SSTX.
-	ErrRegTxSpendStakeOut
+	// ErrRegTxCreateStakeOut indicates that a regular tx attempted to create
+	// a stake tagged output.
+	ErrRegTxCreateStakeOut
 
 	// ErrInvalidFinalState indicates that the final state of the PRNG included
 	// in the the block differed from the calculated final state.
@@ -453,6 +453,10 @@ const (
 	// failed validation.
 	ErrInvalidAncestorBlock
 
+	// ErrInvalidTemplateParent indicates that a block template builds on a
+	// block that is either not the current best chain tip or its parent.
+	ErrInvalidTemplateParent
+
 	// numErrorCodes is the maximum error code number used in tests.
 	numErrorCodes
 )
@@ -532,7 +536,7 @@ var errorCodeStrings = map[ErrorCode]string{
 	ErrSSRtxPayeesMismatch:    "ErrSSRtxPayeesMismatch",
 	ErrSSRtxPayees:            "ErrSSRtxPayees",
 	ErrTxSStxOutSpend:         "ErrTxSStxOutSpend",
-	ErrRegTxSpendStakeOut:     "ErrRegTxSpendStakeOut",
+	ErrRegTxCreateStakeOut:    "ErrRegTxCreateStakeOut",
 	ErrInvalidFinalState:      "ErrInvalidFinalState",
 	ErrPoolSize:               "ErrPoolSize",
 	ErrForceReorgWrongChain:   "ErrForceReorgWrongChain",
@@ -555,6 +559,7 @@ var errorCodeStrings = map[ErrorCode]string{
 	ErrInvalidEarlyVoteBits:   "ErrInvalidEarlyVoteBits",
 	ErrInvalidEarlyFinalState: "ErrInvalidEarlyFinalState",
 	ErrInvalidAncestorBlock:   "ErrInvalidAncestorBlock",
+	ErrInvalidTemplateParent:  "ErrInvalidTemplateParent",
 }
 
 // String returns the ErrorCode as a human-readable name.
