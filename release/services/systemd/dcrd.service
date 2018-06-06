@@ -1,0 +1,13 @@
+[Unit]
+Description=Decred Full Node
+
+[Service]
+Type=simple
+User=hxd
+Group=hxd
+WorkingDirectory=/var/hxd
+ExecStart=/opt/coolsnady/bin/hxd --appdata=/var/hxd
+Restart=on-abnormal
+
+[Install]
+WantedBy=multi-user.target
