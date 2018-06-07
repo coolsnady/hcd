@@ -489,7 +489,7 @@ var MainNetParams = Params{
 	GenerateSupported:        false,
 	MaximumBlockSizes:        []int{393216},
 	MaxTxSize:                393216,
-	TargetTimePerBlock:       time.Minute * 5,
+	TargetTimePerBlock:       time.Minute * 5,   //出块时间
 	WorkDiffAlpha:            1,
 	WorkDiffWindowSize:       144,
 	WorkDiffWindows:          20,
@@ -497,13 +497,13 @@ var MainNetParams = Params{
 	RetargetAdjustmentFactor: 4,
 
 	// Subsidy parameters.
-	BaseSubsidy:              3119582664, // 21m
-	MulSubsidy:               100,
-	DivSubsidy:               101,
-	SubsidyReductionInterval: 6144,
-	WorkRewardProportion:     6,
-	StakeRewardProportion:    3,
-	BlockTaxProportion:       1,
+	BaseSubsidy:              3119582664, // 21m  //单块奖励
+	MulSubsidy:               100,				  //
+	DivSubsidy:               101,				  // Mul Div 决定衰减比例
+	SubsidyReductionInterval: 6144,				  //块衰减周期
+	WorkRewardProportion:     6,				  //pow比例
+	StakeRewardProportion:    3,				  //pos比例
+	BlockTaxProportion:       1,				  //块税比例
 
 	// Checkpoints ordered from oldest to newest.
 	Checkpoints: []Checkpoint{

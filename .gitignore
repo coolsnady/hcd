@@ -36,7 +36,7 @@ _testmain.go
 hxd
 cmd/addblock/addblock
 cmd/checkdevpremine/checkdevpremine
-cmd/dcrctl/dcrctl
+cmd/hxctl/hxctl
 cmd/findcheckpoint/findcheckpoint
 cmd/gencerts/gencerts
 cmd/promptsecret/promptsecret

@@ -31,13 +31,13 @@ const (
 
 var (
 	dcrdHomeDir            = dcrutil.AppDataDir("hxd", false)
-	dcrctlHomeDir          = dcrutil.AppDataDir("dcrctl", false)
-	dcrwalletHomeDir       = dcrutil.AppDataDir("dcrwallet", false)
-	defaultConfigFile      = filepath.Join(dcrctlHomeDir, "dcrctl.conf")
+	hxctlHomeDir          = dcrutil.AppDataDir("hxctl", false)
+	hxwalletHomeDir       = dcrutil.AppDataDir("hxwallet", false)
+	defaultConfigFile      = filepath.Join(hxctlHomeDir, "hxctl.conf")
 	defaultRPCServer       = "localhost"
 	defaultWalletRPCServer = "localhost"
 	defaultRPCCertFile     = filepath.Join(dcrdHomeDir, "rpc.cert")
-	defaultWalletCertFile  = filepath.Join(dcrwalletHomeDir, "rpc.cert")
+	defaultWalletCertFile  = filepath.Join(hxwalletHomeDir, "rpc.cert")
 )
 
 // listCommands categorizes and lists all of the usable commands along with
@@ -93,7 +93,7 @@ func listCommands() {
 	}
 }
 
-// config defines the configuration options for dcrctl.
+// config defines the configuration options for hxctl.
 //
 // See loadConfig for details on the configuration load process.
 type config struct {

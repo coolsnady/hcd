@@ -14,7 +14,7 @@ about Decred please see the
 [project documentation](https://docs.coolsnady.org/#overview).
 
 Note: To send or receive funds and join Proof-of-Stake mining, you will also need
-[dcrwallet](https://github.com/coolsnady/dcrwallet).
+[hxwallet](https://github.com/coolsnady/hxwallet).
 
 This project is currently under active development and is in a Beta state.  It
 is extremely stable and has been in production use since February 2016.

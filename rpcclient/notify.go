@@ -156,31 +156,31 @@ type NotificationHandlers struct {
 	// hxd.
 	//
 	// This will only be available when client is connected to a wallet
-	// server such as dcrwallet.
+	// server such as hxwallet.
 	OnDcrdConnected func(connected bool)
 
 	// OnAccountBalance is invoked with account balance updates.
 	//
 	// This will only be available when speaking to a wallet server
-	// such as dcrwallet.
+	// such as hxwallet.
 	OnAccountBalance func(account string, balance dcrutil.Amount, confirmed bool)
 
 	// OnWalletLockState is invoked when a wallet is locked or unlocked.
 	//
 	// This will only be available when client is connected to a wallet
-	// server such as dcrwallet.
+	// server such as hxwallet.
 	OnWalletLockState func(locked bool)
 
 	// OnTicketsPurchased is invoked when a wallet purchases an SStx.
 	//
 	// This will only be available when client is connected to a wallet
-	// server such as dcrwallet.
+	// server such as hxwallet.
 	OnTicketsPurchased func(TxHash *chainhash.Hash, amount dcrutil.Amount)
 
 	// OnVotesCreated is invoked when a wallet generates an SSGen.
 	//
 	// This will only be available when client is connected to a wallet
-	// server such as dcrwallet.
+	// server such as hxwallet.
 	OnVotesCreated func(txHash *chainhash.Hash,
 		blockHash *chainhash.Hash,
 		height int32,
@@ -190,7 +190,7 @@ type NotificationHandlers struct {
 	// OnRevocationsCreated is invoked when a wallet generates an SSRtx.
 	//
 	// This will only be available when client is connected to a wallet
-	// server such as dcrwallet.
+	// server such as hxwallet.
 	OnRevocationsCreated func(txHash *chainhash.Hash,
 		sstxIn *chainhash.Hash)
 
@@ -920,7 +920,7 @@ func parseTxAcceptedVerboseNtfnParams(params []json.RawMessage) (*dcrjson.TxRawR
 }
 
 // parseDcrdConnectedNtfnParams parses out the connection status of hxd
-// and dcrwallet from the parameters of a dcrdconnected notification.
+// and hxwallet from the parameters of a dcrdconnected notification.
 func parseDcrdConnectedNtfnParams(params []json.RawMessage) (bool, error) {
 	if len(params) != 1 {
 		return false, wrongNumParams(len(params))

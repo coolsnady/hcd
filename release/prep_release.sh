@@ -27,7 +27,7 @@ PROJECT=hxd
 PROJECT_UC=$(echo $PROJECT | tr '[:lower:]' '[:upper:]')
 SCRIPT=$(basename $0)
 VERFILE=../version.go
-VERFILES="$VERFILE ../cmd/dcrctl/version.go"
+VERFILES="$VERFILE ../cmd/hxctl/version.go"
 PROJ_CHANGES=../CHANGES
 
 # verify params

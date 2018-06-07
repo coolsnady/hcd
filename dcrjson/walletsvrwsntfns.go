@@ -25,7 +25,7 @@ const (
 	// added a new transaction to the transaction store.
 	NewTxNtfnMethod = "newtx"
 
-	// RevocationCreatedNtfnMethod is the method of the dcrwallet
+	// RevocationCreatedNtfnMethod is the method of the hxwallet
 	// revocationcreated notification.
 	RevocationCreatedNtfnMethod = "revocationcreated"
 
@@ -37,11 +37,11 @@ const (
 	// stakedifficulty notification.
 	StakeDifficultyNtfnMethod = "stakedifficulty"
 
-	// TicketPurchasedNtfnMethod is the method of the dcrwallet
+	// TicketPurchasedNtfnMethod is the method of the hxwallet
 	// ticketpurchased notification.
 	TicketPurchasedNtfnMethod = "ticketpurchased"
 
-	// VoteCreatedNtfnMethod is the method of the dcrwallet
+	// VoteCreatedNtfnMethod is the method of the hxwallet
 	// votecreated notification.
 	VoteCreatedNtfnMethod = "votecreated"
 

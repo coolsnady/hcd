@@ -5,7 +5,7 @@
         1. [Windows](#WindowsInstallation)
         2. [Linux/BSD/MacOSX/POSIX](#PosixInstallation)
     2. [Configuration](#Configuration)
-    3. [Controlling and Querying hxd via dcrctl](#DcrctlConfig)
+    3. [Controlling and Querying hxd via hxctl](#HxctlConfig)
     4. [Mining](#Mining)
 3. [Help](#Help)
     1. [Startup](#Startup)
@@ -71,11 +71,11 @@ details on how to install on the supported operating systems.
 hxd has a number of [configuration](http://godoc.org/github.com/coolsnady/hxd)
 options, which can be viewed by running: `$ hxd --help`.
 
-<a name="DcrctlConfig" />
+<a name="HxctlConfig" />
 
-**2.3 Controlling and Querying hxd via dcrctl**<br />
+**2.3 Controlling and Querying hxd via hxctl**<br />
 
-dcrctl is a command line utility that can be used to both control and query hxd
+hxctl is a command line utility that can be used to both control and query hxd
 via [RPC](http://www.wikipedia.org/wiki/Remote_procedure_call).  hxd does
 **not** enable its RPC server by default;  You must configure at minimum both an
 RPC username and password or both an RPC limited username and password:
@@ -88,7 +88,7 @@ rpcpass=SomeDecentp4ssw0rd
 rpclimituser=mylimituser
 rpclimitpass=Limitedp4ssw0rd
 ```
-* dcrctl.conf configuration file
+* hxctl.conf configuration file
 ```
 [Application Options]
 rpcuser=myuser
@@ -100,7 +100,7 @@ OR
 rpclimituser=mylimituser
 rpclimitpass=Limitedp4ssw0rd
 ```
-For a list of available options, run: `$ dcrctl --help`
+For a list of available options, run: `$ hxctl --help`
 
 <a name="Mining" />
 
@@ -165,7 +165,7 @@ configuration necessary, however, there is an optional method to use a
 **3.1 Wallet**<br />
 
 hxd was intentionally developed without an integrated wallet for security
-reasons.  Please see [dcrwallet](https://github.com/coolsnady/dcrwallet) for more
+reasons.  Please see [hxwallet](https://github.com/coolsnady/hxwallet) for more
 information.
 
 <a name="Contact" />

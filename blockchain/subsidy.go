@@ -123,15 +123,15 @@ func (s *SubsidyCache) CalcBlockSubsidy(height int64) int64 {
 func CalcBlockWorkSubsidy(subsidyCache *SubsidyCache, height int64, voters uint16, params *chaincfg.Params) int64 {
 	subsidy := subsidyCache.CalcBlockSubsidy(height)
 
-	proportionWork := int64(params.WorkRewardProportion)
-	proportions := int64(params.TotalSubsidyProportions())
+	proportionWork := int64(params.WorkRewardProportion)	//6
+	proportions := int64(params.TotalSubsidyProportions())  //10
 	subsidy *= proportionWork
-	subsidy /= proportions
+	subsidy /= proportions   //*0.6
 
 	// Ignore the voters field of the header before we're at a point
 	// where there are any voters.
 	if height < params.StakeValidationHeight {
-		return subsidy
+		return subsidy  //只有pow
 	}
 
 	// If there are no voters, subsidy is 0. The block will fail later anyway.
@@ -141,9 +141,8 @@ func CalcBlockWorkSubsidy(subsidyCache *SubsidyCache, height int64, voters uint1
 
 	// Adjust for the number of voters. This shouldn't ever overflow if you start
 	// with 50 * 10^8 Atoms and voters and potentialVoters are uint16.
-	potentialVoters := params.TicketsPerBlock
-	actual := (int64(voters) * subsidy) / int64(potentialVoters)
-
+	potentialVoters := params.TicketsPerBlock   					//5
+	actual := (int64(voters) * subsidy) / int64(potentialVoters)	//
 	return actual
 }
 
@@ -161,7 +160,7 @@ func CalcStakeVoteSubsidy(subsidyCache *SubsidyCache, height int64, params *chai
 	proportionStake := int64(params.StakeRewardProportion)
 	proportions := int64(params.TotalSubsidyProportions())
 	subsidy *= proportionStake
-	subsidy /= (proportions * int64(params.TicketsPerBlock))
+	subsidy /= (proportions * int64(params.TicketsPerBlock))  //*0.3
 
 	return subsidy
 }
@@ -180,7 +179,7 @@ func CalcBlockTaxSubsidy(subsidyCache *SubsidyCache, height int64, voters uint16
 	proportionTax := int64(params.BlockTaxProportion)
 	proportions := int64(params.TotalSubsidyProportions())
 	subsidy *= proportionTax
-	subsidy /= proportions
+	subsidy /= proportions     //*0.1
 
 	// Assume all voters 'present' before stake voting is turned on.
 	if height < params.StakeValidationHeight {

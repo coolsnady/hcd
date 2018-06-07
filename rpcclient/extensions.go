@@ -38,20 +38,20 @@ func (r FutureCreateEncryptedWalletResult) Receive() error {
 //
 // See CreateEncryptedWallet for the blocking version and more details.
 //
-// NOTE: This is a dcrwallet extension.
+// NOTE: This is a hxwallet extension.
 func (c *Client) CreateEncryptedWalletAsync(passphrase string) FutureCreateEncryptedWalletResult {
 	cmd := dcrjson.NewCreateEncryptedWalletCmd(passphrase)
 	return c.sendCmd(cmd)
 }
 
 // CreateEncryptedWallet requests the creation of an encrypted wallet.  Wallets
-// managed by dcrwallet are only written to disk with encrypted private keys,
+// managed by hxwallet are only written to disk with encrypted private keys,
 // and generating wallets on the fly is impossible as it requires user input for
 // the encryption passphrase.  This RPC specifies the passphrase and instructs
 // the wallet creation.  This may error if a wallet is already opened, or the
 // new wallet cannot be written to disk.
 //
-// NOTE: This is a dcrwallet extension.
+// NOTE: This is a hxwallet extension.
 func (c *Client) CreateEncryptedWallet(passphrase string) error {
 	return c.CreateEncryptedWalletAsync(passphrase).Receive()
 }
@@ -486,7 +486,7 @@ func (r FutureExportWatchingWalletResult) Receive() ([]byte, []byte, error) {
 //
 // See ExportWatchingWallet for the blocking version and more details.
 //
-// NOTE: This is a dcrwallet extension.
+// NOTE: This is a hxwallet extension.
 func (c *Client) ExportWatchingWalletAsync(account string) FutureExportWatchingWalletResult {
 	cmd := dcrjson.NewExportWatchingWalletCmd(&account, dcrjson.Bool(true))
 	return c.sendCmd(cmd)
@@ -494,10 +494,10 @@ func (c *Client) ExportWatchingWalletAsync(account string) FutureExportWatchingW
 
 // ExportWatchingWallet returns the raw bytes for a watching-only version of
 // wallet.bin and tx.bin, respectively, for the specified account that can be
-// used by dcrwallet to enable a wallet which does not have the private keys
+// used by hxwallet to enable a wallet which does not have the private keys
 // necessary to spend funds.
 //
-// NOTE: This is a dcrwallet extension.
+// NOTE: This is a hxwallet extension.
 func (c *Client) ExportWatchingWallet(account string) ([]byte, []byte, error) {
 	return c.ExportWatchingWalletAsync(account).Receive()
 }
@@ -887,7 +887,7 @@ func (c *Client) ListAddressTransactionsAsync(addresses []dcrutil.Address, accou
 // ListAddressTransactions returns information about all transactions associated
 // with the provided addresses.
 //
-// NOTE: This is a dcrwallet extension.
+// NOTE: This is a hxwallet extension.
 func (c *Client) ListAddressTransactions(addresses []dcrutil.Address, account string) ([]dcrjson.ListTransactionsResult, error) {
 	return c.ListAddressTransactionsAsync(addresses, account).Receive()
 }
