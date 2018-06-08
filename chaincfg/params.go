@@ -684,9 +684,9 @@ var TestNet2Params = Params{
 	Net:         wire.TestNet2,
 	DefaultPort: "19108",
 	DNSSeeds: []DNSSeed{
-		{"testnet-seed.coolsnady.mindcry.org", true},
+		/*{"testnet-seed.coolsnady.mindcry.org", true},
 		{"testnet-seed.coolsnady.netpurgatory.com", true},
-		{"testnet-seed.coolsnady.org", true},
+		{"testnet-seed.coolsnady.org", true},*/
 	},
 
 	// Chain parameters
