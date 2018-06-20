@@ -5752,7 +5752,7 @@ func handleVersion(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (in
 		buildMeta = fmt.Sprintf("%s.%s", build, buildMeta)
 	}
 	result := map[string]dcrjson.VersionResult{
-		"dcrdjsonrpcapi": {
+		"hxdjsonrpcapi": {
 			VersionString: jsonrpcSemverString,
 			Major:         jsonrpcSemverMajor,
 			Minor:         jsonrpcSemverMinor,
