@@ -35,6 +35,7 @@ type edwardsDSA struct {
 	pubKeyBytesLen             func() int
 	pubKeyBytesLenUncompressed func() int
 	pubKeyBytesLenCompressed   func() int
+	pubKeyBytesLenHybrid       func() int
 
 	// Signatures
 	newSignature      func(r *big.Int, s *big.Int) Signature
@@ -108,6 +109,9 @@ func (e edwardsDSA) PubKeyBytesLenUncompressed() int {
 	return e.pubKeyBytesLenUncompressed()
 }
 func (e edwardsDSA) PubKeyBytesLenCompressed() int {
+	return e.pubKeyBytesLenCompressed()
+}
+func (e edwardsDSA) PubKeyBytesLenHybrid() int {
 	return e.pubKeyBytesLenCompressed()
 }
 
@@ -242,6 +246,9 @@ func newEdwardsDSA() DSA {
 			return edwards.PubKeyBytesLen
 		},
 		pubKeyBytesLenCompressed: func() int {
+			return edwards.PubKeyBytesLen
+		},
+		pubKeyBytesLenHybrid: func() int {
 			return edwards.PubKeyBytesLen
 		},
 

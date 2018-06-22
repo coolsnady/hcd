@@ -28,6 +28,8 @@ import (
 	dcrcrypto "github.com/coolsnady/hxd/crypto/bliss"
 	"github.com/coolsnady/hxd/dcrutil"
 	"github.com/decred/base58"
+	"github.com/coolsnady/bliss"
+	"github.com/coolsnady/bliss/sampler"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -64,15 +66,14 @@ const (
 )
 
 var (
-	ErrDerivePublicFromPublic = errors.New("cannot derive a public key " +
-		"from a public key")
-
 	// ErrDeriveHardFromPublic describes an error in which the caller
 	// attempted to derive a hardened extended key from a public key.
 	ErrDeriveHardFromPublic = errors.New("cannot derive a hardened key " +
 		"from a public key")
 	ErrUnknownAlg = errors.New("unkown algtype")
-	
+
+	ErrDerivePublicFromPublic = errors.New("cannot derive a public key " +
+		"from a public key")
 
 	// ErrNotPrivExtKey describes an error in which the caller attempted
 	// to extract a private key from a public extended key.

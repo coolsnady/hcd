@@ -16,6 +16,7 @@ import (
 const (
 	PubKeyBytesLenCompressed   = 33
 	PubKeyBytesLenUncompressed = 65
+	PubKeyBytesLenHybrid       = 65
 )
 
 func isOdd(a *big.Int) bool {
@@ -52,6 +53,7 @@ func decompressPoint(x *big.Int, ybit bool) (*big.Int, error) {
 const (
 	pubkeyCompressed   byte = 0x2 // y_bit + x coord
 	pubkeyUncompressed byte = 0x4 // x coord + y coord
+	pubkeyHybrid       byte = 0x6 // y_bit + x coord + y coord
 )
 
 // NewPublicKey instantiates a new public key with the given X,Y coordinates.
@@ -149,6 +151,18 @@ func (p PublicKey) SerializeCompressed() []byte {
 	}
 	b = append(b, format)
 	return paddedAppend(32, b, p.X.Bytes())
+}
+
+// SerializeHybrid serializes a public key in a 65-byte hybrid format.
+func (p PublicKey) SerializeHybrid() []byte {
+	b := make([]byte, 0, PubKeyBytesLenHybrid)
+	format := pubkeyHybrid
+	if isOdd(p.Y) {
+		format |= 0x1
+	}
+	b = append(b, format)
+	b = paddedAppend(32, b, p.X.Bytes())
+	return paddedAppend(32, b, p.Y.Bytes())
 }
 
 // IsEqual compares this PublicKey instance to the one passed, returning true if

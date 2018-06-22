@@ -762,8 +762,8 @@ type RedeemMultiSigOutCmd struct {
 	Hash        string
 	Index       uint32
 	Tree        int8
-	Address     *string
 	AccountType uint8
+	Address     *string
 }
 
 // NewRedeemMultiSigOutCmd creates a new RedeemMultiSigOutCmd.

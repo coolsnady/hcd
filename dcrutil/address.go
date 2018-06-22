@@ -63,6 +63,8 @@ func encodePKAddress(serializedPK []byte, netID [2]byte, algo int) string {
 		pubKeyBytes[0] = byte(chainec.ECTypeEdwards)
 	case chainec.ECTypeSecSchnorr:
 		pubKeyBytes[0] = byte(chainec.ECTypeSecSchnorr)
+	case bliss.BSTypeBliss:
+		pubKeyBytes[0] = byte(bliss.BSTypeBliss)
 	}
 
 	// Pubkeys are encoded as [0] = type/ybit, [1:33] = serialized pubkey
@@ -187,6 +189,9 @@ func DecodeAddress(addr string) (Address, error) {
 	case net.PKHSchnorrAddrID:
 		return NewAddressPubKeyHash(decoded, net, chainec.ECTypeSecSchnorr)
 
+	case net.PKHBlissAddrID:
+		return NewAddressPubKeyHash(decoded, net, bliss.BSTypeBliss)
+
 	case net.ScriptHashAddrID:
 		return NewAddressScriptHashFromHash(decoded, net)
 
@@ -235,8 +240,10 @@ func NewAddressPubKeyHash(pkHash []byte, net *chaincfg.Params,
 		addrID = net.PKHEdwardsAddrID
 	case chainec.ECTypeSecSchnorr:
 		addrID = net.PKHSchnorrAddrID
+	case bliss.BSTypeBliss:
+		addrID = net.PKHBlissAddrID
 	default:
-		return nil, errors.New("unknown ECDSA algorithm")
+		return nil, errors.New("unknown signature algorithm")
 	}
 	apkh, err := newAddressPubKeyHash(pkHash, addrID)
 	if err != nil {
@@ -279,7 +286,9 @@ func (a *AddressPubKeyHash) ScriptAddress() []byte {
 func (a *AddressPubKeyHash) IsForNet(net *chaincfg.Params) bool {
 	return a.netID == net.PubKeyHashAddrID ||
 		a.netID == net.PKHEdwardsAddrID ||
-		a.netID == net.PKHSchnorrAddrID
+		a.netID == net.PKHSchnorrAddrID ||
+		a.netID == net.PKHSchnorrAddrID ||
+		a.netID == net.PKHBlissAddrID
 }
 
 // String returns a human-readable string for the pay-to-pubkey-hash address.
@@ -290,7 +299,7 @@ func (a *AddressPubKeyHash) String() string {
 }
 
 // Hash160 returns the underlying array of the pubkey hash.  This can be useful
-// when an array is more appropriate than a slice (for example, when used as map
+// when an array is more appropiate than a slice (for example, when used as map
 // keys).
 func (a *AddressPubKeyHash) Hash160() *[ripemd160.Size]byte {
 	return &a.hash
@@ -306,6 +315,8 @@ func (a *AddressPubKeyHash) DSA(net *chaincfg.Params) int {
 		return chainec.ECTypeEdwards
 	case net.PKHSchnorrAddrID:
 		return chainec.ECTypeSecSchnorr
+	case net.PKHBlissAddrID:
+		return bliss.BSTypeBliss
 	}
 	return -1
 }
@@ -392,7 +403,7 @@ func (a *AddressScriptHash) String() string {
 }
 
 // Hash160 returns the underlying array of the script hash.  This can be useful
-// when an array is more appropriate than a slice (for example, when used as map
+// when an array is more appropiate than a slice (for example, when used as map
 // keys).
 func (a *AddressScriptHash) Hash160() *[ripemd160.Size]byte {
 	return &a.hash
@@ -420,6 +431,10 @@ const (
 	// PKFCompressed indicates the pay-to-pubkey address format is a
 	// compressed public key.
 	PKFCompressed
+
+	// PKFHybrid indicates the pay-to-pubkey address format is a hybrid
+	// public key.
+	PKFHybrid
 )
 
 // ErrInvalidPubKeyFormat indicates that a serialized pubkey is unusable as it
@@ -436,7 +451,8 @@ type AddressSecpPubKey struct {
 
 // NewAddressSecpPubKey returns a new AddressSecpPubKey which represents a
 // pay-to-pubkey address, using a secp256k1 pubkey.  The serializedPubKey
-// parameter must be a valid pubkey and must be uncompressed or compressed.
+// parameter must be a valid pubkey and can be uncompressed, compressed, or
+// hybrid.
 func NewAddressSecpPubKey(serializedPubKey []byte,
 	net *chaincfg.Params) (*AddressSecpPubKey, error) {
 	pubKey, err := chainec.Secp256k1.ParsePubKey(serializedPubKey)
@@ -452,6 +468,8 @@ func NewAddressSecpPubKey(serializedPubKey []byte,
 	switch serializedPubKey[0] {
 	case 0x02, 0x03:
 		pkFormat = PKFCompressed
+	case 0x06, 0x07:
+		pkFormat = PKFHybrid
 	case 0x04:
 		pkFormat = PKFUncompressed
 	default:
@@ -477,6 +495,9 @@ func (a *AddressSecpPubKey) serialize() []byte {
 
 	case PKFCompressed:
 		return a.pubKey.SerializeCompressed()
+
+	case PKFHybrid:
+		return a.pubKey.SerializeHybrid()
 	}
 }
 
@@ -500,7 +521,7 @@ func (a *AddressSecpPubKey) ScriptAddress() []byte {
 }
 
 // Hash160 returns the underlying array of the pubkey hash.  This can be useful
-// when an array is more appropriate than a slice (for example, when used as map
+// when an array is more appropiate than a slice (for example, when used as map
 // keys).
 func (a *AddressSecpPubKey) Hash160() *[ripemd160.Size]byte {
 	h160 := Hash160(a.pubKey.SerializeCompressed())
@@ -613,7 +634,7 @@ func (a *AddressEdwardsPubKey) ScriptAddress() []byte {
 }
 
 // Hash160 returns the underlying array of the pubkey hash.  This can be useful
-// when an array is more appropriate than a slice (for example, when used as map
+// when an array is more appropiate than a slice (for example, when used as map
 // keys).
 func (a *AddressEdwardsPubKey) Hash160() *[ripemd160.Size]byte {
 	h160 := Hash160(a.pubKey.Serialize())
@@ -670,7 +691,8 @@ type AddressSecSchnorrPubKey struct {
 
 // NewAddressSecSchnorrPubKey returns a new AddressSecpPubKey which represents a
 // pay-to-pubkey address, using a secp256k1 pubkey.  The serializedPubKey
-// parameter must be a valid pubkey and must be compressed.
+// parameter must be a valid pubkey and can be uncompressed, compressed, or
+// hybrid.
 func NewAddressSecSchnorrPubKey(serializedPubKey []byte,
 	net *chaincfg.Params) (*AddressSecSchnorrPubKey, error) {
 	pubKey, err := chainec.SecSchnorr.ParsePubKey(serializedPubKey)
@@ -711,7 +733,7 @@ func (a *AddressSecSchnorrPubKey) ScriptAddress() []byte {
 }
 
 // Hash160 returns the underlying array of the pubkey hash.  This can be useful
-// when an array is more appropriate than a slice (for example, when used as map
+// when an array is more appropiate than a slice (for example, when used as map
 // keys).
 func (a *AddressSecSchnorrPubKey) Hash160() *[ripemd160.Size]byte {
 	h160 := Hash160(a.pubKey.Serialize())
