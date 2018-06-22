@@ -113,14 +113,16 @@ func NewCreateMultisigCmd(nRequired int, keys []string) *CreateMultisigCmd {
 
 // CreateNewAccountCmd defines the createnewaccount JSON-RPC command.
 type CreateNewAccountCmd struct {
-	Account string
+	Account     string
+	AccountType string
 }
 
 // NewCreateNewAccountCmd returns a new instance which can be used to issue a
 // createnewaccount JSON-RPC command.
-func NewCreateNewAccountCmd(account string) *CreateNewAccountCmd {
+func NewCreateNewAccountCmd(account string, acctype string) *CreateNewAccountCmd {
 	return &CreateNewAccountCmd{
-		Account: account,
+		Account:     account,
+		AccountType: acctype,    
 	}
 }
 

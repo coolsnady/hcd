@@ -1270,7 +1270,7 @@ func CheckTransactionInputs(subsidyCache *SubsidyCache, tx *dcrutil.Tx, txHeight
 	// Decred stake transaction testing.
 	// -------------------------------------------------------------------
 
-	// SSTX --------------------------------------------------------------
+	// SSTX 买票--------------------------------------------------------------
 	// 1. Check and make sure that the output amounts in the commitments to
 	//    the ticket are correctly calculated.
 

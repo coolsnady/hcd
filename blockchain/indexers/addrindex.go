@@ -15,6 +15,7 @@ import (
 	"github.com/coolsnady/hxd/chaincfg"
 	"github.com/coolsnady/hxd/chaincfg/chainec"
 	"github.com/coolsnady/hxd/chaincfg/chainhash"
+	"github.com/coolsnady/hxd/crypto/bliss"
 	"github.com/coolsnady/hxd/database"
 	"github.com/coolsnady/hxd/dcrutil"
 	"github.com/coolsnady/hxd/txscript"
@@ -67,6 +68,12 @@ const (
 	// the hash of a pubkey address might be the same as that of a script
 	// hash.
 	addrKeyTypeScriptHash = 3
+
+	// addrKeyTypePubKeyHashBliss is the address type in an address key which
+	// represents both a bliss pay-to-pubkey-hash and a bliss pay-to-pubkey address.
+	// This is done because both are identical for the purposes of the
+	// address index.
+	addrKeyTypePubKeyHashBliss = 4
 
 	// Size of a transaction entry.  It consists of 4 bytes block id + 4
 	// bytes offset + 4 bytes length.
@@ -551,6 +558,11 @@ func addrToKey(addr dcrutil.Address, params *chaincfg.Params) ([addrKeySize]byte
 			result[0] = addrKeyTypePubKeyHashSchnorr
 			copy(result[1:], addr.Hash160()[:])
 			return result, nil
+		case bliss.BSTypeBliss:
+			var result [addrKeySize]byte
+			result[0] = addrKeyTypePubKeyHashBliss
+			copy(result[1:], addr.Hash160()[:])
+			return result, nil
 		}
 
 	case *dcrutil.AddressScriptHash:
@@ -574,6 +586,12 @@ func addrToKey(addr dcrutil.Address, params *chaincfg.Params) ([addrKeySize]byte
 	case *dcrutil.AddressSecSchnorrPubKey:
 		var result [addrKeySize]byte
 		result[0] = addrKeyTypePubKeyHashSchnorr
+		copy(result[1:], addr.AddressPubKeyHash().Hash160()[:])
+		return result, nil
+
+	case *dcrutil.AddressBlissPubKey:
+		var result [addrKeySize]byte
+		result[0] = addrKeyTypePubKeyHashBliss
 		copy(result[1:], addr.AddressPubKeyHash().Hash160()[:])
 		return result, nil
 	}
@@ -663,7 +681,7 @@ func (idx *AddrIndex) Create(dbTx database.Tx) error {
 }
 
 // writeIndexData represents the address index data to be written for one block.
-// It consists of the address mapped to an ordered list of the transactions
+// It consistens of the address mapped to an ordered list of the transactions
 // that involve the address in block.  It is ordered so the transactions can be
 // stored in the order they appear in the block.
 type writeIndexData map[[addrKeySize]byte][]int

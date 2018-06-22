@@ -19,6 +19,7 @@ import (
 	"github.com/coolsnady/hxd/chaincfg"
 	"github.com/coolsnady/hxd/chaincfg/chainec"
 	"github.com/coolsnady/hxd/chaincfg/chainhash"
+	bs "github.com/coolsnady/hxd/crypto/bliss"
 	"github.com/coolsnady/hxd/wire"
 )
 
@@ -2753,6 +2754,7 @@ type sigTypes uint8
 
 var edwards = sigTypes(chainec.ECTypeEdwards)
 var secSchnorr = sigTypes(chainec.ECTypeSecSchnorr)
+var bliss = sigTypes(bs.BSTypeBliss)
 
 // opcodeCheckSigAlt accepts a three item stack and pops off the first three
 // items. The first item is a signature type (1-255, can not be zero or the
@@ -2779,6 +2781,8 @@ func opcodeCheckSigAlt(op *parsedOpcode, vm *Engine) error {
 		break
 	case secSchnorr:
 		break
+	case bliss:
+		break
 	default:
 		// Caveat: All unknown signature types return true, allowing for future
 		// softforks with other new signature types.
@@ -2793,7 +2797,7 @@ func opcodeCheckSigAlt(op *parsedOpcode, vm *Engine) error {
 
 	// Check the public key lengths. Only 33-byte compressed secp256k1 keys
 	// are allowed for secp256k1 Schnorr signatures, which 32 byte keys
-	// are used for Curve25519.
+	// are used for Curve25519, and 897 byte keys are used for Bliss.
 	switch sigTypes(sigType) {
 	case edwards:
 		if len(pkBytes) != 32 {
@@ -2802,6 +2806,12 @@ func opcodeCheckSigAlt(op *parsedOpcode, vm *Engine) error {
 		}
 	case secSchnorr:
 		if len(pkBytes) != 33 {
+			vm.dstack.PushBool(false)
+			return nil
+		}
+	case bliss:
+		if len(pkBytes) != 897 {
+			fmt.Printf("pub key length is not 897, length:%v\n", len(pkBytes))
 			vm.dstack.PushBool(false)
 			return nil
 		}
@@ -2822,6 +2832,11 @@ func opcodeCheckSigAlt(op *parsedOpcode, vm *Engine) error {
 		}
 	case secSchnorr:
 		if len(fullSigBytes) != 65 {
+			vm.dstack.PushBool(false)
+			return nil
+		}
+	case bliss:
+		if len(fullSigBytes) < 397 || len(fullSigBytes) > 860 {
 			vm.dstack.PushBool(false)
 			return nil
 		}
@@ -2884,6 +2899,13 @@ func opcodeCheckSigAlt(op *parsedOpcode, vm *Engine) error {
 			return nil
 		}
 		pubKey = pubKeySec
+	case bliss:
+		pubKeySec, err := bs.Bliss.ParsePubKey(pkBytes)
+		if err != nil {
+			vm.dstack.PushBool(false)
+			return nil
+		}
+		pubKey = pubKeySec
 	}
 
 	// Get the signature from bytes.
@@ -2898,6 +2920,13 @@ func opcodeCheckSigAlt(op *parsedOpcode, vm *Engine) error {
 		signature = sigEd
 	case secSchnorr:
 		sigSec, err := chainec.SecSchnorr.ParseSignature(sigBytes)
+		if err != nil {
+			vm.dstack.PushBool(false)
+			return nil
+		}
+		signature = sigSec
+	case bliss:
+		sigSec, err := bs.Bliss.ParseSignature(sigBytes)
 		if err != nil {
 			vm.dstack.PushBool(false)
 			return nil
@@ -2918,6 +2947,10 @@ func opcodeCheckSigAlt(op *parsedOpcode, vm *Engine) error {
 	case secSchnorr:
 		ok := chainec.SecSchnorr.Verify(pubKey, hash, signature.GetR(),
 			signature.GetS())
+		vm.dstack.PushBool(ok)
+		return nil
+	case bliss:
+		ok := bs.Bliss.Verify(pubKey, hash, signature)
 		vm.dstack.PushBool(ok)
 		return nil
 	}

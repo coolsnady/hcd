@@ -9,6 +9,7 @@ import (
 	"fmt"
 
 	"github.com/coolsnady/hxd/blockchain/stake"
+	"github.com/coolsnady/hxd/crypto/bliss"
 	"github.com/coolsnady/hxd/dcrec/secp256k1"
 	"github.com/coolsnady/hxd/txscript"
 )
@@ -170,6 +171,10 @@ const (
 	// an uncompressed pubkey whose y coordinate is odd when compressed.
 	cstPayToPubKeyUncompOdd = 5
 
+	// cstPayToPubKeyHashBliss identifies a compressed pay-to-pubkey script to
+	// a bliss pubkey.
+	cstPayToPubKeyHashBliss = 6
+
 	// numSpecialScripts is the number of special scripts possibly recognized
 	// by the domain-specific script compression algorithm. It is one more
 	// than half the number required to overflow a single byte in VLQ format
@@ -195,6 +200,42 @@ func isPubKeyHash(script []byte) (bool, []byte) {
 	}
 
 	return false, nil
+}
+
+// isPubKeyHashAlt returns whether or not the passed public key script is a
+// bliss pay-to-pubkey-hash script along with the bliss pubkey hash it is paying
+// ot if it is.
+func isPubKeyHashAlt(script []byte) (bool, []byte) {
+	if len(script) == 26 && script[0] == txscript.OP_DUP &&
+		script[1] == txscript.OP_HASH160 &&
+		script[2] == txscript.OP_DATA_20 &&
+		script[23] == txscript.OP_EQUALVERIFY &&
+		isOneByteMaxDataPush(script[24]) &&
+		script[25] == txscript.OP_CHECKSIGALT {
+
+		return true, script[3:23]
+	}
+
+	return false, nil
+}
+func isOneByteMaxDataPush(op byte) bool {
+	return op == txscript.OP_1 ||
+		op == txscript.OP_2 ||
+		op == txscript.OP_3 ||
+		op == txscript.OP_4 ||
+		op == txscript.OP_5 ||
+		op == txscript.OP_6 ||
+		op == txscript.OP_7 ||
+		op == txscript.OP_8 ||
+		op == txscript.OP_9 ||
+		op == txscript.OP_10 ||
+		op == txscript.OP_11 ||
+		op == txscript.OP_12 ||
+		op == txscript.OP_13 ||
+		op == txscript.OP_14 ||
+		op == txscript.OP_15 ||
+		op == txscript.OP_16 ||
+		op == txscript.OP_DATA_1
 }
 
 // isScriptHash returns whether or not the passed public key script is a
@@ -258,6 +299,11 @@ func compressedScriptSize(scriptVersion uint16, pkScript []byte,
 		return 21
 	}
 
+	// Pay-to-alternative-pubkey-hash script.
+	if valid, _ := isPubKeyHashAlt(pkScript); valid {
+		return 21
+	}
+
 	// Pay-to-script-hash script.
 	if valid, _ := isScriptHash(pkScript); valid {
 		return 21
@@ -290,6 +336,9 @@ func decodeCompressedScriptSize(serialized []byte, compressionVersion uint32) in
 		return 21
 
 	case cstPayToScriptHash:
+		return 21
+
+	case cstPayToPubKeyHashBliss:
 		return 21
 
 	case cstPayToPubKeyCompEven, cstPayToPubKeyCompOdd,
@@ -351,6 +400,13 @@ func putCompressedScript(target []byte, scriptVersion uint16, pkScript []byte,
 			copy(target[1:33], serializedPubKey[1:33])
 			return 33
 		}
+	}
+
+	// bliss Pay-to-pubkey-hash script.
+	if valid, hash := isPubKeyHashAlt(pkScript); valid {
+		target[0] = cstPayToPubKeyHashBliss
+		copy(target[1:21], hash)
+		return 21
 	}
 
 	// When none of the above special cases apply, encode the unmodified
@@ -438,6 +494,19 @@ func decompressScript(compressedPkScript []byte,
 		pkScript[0] = txscript.OP_DATA_65
 		copy(pkScript[1:], key.SerializeUncompressed())
 		pkScript[66] = txscript.OP_CHECKSIG
+		return pkScript
+
+	// bliss Pay-to-pubkey-hash script. The resulting script is:
+	// <OP_DUP><OP_HASH160><20 byte hash><OP_EQUALVERIFY><OP_CHECKSIGAL>
+	case cstPayToPubKeyHashBliss:
+		pkScript := make([]byte, 26)
+		pkScript[0] = txscript.OP_DUP
+		pkScript[1] = txscript.OP_HASH160
+		pkScript[2] = txscript.OP_DATA_20
+		copy(pkScript[3:], compressedPkScript[bytesRead:bytesRead+20])
+		pkScript[23] = txscript.OP_EQUALVERIFY
+		pkScript[24] = byte(bliss.BSTypeBliss)
+		pkScript[25] = txscript.OP_CHECKSIGALT
 		return pkScript
 	}
 

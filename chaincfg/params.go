@@ -368,10 +368,12 @@ type Params struct {
 	NetworkAddressPrefix string
 
 	// Address encoding magics
-	PubKeyAddrID     [2]byte // First 2 bytes of a P2PK address
+	PubKeyAddrID      [2]byte // First 2 bytes of a P2PK address
+	PubKeyBlissAddrID [2]byte // First 2 bytes of a P2PK bliss address
 	PubKeyHashAddrID [2]byte // First 2 bytes of a P2PKH address
 	PKHEdwardsAddrID [2]byte // First 2 bytes of an Edwards P2PKH address
 	PKHSchnorrAddrID [2]byte // First 2 bytes of a secp256k1 Schnorr P2PKH address
+	PKHBlissAddrID    [2]byte // First 2 bytes of a Bliss P2PKH address
 	ScriptHashAddrID [2]byte // First 2 bytes of a P2SH address
 	PrivateKeyID     [2]byte // First 2 bytes of a WIF private key
 
@@ -684,8 +686,8 @@ var TestNet2Params = Params{
 	Net:         wire.TestNet2,
 	DefaultPort: "19108",
 	DNSSeeds: []DNSSeed{
-		/*
-	{"testnet-seed.coolsnady.netpurgatory.com", true},
+	/*	{"testnet-seed.coolsnady.mindcry.org", true},
+		{"testnet-seed.coolsnady.netpurgatory.com", true},
 		{"testnet-seed.coolsnady.org", true},*/
 	},
 
@@ -803,9 +805,11 @@ var TestNet2Params = Params{
 	// Address encoding magics
 	NetworkAddressPrefix: "T",
 	PubKeyAddrID:         [2]byte{0x28, 0xf7}, // starts with Tk
+	PubKeyBlissAddrID:    [2]byte{0x0b, 0xf0}, // starts with Tk
 	PubKeyHashAddrID:     [2]byte{0x0f, 0x21}, // starts with Ts
 	PKHEdwardsAddrID:     [2]byte{0x0f, 0x01}, // starts with Te
 	PKHSchnorrAddrID:     [2]byte{0x0e, 0xe3}, // starts with TS
+	PKHBlissAddrID:       [2]byte{0x0e, 0xf8}, // starts with Tb
 	ScriptHashAddrID:     [2]byte{0x0e, 0xfc}, // starts with Tc
 	PrivateKeyID:         [2]byte{0x23, 0x0e}, // starts with Pt
 
@@ -998,9 +1002,11 @@ var SimNetParams = Params{
 	// Address encoding magics
 	NetworkAddressPrefix: "S",
 	PubKeyAddrID:         [2]byte{0x27, 0x6f}, // starts with Sk
+	PubKeyBlissAddrID:    [2]byte{0x0b, 0xef}, // starts with Sk
 	PubKeyHashAddrID:     [2]byte{0x0e, 0x91}, // starts with Ss
 	PKHEdwardsAddrID:     [2]byte{0x0e, 0x71}, // starts with Se
 	PKHSchnorrAddrID:     [2]byte{0x0e, 0x53}, // starts with SS
+	PKHBlissAddrID:       [2]byte{0x0e, 0x68}, // starts with Sb
 	ScriptHashAddrID:     [2]byte{0x0e, 0x6c}, // starts with Sc
 	PrivateKeyID:         [2]byte{0x23, 0x07}, // starts with Ps
 

@@ -281,7 +281,7 @@ type TxIn struct {
 	ValueIn         int64
 	BlockHeight     uint32
 	BlockIndex      uint32
-	SignatureScript []byte
+	SignatureScript []byte //签名和公钥
 }
 
 // SerializeSizePrefix returns the number of bytes it would take to serialize
@@ -320,7 +320,7 @@ func NewTxIn(prevOut *OutPoint, signatureScript []byte) *TxIn {
 type TxOut struct {
 	Value    int64
 	Version  uint16
-	PkScript []byte
+	PkScript []byte //脚本指令+转账接收方的公钥。
 }
 
 // SerializeSize returns the number of bytes it would take to serialize the

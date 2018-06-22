@@ -9,11 +9,12 @@ import (
 	"errors"
 	"fmt"
 
-	"golang.org/x/crypto/ripemd160"
-
-	"github.com/decred/base58"
 	"github.com/coolsnady/hxd/chaincfg"
 	"github.com/coolsnady/hxd/chaincfg/chainec"
+	"github.com/coolsnady/hxd/crypto"
+	"github.com/coolsnady/hxd/crypto/bliss"
+	"github.com/decred/base58"
+	"golang.org/x/crypto/ripemd160"
 )
 
 var (
@@ -749,5 +750,95 @@ func (a *AddressSecSchnorrPubKey) DSA(net *chaincfg.Params) int {
 
 // Net returns the network for the address.
 func (a *AddressSecSchnorrPubKey) Net() *chaincfg.Params {
+	return a.net
+}
+
+// AddressSecSchnorrPubKey is an Address for a secp256k1 pay-to-pubkey
+// transaction.
+type AddressBlissPubKey struct {
+	net          *chaincfg.Params
+	pubKey       crypto.PublicKey
+	pubKeyHashID [2]byte
+}
+
+func NewAddressBlissPubKey(serializedPubKey []byte,
+	net *chaincfg.Params) (*AddressBlissPubKey, error) {
+	pubKey, err := bliss.Bliss.ParsePubKey(serializedPubKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return &AddressBlissPubKey{
+		net:          net,
+		pubKey:       pubKey,
+		pubKeyHashID: net.PKHBlissAddrID,
+	}, nil
+}
+
+// serialize returns the serialization of the public key according to the
+// format associated with the address.
+func (a *AddressBlissPubKey) serialize() []byte {
+	return a.pubKey.Serialize()
+}
+
+// EncodeAddress returns the string encoding of the public key as a
+// pay-to-pubkey-hash.  Note that the public key format (uncompressed,
+// compressed, etc) will change the resulting address.  This is expected since
+// pay-to-pubkey-hash is a hash of the serialized public key which obviously
+// differs with the format.  At the time of this writing, most Decred addresses
+// are pay-to-pubkey-hash constructed from the uncompressed public key.
+//
+// Part of the Address interface.
+func (a *AddressBlissPubKey) EncodeAddress() string {
+	return encodeAddress(Hash160(a.serialize()), a.pubKeyHashID)
+}
+
+// ScriptAddress returns the bytes to be included in a txout script to pay
+// to a public key.  Setting the public key format will affect the output of
+// this function accordingly.  Part of the Address interface.
+func (a *AddressBlissPubKey) ScriptAddress() []byte {
+	return a.serialize()
+}
+
+// Hash160 returns the underlying array of the pubkey hash.  This can be useful
+// when an array is more appropiate than a slice (for example, when used as map
+// keys).
+func (a *AddressBlissPubKey) Hash160() *[ripemd160.Size]byte {
+	h160 := Hash160(a.pubKey.Serialize())
+	array := new([ripemd160.Size]byte)
+	copy(array[:], h160)
+
+	return array
+}
+
+// IsForNet returns whether or not the pay-to-pubkey address is associated
+// with the passed network.
+func (a *AddressBlissPubKey) IsForNet(net *chaincfg.Params) bool {
+	return a.pubKeyHashID == net.PKHBlissAddrID
+}
+
+// String returns the hex-encoded human-readable string for the pay-to-pubkey
+// address.  This is not the same as calling EncodeAddress.
+func (a *AddressBlissPubKey) String() string {
+	return encodePKAddress(a.serialize(), a.net.PubKeyBlissAddrID,
+		bliss.BSTypeBliss)
+}
+
+// AddressPubKeyHash returns the pay-to-pubkey address converted to a
+// pay-to-pubkey-hash address.
+func (a *AddressBlissPubKey) AddressPubKeyHash() *AddressPubKeyHash {
+	addr := &AddressPubKeyHash{net: a.net, netID: a.pubKeyHashID}
+	copy(addr.hash[:], Hash160(a.serialize()))
+	return addr
+}
+
+// DSA returns the underlying digital signature algorithm for the
+// address.
+func (a *AddressBlissPubKey) DSA(net *chaincfg.Params) int {
+	return bliss.BSTypeBliss
+}
+
+// Net returns the network for the address.
+func (a *AddressBlissPubKey) Net() *chaincfg.Params {
 	return a.net
 }

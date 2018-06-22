@@ -41,6 +41,7 @@ import (
 	"github.com/coolsnady/hxd/chaincfg"
 	"github.com/coolsnady/hxd/chaincfg/chainec"
 	"github.com/coolsnady/hxd/chaincfg/chainhash"
+	"github.com/coolsnady/hxd/crypto/bliss"
 	"github.com/coolsnady/hxd/database"
 	"github.com/coolsnady/hxd/dcrjson"
 	"github.com/coolsnady/hxd/dcrutil"
@@ -239,6 +240,7 @@ var rpcHandlersBeforeInit = map[string]commandHandler{
 	"validateaddress":       handleValidateAddress,
 	"verifychain":           handleVerifyChain,
 	"verifymessage":         handleVerifyMessage,
+	"verifyblissmessage":    handleVerifyBlissMessage,
 	"version":               handleVersion,
 }
 
@@ -339,6 +341,7 @@ var rpcLimited = map[string]struct{}{
 	"submitblock":           {},
 	"validateaddress":       {},
 	"verifymessage":         {},
+	"verifyblissmessage":    {},
 	"version":               {},
 }
 
@@ -5744,6 +5747,39 @@ func handleVerifyMessage(s *rpcServer, cmd interface{}, closeChan <-chan struct{
 	return address.EncodeAddress() == c.Address, nil
 }
 
+// handleVerifyBlissMessage implements the verifyblissmessage command.
+func handleVerifyBlissMessage(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
+
+	icmd := cmd.(*dcrjson.VerifyBlissMessageCmd)
+	var valid bool
+
+	pubkey, err := hex.DecodeString(icmd.PubKey)
+	if err != nil {
+		return nil, err
+	}
+	key, err := bliss.Bliss.ParsePubKey(pubkey)
+	if err != nil {
+		return nil, err
+	}
+
+	var buf bytes.Buffer
+	wire.WriteVarString(&buf, 0, "Hx Signed Message:\n")
+	wire.WriteVarString(&buf, 0, icmd.Message)
+	messageHash := chainhash.HashB(buf.Bytes())
+
+	sig, err := base64.StdEncoding.DecodeString(icmd.Signature)
+	if err != nil {
+		return nil, err
+	}
+
+	valid, err = bliss.VerifyCompact(key, messageHash, sig)
+	if err != nil {
+		return nil, err
+	}
+
+	return valid, nil
+}
+
 // handleVersion implements the version command.
 func handleVersion(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	runtimeVer := strings.Replace(runtime.Version(), ".", "-", -1)
@@ -5752,7 +5788,7 @@ func handleVersion(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (in
 		buildMeta = fmt.Sprintf("%s.%s", build, buildMeta)
 	}
 	result := map[string]dcrjson.VersionResult{
-		"hxdjsonrpcapi": {
+		"dcrdjsonrpcapi": {
 			VersionString: jsonrpcSemverString,
 			Major:         jsonrpcSemverMajor,
 			Minor:         jsonrpcSemverMinor,
