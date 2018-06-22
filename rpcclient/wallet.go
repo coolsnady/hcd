@@ -1295,13 +1295,13 @@ func (r FutureCreateNewAccountResult) Receive() error {
 // returned instance.
 //
 // See CreateNewAccount for the blocking version and more details.
-func (c *Client) CreateNewAccountAsync(account, acctype string) FutureCreateNewAccountResult {
+func (c *Client) CreateNewAccountAsync(account string, acctype int32) FutureCreateNewAccountResult {
 	cmd := dcrjson.NewCreateNewAccountCmd(account, acctype)
 	return c.sendCmd(cmd)
 }
 
 // CreateNewAccount creates a new wallet account.
-func (c *Client) CreateNewAccount(account, acctype string) error {
+func (c *Client) CreateNewAccount(account string, acctype int32) error {
 	return c.CreateNewAccountAsync(account, acctype).Receive()
 }
 

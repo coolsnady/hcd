@@ -114,15 +114,15 @@ func NewCreateMultisigCmd(nRequired int, keys []string) *CreateMultisigCmd {
 // CreateNewAccountCmd defines the createnewaccount JSON-RPC command.
 type CreateNewAccountCmd struct {
 	Account     string
-	AccountType string
+	AccountType uint8
 }
 
 // NewCreateNewAccountCmd returns a new instance which can be used to issue a
 // createnewaccount JSON-RPC command.
-func NewCreateNewAccountCmd(account string, acctype string) *CreateNewAccountCmd {
+func NewCreateNewAccountCmd(account string, acctype int32) *CreateNewAccountCmd {
 	return &CreateNewAccountCmd{
 		Account:     account,
-		AccountType: acctype,    
+		AccountType: uint8(acctype),
 	}
 }
 
@@ -759,20 +759,22 @@ func NewPurchaseTicketCmd(fromAccount string, spendLimit float64, minConf *int,
 // RedeemMultiSigOutCmd is a type handling custom marshaling and
 // unmarshaling of redeemmultisigout JSON RPC commands.
 type RedeemMultiSigOutCmd struct {
-	Hash    string
-	Index   uint32
-	Tree    int8
-	Address *string
+	Hash        string
+	Index       uint32
+	Tree        int8
+	Address     *string
+	AccountType uint8
 }
 
 // NewRedeemMultiSigOutCmd creates a new RedeemMultiSigOutCmd.
 func NewRedeemMultiSigOutCmd(hash string, index uint32, tree int8,
-	address *string) *RedeemMultiSigOutCmd {
+	address *string, accType uint8) *RedeemMultiSigOutCmd {
 	return &RedeemMultiSigOutCmd{
-		Hash:    hash,
-		Index:   index,
-		Tree:    tree,
-		Address: address,
+		Hash:        hash,
+		Index:       index,
+		Tree:        tree,
+		Address:     address,
+		AccountType: accType,
 	}
 }
 

@@ -9,10 +9,10 @@ import (
 	"bytes"
 	"errors"
 
-	"github.com/decred/base58"
 	"github.com/coolsnady/hxd/chaincfg"
 	"github.com/coolsnady/hxd/chaincfg/chainec"
 	"github.com/coolsnady/hxd/chaincfg/chainhash"
+	"github.com/decred/base58"
 )
 
 // ErrMalformedPrivateKey describes an error where a WIF-encoded private
@@ -28,8 +28,8 @@ var ErrMalformedPrivateKey = errors.New("malformed private key")
 // structure by calling DecodeWIF or created with a user-provided private key
 // by calling NewWIF.
 type WIF struct {
-	// ecType is the type of ECDSA used.
-	ecType int
+	// AlgorithmType is the type of digital signature algorithm used.
+	AlgorithmType int
 
 	// PrivKey is the private key being imported or exported.
 	PrivKey chainec.PrivateKey
@@ -122,7 +122,7 @@ func (w *WIF) String() string {
 
 	a := make([]byte, 0, encodeLen)
 	a = append(a, w.netID[:]...)
-	a = append(a, byte(w.ecType))
+	a = append(a, byte(w.AlgorithmType))
 	a = append(a, w.PrivKey.Serialize()...)
 
 	cksum := chainhash.HashB(a)
@@ -137,7 +137,7 @@ func (w *WIF) SerializePubKey() []byte {
 	pkx, pky := w.PrivKey.Public()
 	var pk chainec.PublicKey
 
-	switch w.ecType {
+	switch w.AlgorithmType {
 	case chainec.ECTypeSecp256k1:
 		pk = chainec.Secp256k1.NewPublicKey(pkx, pky)
 	case chainec.ECTypeEdwards:
@@ -151,5 +151,5 @@ func (w *WIF) SerializePubKey() []byte {
 
 // DSA returns the ECDSA type for the private key.
 func (w *WIF) DSA() int {
-	return w.ecType
+	return w.AlgorithmType
 }
