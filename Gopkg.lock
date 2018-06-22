@@ -48,6 +48,7 @@
   revision = "0bdef8d067237991ddaa1bb6072a740bc40601ba"
 
 [[projects]]
+  branch = "master"
   name = "github.com/btcsuite/winsvc"
   packages = [
     "eventlog",
@@ -57,7 +58,6 @@
     "winapi"
   ]
   revision = "f8fb11f83f7e860e3769a08e6811d1b399a43722"
-  version = "v1.0.0"
 
 [[projects]]
   branch = "master"
@@ -66,22 +66,22 @@
   revision = "8991bc29aa16c548c550c7ff78260e27b9ab7c73"
 
 [[projects]]
+  branch = "master"
   name = "github.com/dchest/blake256"
   packages = ["."]
   revision = "dee3fe6eb0e98dc774a94fc231f85baf7c29d360"
-  version = "v1.0.0"
 
 [[projects]]
+  branch = "master"
   name = "github.com/decred/base58"
   packages = ["."]
   revision = "56c501706f00d9e1cfacee19a27117e12da24734"
-  version = "v1.0.0"
 
 [[projects]]
+  branch = "master"
   name = "github.com/decred/slog"
   packages = ["."]
   revision = "fbd821ef791ba2b8ae945f5d44f4e49396d230c5"
-  version = "v1.0.0"
 
 [[projects]]
   name = "github.com/gorilla/websocket"
@@ -92,20 +92,20 @@
 [[projects]]
   name = "github.com/jessevdk/go-flags"
   packages = ["."]
-  revision = "c6ca198ec95c841fdb89fc0de7496fed11ab854e"
-  version = "v1.4.0"
+  revision = "96dc06278ce32a0e9d957d590bb987c81ee66407"
+  version = "v1.3.0"
 
 [[projects]]
+  branch = "master"
   name = "github.com/jrick/bitset"
   packages = ["."]
   revision = "06eae37cdf93c699c0503c23f998167ce841974c"
-  version = "v1.0.0"
 
 [[projects]]
+  branch = "master"
   name = "github.com/jrick/logrotate"
   packages = ["rotator"]
   revision = "a93b200c26cbae3bb09dd0dc2c7c7fe1468a034a"
-  version = "v1.0.0"
 
 [[projects]]
   branch = "master"
@@ -114,7 +114,7 @@
     "ripemd160",
     "ssh/terminal"
   ]
-  revision = "8ac0e0d97ce45cd83d1d7243c060cb8461dda5e9"
+  revision = "88942b9c40a4c9d203b82b3731787b672d6e809b"
 
 [[projects]]
   branch = "master"
@@ -123,7 +123,7 @@
     "unix",
     "windows"
   ]
-  revision = "a9e25c09b96b8870693763211309e213c6ef299d"
+  revision = "13d03a9a82fba647c21a0ef8fba44a795d0f0835"
 
 [solve-meta]
   analyzer-name = "dep"
