@@ -28,8 +28,6 @@ import (
 	dcrcrypto "github.com/coolsnady/hxd/crypto/bliss"
 	"github.com/coolsnady/hxd/dcrutil"
 	"github.com/decred/base58"
-	"github.com/coolsnady/bliss"
-	"github.com/coolsnady/bliss/sampler"
 	"golang.org/x/crypto/sha3"
 )
 
