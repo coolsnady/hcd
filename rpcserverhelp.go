@@ -11,7 +11,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/coolsnady/hxd/dcrjson"
+	"github.com/coolsnady/hxd/hxjson"
 )
 
 // helpDescsEnUS defines the English descriptions used for the help strings.
@@ -928,10 +928,10 @@ var rpcResultTypes = map[string][]interface{}{
 	"createrawssrtx":        {(*string)(nil)},
 	"createrawtransaction":  {(*string)(nil)},
 	"debuglevel":            {(*string)(nil), (*string)(nil)},
-	"decoderawtransaction":  {(*dcrjson.TxRawDecodeResult)(nil)},
-	"decodescript":          {(*dcrjson.DecodeScriptResult)(nil)},
+	"decoderawtransaction":  {(*hxjson.TxRawDecodeResult)(nil)},
+	"decodescript":          {(*hxjson.DecodeScriptResult)(nil)},
 	"estimatefee":           {(*float64)(nil)},
-	"estimatestakediff":     {(*dcrjson.EstimateStakeDiffResult)(nil)},
+	"estimatestakediff":     {(*hxjson.EstimateStakeDiffResult)(nil)},
 	"existsaddress":         {(*bool)(nil)},
 	"existsaddresses":       {(*string)(nil)},
 	"existsmissedtickets":   {(*string)(nil)},
@@ -939,66 +939,66 @@ var rpcResultTypes = map[string][]interface{}{
 	"existsliveticket":      {(*bool)(nil)},
 	"existslivetickets":     {(*string)(nil)},
 	"existsmempooltxs":      {(*string)(nil)},
-	"getaddednodeinfo":      {(*[]string)(nil), (*[]dcrjson.GetAddedNodeInfoResult)(nil)},
-	"getbestblock":          {(*dcrjson.GetBestBlockResult)(nil)},
+	"getaddednodeinfo":      {(*[]string)(nil), (*[]hxjson.GetAddedNodeInfoResult)(nil)},
+	"getbestblock":          {(*hxjson.GetBestBlockResult)(nil)},
 	"generate":              {(*[]string)(nil)},
 	"getbestblockhash":      {(*string)(nil)},
-	"getblock":              {(*string)(nil), (*dcrjson.GetBlockVerboseResult)(nil)},
+	"getblock":              {(*string)(nil), (*hxjson.GetBlockVerboseResult)(nil)},
 	"getblockcount":         {(*int64)(nil)},
 	"getblockhash":          {(*string)(nil)},
-	"getblockheader":        {(*string)(nil), (*dcrjson.GetBlockHeaderVerboseResult)(nil)},
-	"getblocksubsidy":       {(*dcrjson.GetBlockSubsidyResult)(nil)},
-	"getblocktemplate":      {(*dcrjson.GetBlockTemplateResult)(nil), (*string)(nil), nil},
+	"getblockheader":        {(*string)(nil), (*hxjson.GetBlockHeaderVerboseResult)(nil)},
+	"getblocksubsidy":       {(*hxjson.GetBlockSubsidyResult)(nil)},
+	"getblocktemplate":      {(*hxjson.GetBlockTemplateResult)(nil), (*string)(nil), nil},
 	"getcfilter":            {(*string)(nil)},
 	"getcfilterheader":      {(*string)(nil)},
-	"getchaintips":          {(*[]dcrjson.GetChainTipsResult)(nil)},
+	"getchaintips":          {(*[]hxjson.GetChainTipsResult)(nil)},
 	"getconnectioncount":    {(*int32)(nil)},
 	"getcurrentnet":         {(*uint32)(nil)},
 	"getdifficulty":         {(*float64)(nil)},
-	"getstakedifficulty":    {(*dcrjson.GetStakeDifficultyResult)(nil)},
-	"getstakeversioninfo":   {(*dcrjson.GetStakeVersionInfoResult)(nil)},
-	"getstakeversions":      {(*dcrjson.GetStakeVersionsResult)(nil)},
+	"getstakedifficulty":    {(*hxjson.GetStakeDifficultyResult)(nil)},
+	"getstakeversioninfo":   {(*hxjson.GetStakeVersionInfoResult)(nil)},
+	"getstakeversions":      {(*hxjson.GetStakeVersionsResult)(nil)},
 	"getgenerate":           {(*bool)(nil)},
 	"gethashespersec":       {(*float64)(nil)},
-	"getheaders":            {(*dcrjson.GetHeadersResult)(nil)},
-	"getinfo":               {(*dcrjson.InfoChainResult)(nil)},
-	"getmempoolinfo":        {(*dcrjson.GetMempoolInfoResult)(nil)},
-	"getmininginfo":         {(*dcrjson.GetMiningInfoResult)(nil)},
-	"getnettotals":          {(*dcrjson.GetNetTotalsResult)(nil)},
+	"getheaders":            {(*hxjson.GetHeadersResult)(nil)},
+	"getinfo":               {(*hxjson.InfoChainResult)(nil)},
+	"getmempoolinfo":        {(*hxjson.GetMempoolInfoResult)(nil)},
+	"getmininginfo":         {(*hxjson.GetMiningInfoResult)(nil)},
+	"getnettotals":          {(*hxjson.GetNetTotalsResult)(nil)},
 	"getnetworkhashps":      {(*int64)(nil)},
-	"getpeerinfo":           {(*[]dcrjson.GetPeerInfoResult)(nil)},
-	"getrawmempool":         {(*[]string)(nil), (*dcrjson.GetRawMempoolVerboseResult)(nil)},
-	"getrawtransaction":     {(*string)(nil), (*dcrjson.TxRawResult)(nil)},
+	"getpeerinfo":           {(*[]hxjson.GetPeerInfoResult)(nil)},
+	"getrawmempool":         {(*[]string)(nil), (*hxjson.GetRawMempoolVerboseResult)(nil)},
+	"getrawtransaction":     {(*string)(nil), (*hxjson.TxRawResult)(nil)},
 	"getticketpoolvalue":    {(*float64)(nil)},
-	"gettxout":              {(*dcrjson.GetTxOutResult)(nil)},
-	"getvoteinfo":           {(*dcrjson.GetVoteInfoResult)(nil)},
-	"getwork":               {(*dcrjson.GetWorkResult)(nil), (*bool)(nil)},
+	"gettxout":              {(*hxjson.GetTxOutResult)(nil)},
+	"getvoteinfo":           {(*hxjson.GetVoteInfoResult)(nil)},
+	"getwork":               {(*hxjson.GetWorkResult)(nil), (*bool)(nil)},
 	"getcoinsupply":         {(*int64)(nil)},
 	"help":                  {(*string)(nil), (*string)(nil)},
-	"livetickets":           {(*dcrjson.LiveTicketsResult)(nil)},
-	"missedtickets":         {(*dcrjson.MissedTicketsResult)(nil)},
+	"livetickets":           {(*hxjson.LiveTicketsResult)(nil)},
+	"missedtickets":         {(*hxjson.MissedTicketsResult)(nil)},
 	"node":                  nil,
 	"ping":                  nil,
 	"rebroadcastmissed":     nil,
 	"rebroadcastwinners":    nil,
-	"searchrawtransactions": {(*string)(nil), (*[]dcrjson.SearchRawTransactionsResult)(nil)},
+	"searchrawtransactions": {(*string)(nil), (*[]hxjson.SearchRawTransactionsResult)(nil)},
 	"sendrawtransaction":    {(*string)(nil)},
 	"setgenerate":           nil,
 	"stop":                  {(*string)(nil)},
 	"submitblock":           {nil, (*string)(nil)},
-	"ticketfeeinfo":         {(*dcrjson.TicketFeeInfoResult)(nil)},
-	"ticketsforaddress":     {(*dcrjson.TicketsForAddressResult)(nil)},
+	"ticketfeeinfo":         {(*hxjson.TicketFeeInfoResult)(nil)},
+	"ticketsforaddress":     {(*hxjson.TicketsForAddressResult)(nil)},
 	"ticketvwap":            {(*float64)(nil)},
-	"txfeeinfo":             {(*dcrjson.TxFeeInfoResult)(nil)},
-	"validateaddress":       {(*dcrjson.ValidateAddressChainResult)(nil)},
+	"txfeeinfo":             {(*hxjson.TxFeeInfoResult)(nil)},
+	"validateaddress":       {(*hxjson.ValidateAddressChainResult)(nil)},
 	"verifychain":           {(*bool)(nil)},
 	"verifymessage":         {(*bool)(nil)},
 	"verifyblissmessage":    {(*bool)(nil)},
-	"version":               {(*map[string]dcrjson.VersionResult)(nil)},
+	"version":               {(*map[string]hxjson.VersionResult)(nil)},
 
 	// Websocket commands.
 	"loadtxfilter":                nil,
-	"session":                     {(*dcrjson.SessionResult)(nil)},
+	"session":                     {(*hxjson.SessionResult)(nil)},
 	"notifywinningtickets":        nil,
 	"notifyspentandmissedtickets": nil,
 	"notifynewtickets":            nil,
@@ -1042,7 +1042,7 @@ func (c *helpCacher) rpcMethodHelp(method string) (string, error) {
 	}
 
 	// Generate, cache, and return the help.
-	help, err := dcrjson.GenerateHelp(method, helpDescsEnUS, resultTypes...)
+	help, err := hxjson.GenerateHelp(method, helpDescsEnUS, resultTypes...)
 	if err != nil {
 		return "", err
 	}
@@ -1065,7 +1065,7 @@ func (c *helpCacher) rpcUsage(includeWebsockets bool) (string, error) {
 	// Generate a list of one-line usage for every command.
 	usageTexts := make([]string, 0, len(rpcHandlers))
 	for k := range rpcHandlers {
-		usage, err := dcrjson.MethodUsageText(k)
+		usage, err := hxjson.MethodUsageText(k)
 		if err != nil {
 			return "", err
 		}
@@ -1075,7 +1075,7 @@ func (c *helpCacher) rpcUsage(includeWebsockets bool) (string, error) {
 	// Include websockets commands if requested.
 	if includeWebsockets {
 		for k := range wsHandlers {
-			usage, err := dcrjson.MethodUsageText(k)
+			usage, err := hxjson.MethodUsageText(k)
 			if err != nil {
 				return "", err
 			}

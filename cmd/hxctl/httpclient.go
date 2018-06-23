@@ -10,7 +10,7 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/coolsnady/hxd/dcrjson"
+	"github.com/coolsnady/hxd/hxjson"
 
 	"github.com/btcsuite/go-socks/socks"
 )
@@ -130,7 +130,7 @@ func sendPostRequest(marshalledJSON []byte, cfg *config) ([]byte, error) {
 	}
 
 	// Unmarshal the response.
-	var resp dcrjson.Response
+	var resp hxjson.Response
 	if err := json.Unmarshal(respBytes, &resp); err != nil {
 		return nil, err
 	}

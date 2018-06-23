@@ -12,7 +12,7 @@ import (
 	"fmt"
 
 	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/hxd/dcrjson"
+	"github.com/coolsnady/hxd/hxjson"
 	"github.com/coolsnady/hxd/hxutil"
 	"github.com/coolsnady/hxd/wire"
 )
@@ -40,7 +40,7 @@ func (r FutureCreateEncryptedWalletResult) Receive() error {
 //
 // NOTE: This is a hxwallet extension.
 func (c *Client) CreateEncryptedWalletAsync(passphrase string) FutureCreateEncryptedWalletResult {
-	cmd := dcrjson.NewCreateEncryptedWalletCmd(passphrase)
+	cmd := hxjson.NewCreateEncryptedWalletCmd(passphrase)
 	return c.sendCmd(cmd)
 }
 
@@ -86,7 +86,7 @@ func (r FutureDebugLevelResult) Receive() (string, error) {
 //
 // NOTE: This is a hxd extension.
 func (c *Client) DebugLevelAsync(levelSpec string) FutureDebugLevelResult {
-	cmd := dcrjson.NewDebugLevelCmd(levelSpec)
+	cmd := hxjson.NewDebugLevelCmd(levelSpec)
 	return c.sendCmd(cmd)
 }
 
@@ -110,14 +110,14 @@ type FutureEstimateStakeDiffResult chan *response
 
 // Receive waits for the response promised by the future and returns the hash
 // and height of the block in the longest (best) chain.
-func (r FutureEstimateStakeDiffResult) Receive() (*dcrjson.EstimateStakeDiffResult, error) {
+func (r FutureEstimateStakeDiffResult) Receive() (*hxjson.EstimateStakeDiffResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarsal result as a estimatestakediff result object.
-	var est dcrjson.EstimateStakeDiffResult
+	var est hxjson.EstimateStakeDiffResult
 	err = json.Unmarshal(res, &est)
 	if err != nil {
 		return nil, err
@@ -134,7 +134,7 @@ func (r FutureEstimateStakeDiffResult) Receive() (*dcrjson.EstimateStakeDiffResu
 //
 // NOTE: This is a hxd extension.
 func (c *Client) EstimateStakeDiffAsync(tickets *uint32) FutureEstimateStakeDiffResult {
-	cmd := dcrjson.NewEstimateStakeDiffCmd(tickets)
+	cmd := hxjson.NewEstimateStakeDiffCmd(tickets)
 	return c.sendCmd(cmd)
 }
 
@@ -142,7 +142,7 @@ func (c *Client) EstimateStakeDiffAsync(tickets *uint32) FutureEstimateStakeDiff
 // difficulty.
 //
 // NOTE: This is a hxd extension.
-func (c *Client) EstimateStakeDiff(tickets *uint32) (*dcrjson.EstimateStakeDiffResult, error) {
+func (c *Client) EstimateStakeDiff(tickets *uint32) (*hxjson.EstimateStakeDiffResult, error) {
 	return c.EstimateStakeDiffAsync(tickets).Receive()
 }
 
@@ -171,7 +171,7 @@ func (r FutureExistsAddressResult) Receive() (bool, error) {
 // result of the RPC at some future time by invoking the Receive function on the
 // returned instance.
 func (c *Client) ExistsAddressAsync(address hxutil.Address) FutureExistsAddressResult {
-	cmd := dcrjson.NewExistsAddressCmd(address.EncodeAddress())
+	cmd := hxjson.NewExistsAddressCmd(address.EncodeAddress())
 	return c.sendCmd(cmd)
 }
 
@@ -214,7 +214,7 @@ func (c *Client) ExistsAddressesAsync(addresses []hxutil.Address) FutureExistsAd
 		addrsStr[i] = addresses[i].EncodeAddress()
 	}
 
-	cmd := dcrjson.NewExistsAddressesCmd(addrsStr)
+	cmd := hxjson.NewExistsAddressesCmd(addrsStr)
 	return c.sendCmd(cmd)
 }
 
@@ -256,7 +256,7 @@ func (c *Client) ExistsMissedTicketsAsync(hashes []*chainhash.Hash) FutureExists
 		copy(hashBlob[i*chainhash.HashSize:(i+1)*chainhash.HashSize],
 			hash[:])
 	}
-	cmd := dcrjson.NewExistsMissedTicketsCmd(hex.EncodeToString(hashBlob))
+	cmd := hxjson.NewExistsMissedTicketsCmd(hex.EncodeToString(hashBlob))
 	return c.sendCmd(cmd)
 }
 
@@ -297,7 +297,7 @@ func (c *Client) ExistsExpiredTicketsAsync(hashes []*chainhash.Hash) FutureExist
 		copy(hashBlob[i*chainhash.HashSize:(i+1)*chainhash.HashSize],
 			hash[:])
 	}
-	cmd := dcrjson.NewExistsExpiredTicketsCmd(hex.EncodeToString(hashBlob))
+	cmd := hxjson.NewExistsExpiredTicketsCmd(hex.EncodeToString(hashBlob))
 	return c.sendCmd(cmd)
 }
 
@@ -335,7 +335,7 @@ func (r FutureExistsLiveTicketResult) Receive() (bool, error) {
 // result of the RPC at some future time by invoking the Receive function on the
 // returned instance.
 func (c *Client) ExistsLiveTicketAsync(hash *chainhash.Hash) FutureExistsLiveTicketResult {
-	cmd := dcrjson.NewExistsLiveTicketCmd(hash.String())
+	cmd := hxjson.NewExistsLiveTicketCmd(hash.String())
 	return c.sendCmd(cmd)
 }
 
@@ -378,7 +378,7 @@ func (c *Client) ExistsLiveTicketsAsync(hashes []*chainhash.Hash) FutureExistsLi
 		copy(hashBlob[i*chainhash.HashSize:(i+1)*chainhash.HashSize],
 			hash[:])
 	}
-	cmd := dcrjson.NewExistsLiveTicketsCmd(hex.EncodeToString(hashBlob))
+	cmd := hxjson.NewExistsLiveTicketsCmd(hex.EncodeToString(hashBlob))
 	return c.sendCmd(cmd)
 }
 
@@ -421,7 +421,7 @@ func (c *Client) ExistsMempoolTxsAsync(hashes []*chainhash.Hash) FutureExistsMem
 		copy(hashBlob[i*chainhash.HashSize:(i+1)*chainhash.HashSize],
 			hash[:])
 	}
-	cmd := dcrjson.NewExistsMempoolTxsCmd(hex.EncodeToString(hashBlob))
+	cmd := hxjson.NewExistsMempoolTxsCmd(hex.EncodeToString(hashBlob))
 	return c.sendCmd(cmd)
 }
 
@@ -488,7 +488,7 @@ func (r FutureExportWatchingWalletResult) Receive() ([]byte, []byte, error) {
 //
 // NOTE: This is a hxwallet extension.
 func (c *Client) ExportWatchingWalletAsync(account string) FutureExportWatchingWalletResult {
-	cmd := dcrjson.NewExportWatchingWalletCmd(&account, dcrjson.Bool(true))
+	cmd := hxjson.NewExportWatchingWalletCmd(&account, hxjson.Bool(true))
 	return c.sendCmd(cmd)
 }
 
@@ -515,7 +515,7 @@ func (r FutureGetBestBlockResult) Receive() (*chainhash.Hash, int64, error) {
 	}
 
 	// Unmarshal result as a getbestblock result object.
-	var bestBlock dcrjson.GetBestBlockResult
+	var bestBlock hxjson.GetBestBlockResult
 	err = json.Unmarshal(res, &bestBlock)
 	if err != nil {
 		return nil, 0, err
@@ -538,7 +538,7 @@ func (r FutureGetBestBlockResult) Receive() (*chainhash.Hash, int64, error) {
 //
 // NOTE: This is a hxd extension.
 func (c *Client) GetBestBlockAsync() FutureGetBestBlockResult {
-	cmd := dcrjson.NewGetBestBlockCmd()
+	cmd := hxjson.NewGetBestBlockCmd()
 	return c.sendCmd(cmd)
 }
 
@@ -580,7 +580,7 @@ func (r FutureGetCurrentNetResult) Receive() (wire.CurrencyNet, error) {
 //
 // NOTE: This is a hxd extension.
 func (c *Client) GetCurrentNetAsync() FutureGetCurrentNetResult {
-	cmd := dcrjson.NewGetCurrentNetCmd()
+	cmd := hxjson.NewGetCurrentNetCmd()
 	return c.sendCmd(cmd)
 }
 
@@ -597,14 +597,14 @@ type FutureGetHeadersResult chan *response
 
 // Receive waits for the response promised by the future and returns the
 // getheaders result.
-func (r FutureGetHeadersResult) Receive() (*dcrjson.GetHeadersResult, error) {
+func (r FutureGetHeadersResult) Receive() (*hxjson.GetHeadersResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarsal result as a getheaders result object.
-	var vr dcrjson.GetHeadersResult
+	var vr hxjson.GetHeadersResult
 	err = json.Unmarshal(res, &vr)
 	if err != nil {
 		return nil, err
@@ -622,7 +622,7 @@ func (c *Client) GetHeadersAsync(blockLocators []*chainhash.Hash, hashStop *chai
 	for i := range blockLocators {
 		copy(concatenatedLocators[i*chainhash.HashSize:], blockLocators[i][:])
 	}
-	cmd := dcrjson.NewGetHeadersCmd(hex.EncodeToString(concatenatedLocators),
+	cmd := hxjson.NewGetHeadersCmd(hex.EncodeToString(concatenatedLocators),
 		hashStop.String())
 	return c.sendCmd(cmd)
 }
@@ -630,7 +630,7 @@ func (c *Client) GetHeadersAsync(blockLocators []*chainhash.Hash, hashStop *chai
 // GetHeaders mimics the wire protocol getheaders and headers messages by
 // returning all headers on the main chain after the first known block in the
 // locators, up until a block hash matches hashStop.
-func (c *Client) GetHeaders(blockLocators []*chainhash.Hash, hashStop *chainhash.Hash) (*dcrjson.GetHeadersResult, error) {
+func (c *Client) GetHeaders(blockLocators []*chainhash.Hash, hashStop *chainhash.Hash) (*hxjson.GetHeadersResult, error) {
 	return c.GetHeadersAsync(blockLocators, hashStop).Receive()
 }
 
@@ -640,14 +640,14 @@ type FutureGetStakeDifficultyResult chan *response
 
 // Receive waits for the response promised by the future and returns the network
 // the server is running on.
-func (r FutureGetStakeDifficultyResult) Receive() (*dcrjson.GetStakeDifficultyResult, error) {
+func (r FutureGetStakeDifficultyResult) Receive() (*hxjson.GetStakeDifficultyResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
-	// Unmarshal result as a dcrjson.GetStakeDifficultyResult.
-	var gsdr dcrjson.GetStakeDifficultyResult
+	// Unmarshal result as a hxjson.GetStakeDifficultyResult.
+	var gsdr hxjson.GetStakeDifficultyResult
 	err = json.Unmarshal(res, &gsdr)
 	if err != nil {
 		return nil, err
@@ -664,14 +664,14 @@ func (r FutureGetStakeDifficultyResult) Receive() (*dcrjson.GetStakeDifficultyRe
 //
 // NOTE: This is a hxd extension.
 func (c *Client) GetStakeDifficultyAsync() FutureGetStakeDifficultyResult {
-	cmd := dcrjson.NewGetStakeDifficultyCmd()
+	cmd := hxjson.NewGetStakeDifficultyCmd()
 	return c.sendCmd(cmd)
 }
 
 // GetStakeDifficulty returns the current and next stake difficulty.
 //
 // NOTE: This is a hxd extension.
-func (c *Client) GetStakeDifficulty() (*dcrjson.GetStakeDifficultyResult, error) {
+func (c *Client) GetStakeDifficulty() (*hxjson.GetStakeDifficultyResult, error) {
 	return c.GetStakeDifficultyAsync().Receive()
 }
 
@@ -681,14 +681,14 @@ type FutureGetStakeVersionsResult chan *response
 
 // Receive waits for the response promised by the future and returns the network
 // the server is running on.
-func (r FutureGetStakeVersionsResult) Receive() (*dcrjson.GetStakeVersionsResult, error) {
+func (r FutureGetStakeVersionsResult) Receive() (*hxjson.GetStakeVersionsResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
-	// Unmarshal result as a dcrjson.GetStakeVersionsResult.
-	var gsvr dcrjson.GetStakeVersionsResult
+	// Unmarshal result as a hxjson.GetStakeVersionsResult.
+	var gsvr hxjson.GetStakeVersionsResult
 	err = json.Unmarshal(res, &gsvr)
 	if err != nil {
 		return nil, err
@@ -705,14 +705,14 @@ func (r FutureGetStakeVersionsResult) Receive() (*dcrjson.GetStakeVersionsResult
 //
 // NOTE: This is a hxd extension.
 func (c *Client) GetStakeVersionInfoAsync(count int32) FutureGetStakeVersionInfoResult {
-	cmd := dcrjson.NewGetStakeVersionInfoCmd(count)
+	cmd := hxjson.NewGetStakeVersionInfoCmd(count)
 	return c.sendCmd(cmd)
 }
 
 // GetStakeVersionInfo returns the stake versions results for past requested intervals (count).
 //
 // NOTE: This is a hxd extension.
-func (c *Client) GetStakeVersionInfo(count int32) (*dcrjson.GetStakeVersionInfoResult, error) {
+func (c *Client) GetStakeVersionInfo(count int32) (*hxjson.GetStakeVersionInfoResult, error) {
 	return c.GetStakeVersionInfoAsync(count).Receive()
 }
 
@@ -722,14 +722,14 @@ type FutureGetStakeVersionInfoResult chan *response
 
 // Receive waits for the response promised by the future and returns the network
 // the server is running on.
-func (r FutureGetStakeVersionInfoResult) Receive() (*dcrjson.GetStakeVersionInfoResult, error) {
+func (r FutureGetStakeVersionInfoResult) Receive() (*hxjson.GetStakeVersionInfoResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
-	// Unmarshal result as a dcrjson.GetStakeVersionInfoResult.
-	var gsvr dcrjson.GetStakeVersionInfoResult
+	// Unmarshal result as a hxjson.GetStakeVersionInfoResult.
+	var gsvr hxjson.GetStakeVersionInfoResult
 	err = json.Unmarshal(res, &gsvr)
 	if err != nil {
 		return nil, err
@@ -746,14 +746,14 @@ func (r FutureGetStakeVersionInfoResult) Receive() (*dcrjson.GetStakeVersionInfo
 //
 // NOTE: This is a hxd extension.
 func (c *Client) GetStakeVersionsAsync(hash string, count int32) FutureGetStakeVersionsResult {
-	cmd := dcrjson.NewGetStakeVersionsCmd(hash, count)
+	cmd := hxjson.NewGetStakeVersionsCmd(hash, count)
 	return c.sendCmd(cmd)
 }
 
 // GetStakeVersions returns the stake versions and vote versions of past requested blocks.
 //
 // NOTE: This is a hxd extension.
-func (c *Client) GetStakeVersions(hash string, count int32) (*dcrjson.GetStakeVersionsResult, error) {
+func (c *Client) GetStakeVersions(hash string, count int32) (*hxjson.GetStakeVersionsResult, error) {
 	return c.GetStakeVersionsAsync(hash, count).Receive()
 }
 
@@ -793,7 +793,7 @@ func (r FutureGetTicketPoolValueResult) Receive() (hxutil.Amount, error) {
 //
 // NOTE: This is a hxd extension.
 func (c *Client) GetTicketPoolValueAsync() FutureGetTicketPoolValueResult {
-	cmd := dcrjson.NewGetTicketPoolValueCmd()
+	cmd := hxjson.NewGetTicketPoolValueCmd()
 	return c.sendCmd(cmd)
 }
 
@@ -810,14 +810,14 @@ type FutureGetVoteInfoResult chan *response
 
 // Receive waits for the response promised by the future and returns the network
 // the server is running on.
-func (r FutureGetVoteInfoResult) Receive() (*dcrjson.GetVoteInfoResult, error) {
+func (r FutureGetVoteInfoResult) Receive() (*hxjson.GetVoteInfoResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
-	// Unmarshal result as a dcrjson.GetVoteInfoResult.
-	var gsvr dcrjson.GetVoteInfoResult
+	// Unmarshal result as a hxjson.GetVoteInfoResult.
+	var gsvr hxjson.GetVoteInfoResult
 	err = json.Unmarshal(res, &gsvr)
 	if err != nil {
 		return nil, err
@@ -834,7 +834,7 @@ func (r FutureGetVoteInfoResult) Receive() (*dcrjson.GetVoteInfoResult, error) {
 //
 // NOTE: This is a hxd extension.
 func (c *Client) GetVoteInfoAsync(version uint32) FutureGetVoteInfoResult {
-	cmd := dcrjson.NewGetVoteInfoCmd(version)
+	cmd := hxjson.NewGetVoteInfoCmd(version)
 	return c.sendCmd(cmd)
 }
 
@@ -842,7 +842,7 @@ func (c *Client) GetVoteInfoAsync(version uint32) FutureGetVoteInfoResult {
 // includes current voting window, quorum, total votes and agendas.
 //
 // NOTE: This is a hxd extension.
-func (c *Client) GetVoteInfo(version uint32) (*dcrjson.GetVoteInfoResult, error) {
+func (c *Client) GetVoteInfo(version uint32) (*hxjson.GetVoteInfoResult, error) {
 	return c.GetVoteInfoAsync(version).Receive()
 }
 
@@ -852,14 +852,14 @@ type FutureListAddressTransactionsResult chan *response
 
 // Receive waits for the response promised by the future and returns information
 // about all transactions associated with the provided addresses.
-func (r FutureListAddressTransactionsResult) Receive() ([]dcrjson.ListTransactionsResult, error) {
+func (r FutureListAddressTransactionsResult) Receive() ([]hxjson.ListTransactionsResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal the result as an array of listtransactions objects.
-	var transactions []dcrjson.ListTransactionsResult
+	var transactions []hxjson.ListTransactionsResult
 	err = json.Unmarshal(res, &transactions)
 	if err != nil {
 		return nil, err
@@ -880,7 +880,7 @@ func (c *Client) ListAddressTransactionsAsync(addresses []hxutil.Address, accoun
 	for _, addr := range addresses {
 		addrs = append(addrs, addr.EncodeAddress())
 	}
-	cmd := dcrjson.NewListAddressTransactionsCmd(addrs, &account)
+	cmd := hxjson.NewListAddressTransactionsCmd(addrs, &account)
 	return c.sendCmd(cmd)
 }
 
@@ -888,7 +888,7 @@ func (c *Client) ListAddressTransactionsAsync(addresses []hxutil.Address, accoun
 // with the provided addresses.
 //
 // NOTE: This is a hxwallet extension.
-func (c *Client) ListAddressTransactions(addresses []hxutil.Address, account string) ([]dcrjson.ListTransactionsResult, error) {
+func (c *Client) ListAddressTransactions(addresses []hxutil.Address, account string) ([]hxjson.ListTransactionsResult, error) {
 	return c.ListAddressTransactionsAsync(addresses, account).Receive()
 }
 
@@ -904,8 +904,8 @@ func (r FutureLiveTicketsResult) Receive() ([]*chainhash.Hash, error) {
 		return nil, err
 	}
 
-	// Unmarshal the result as a dcrjson.LiveTicketsResult.
-	var container dcrjson.LiveTicketsResult
+	// Unmarshal the result as a hxjson.LiveTicketsResult.
+	var container hxjson.LiveTicketsResult
 	err = json.Unmarshal(res, &container)
 	if err != nil {
 		return nil, err
@@ -927,7 +927,7 @@ func (r FutureLiveTicketsResult) Receive() ([]*chainhash.Hash, error) {
 // result of the RPC at some future time by invoking the Receive function on the
 // returned instance.
 func (c *Client) LiveTicketsAsync() FutureLiveTicketsResult {
-	cmd := dcrjson.NewLiveTicketsCmd()
+	cmd := hxjson.NewLiveTicketsCmd()
 	return c.sendCmd(cmd)
 }
 
@@ -951,8 +951,8 @@ func (r FutureMissedTicketsResult) Receive() ([]*chainhash.Hash, error) {
 		return nil, err
 	}
 
-	// Unmarshal the result as a dcrjson.MissedTicketsResult.
-	var container dcrjson.MissedTicketsResult
+	// Unmarshal the result as a hxjson.MissedTicketsResult.
+	var container hxjson.MissedTicketsResult
 	err = json.Unmarshal(res, &container)
 	if err != nil {
 		return nil, err
@@ -974,7 +974,7 @@ func (r FutureMissedTicketsResult) Receive() ([]*chainhash.Hash, error) {
 // result of the RPC at some future time by invoking the Receive function on the
 // returned instance.
 func (c *Client) MissedTicketsAsync() FutureMissedTicketsResult {
-	cmd := dcrjson.NewMissedTicketsCmd()
+	cmd := hxjson.NewMissedTicketsCmd()
 	return c.sendCmd(cmd)
 }
 
@@ -992,14 +992,14 @@ type FutureSessionResult chan *response
 
 // Receive waits for the response promised by the future and returns the
 // session result.
-func (r FutureSessionResult) Receive() (*dcrjson.SessionResult, error) {
+func (r FutureSessionResult) Receive() (*hxjson.SessionResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal result as a session result object.
-	var session dcrjson.SessionResult
+	var session hxjson.SessionResult
 	err = json.Unmarshal(res, &session)
 	if err != nil {
 		return nil, err
@@ -1021,7 +1021,7 @@ func (c *Client) SessionAsync() FutureSessionResult {
 		return newFutureError(ErrWebsocketsRequired)
 	}
 
-	cmd := dcrjson.NewSessionCmd()
+	cmd := hxjson.NewSessionCmd()
 	return c.sendCmd(cmd)
 }
 
@@ -1030,7 +1030,7 @@ func (c *Client) SessionAsync() FutureSessionResult {
 // This RPC requires the client to be running in websocket mode.
 //
 // NOTE: This is a Decred extension.
-func (c *Client) Session() (*dcrjson.SessionResult, error) {
+func (c *Client) Session() (*hxjson.SessionResult, error) {
 	return c.SessionAsync().Receive()
 }
 
@@ -1040,14 +1040,14 @@ type FutureTicketFeeInfoResult chan *response
 
 // Receive waits for the response promised by the future and returns the
 // ticketfeeinfo result.
-func (r FutureTicketFeeInfoResult) Receive() (*dcrjson.TicketFeeInfoResult, error) {
+func (r FutureTicketFeeInfoResult) Receive() (*hxjson.TicketFeeInfoResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarsal result as a ticketfeeinfo result object.
-	var tfir dcrjson.TicketFeeInfoResult
+	var tfir hxjson.TicketFeeInfoResult
 	err = json.Unmarshal(res, &tfir)
 	if err != nil {
 		return nil, err
@@ -1078,7 +1078,7 @@ func (c *Client) TicketFeeInfoAsync(blocks *uint32, windows *uint32) FutureTicke
 		windows = &zeroUint32
 	}
 
-	cmd := dcrjson.NewTicketFeeInfoCmd(blocks, windows)
+	cmd := hxjson.NewTicketFeeInfoCmd(blocks, windows)
 	return c.sendCmd(cmd)
 }
 
@@ -1087,7 +1087,7 @@ func (c *Client) TicketFeeInfoAsync(blocks *uint32, windows *uint32) FutureTicke
 // This RPC requires the client to be running in websocket mode.
 //
 // NOTE: This is a Decred extension.
-func (c *Client) TicketFeeInfo(blocks *uint32, windows *uint32) (*dcrjson.TicketFeeInfoResult, error) {
+func (c *Client) TicketFeeInfo(blocks *uint32, windows *uint32) (*hxjson.TicketFeeInfoResult, error) {
 	return c.TicketFeeInfoAsync(blocks, windows).Receive()
 }
 
@@ -1131,7 +1131,7 @@ func (c *Client) TicketVWAPAsync(start *uint32, end *uint32) FutureTicketVWAPRes
 		return newFutureError(ErrWebsocketsRequired)
 	}
 
-	cmd := dcrjson.NewTicketVWAPCmd(start, end)
+	cmd := hxjson.NewTicketVWAPCmd(start, end)
 	return c.sendCmd(cmd)
 }
 
@@ -1150,14 +1150,14 @@ type FutureTxFeeInfoResult chan *response
 
 // Receive waits for the response promised by the future and returns the
 // txfeeinfo result.
-func (r FutureTxFeeInfoResult) Receive() (*dcrjson.TxFeeInfoResult, error) {
+func (r FutureTxFeeInfoResult) Receive() (*hxjson.TxFeeInfoResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarsal result as a txfeeinfo result object.
-	var tfir dcrjson.TxFeeInfoResult
+	var tfir hxjson.TxFeeInfoResult
 	err = json.Unmarshal(res, &tfir)
 	if err != nil {
 		return nil, err
@@ -1179,7 +1179,7 @@ func (c *Client) TxFeeInfoAsync(blocks *uint32, start *uint32, end *uint32) Futu
 		return newFutureError(ErrWebsocketsRequired)
 	}
 
-	cmd := dcrjson.NewTxFeeInfoCmd(blocks, start, end)
+	cmd := hxjson.NewTxFeeInfoCmd(blocks, start, end)
 	return c.sendCmd(cmd)
 }
 
@@ -1188,7 +1188,7 @@ func (c *Client) TxFeeInfoAsync(blocks *uint32, start *uint32, end *uint32) Futu
 // This RPC requires the client to be running in websocket mode.
 //
 // NOTE: This is a Decred extension.
-func (c *Client) TxFeeInfo(blocks *uint32, start *uint32, end *uint32) (*dcrjson.TxFeeInfoResult, error) {
+func (c *Client) TxFeeInfo(blocks *uint32, start *uint32, end *uint32) (*hxjson.TxFeeInfoResult, error) {
 	return c.TxFeeInfoAsync(blocks, start, end).Receive()
 }
 
@@ -1198,14 +1198,14 @@ type FutureVersionResult chan *response
 
 // Receive waits for the response promised by the future and returns the version
 // result.
-func (r FutureVersionResult) Receive() (map[string]dcrjson.VersionResult, error) {
+func (r FutureVersionResult) Receive() (map[string]hxjson.VersionResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarsal result as a version result object.
-	var vr map[string]dcrjson.VersionResult
+	var vr map[string]hxjson.VersionResult
 	err = json.Unmarshal(res, &vr)
 	if err != nil {
 		return nil, err
@@ -1219,11 +1219,11 @@ func (r FutureVersionResult) Receive() (map[string]dcrjson.VersionResult, error)
 //
 // See Version for the blocking version and more details.
 func (c *Client) VersionAsync() FutureVersionResult {
-	cmd := dcrjson.NewVersionCmd()
+	cmd := hxjson.NewVersionCmd()
 	return c.sendCmd(cmd)
 }
 
 // Version returns information about the server's JSON-RPC API versions.
-func (c *Client) Version() (map[string]dcrjson.VersionResult, error) {
+func (c *Client) Version() (map[string]hxjson.VersionResult, error) {
 	return c.VersionAsync().Receive()
 }

@@ -201,7 +201,7 @@ information.
 * The Decred-related Go Packages:
   * [rpcclient](https://github.com/coolsnady/hxd/tree/master/rpcclient) - Implements a
     robust and easy to use Websocket-enabled Decred JSON-RPC client
-  * [dcrjson](https://github.com/coolsnady/hxd/tree/master/dcrjson) - Provides an extensive API
+  * [hxjson](https://github.com/coolsnady/hxd/tree/master/hxjson) - Provides an extensive API
     for the underlying JSON-RPC command and return values
   * [wire](https://github.com/coolsnady/hxd/tree/master/wire) - Implements the
     Decred wire protocol

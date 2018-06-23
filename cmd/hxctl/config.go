@@ -16,7 +16,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/coolsnady/hxd/dcrjson"
+	"github.com/coolsnady/hxd/hxjson"
 	"github.com/coolsnady/hxd/hxutil"
 
 	flags "github.com/jessevdk/go-flags"
@@ -26,7 +26,7 @@ const (
 	// unusableFlags are the command usage flags which this utility are not
 	// able to use.  In particular it doesn't support websockets and
 	// consequently notifications.
-	unusableFlags = dcrjson.UFWebsocketOnly | dcrjson.UFNotification
+	unusableFlags = hxjson.UFWebsocketOnly | hxjson.UFNotification
 )
 
 var (
@@ -50,10 +50,10 @@ func listCommands() {
 	)
 
 	// Get a list of registered commands and categorize and filter them.
-	cmdMethods := dcrjson.RegisteredCmdMethods()
+	cmdMethods := hxjson.RegisteredCmdMethods()
 	categorized := make([][]string, numCategories)
 	for _, method := range cmdMethods {
-		flags, err := dcrjson.MethodUsageFlags(method)
+		flags, err := hxjson.MethodUsageFlags(method)
 		if err != nil {
 			// This should never happen since the method was just
 			// returned from the package, but be safe.
@@ -65,7 +65,7 @@ func listCommands() {
 			continue
 		}
 
-		usage, err := dcrjson.MethodUsageText(method)
+		usage, err := hxjson.MethodUsageText(method)
 		if err != nil {
 			// This should never happen since the method was just
 			// returned from the package, but be safe.
@@ -74,7 +74,7 @@ func listCommands() {
 
 		// Categorize the command based on the usage flags.
 		category := categoryChain
-		if flags&dcrjson.UFWalletOnly != 0 {
+		if flags&hxjson.UFWalletOnly != 0 {
 			category = categoryWallet
 		}
 		categorized[category] = append(categorized[category], usage)

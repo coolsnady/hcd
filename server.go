@@ -1861,7 +1861,7 @@ func (s *server) OutboundGroupCount(key string) int {
 	return <-replyChan
 }
 
-// AddedNodeInfo returns an array of dcrjson.GetAddedNodeInfoResult structures
+// AddedNodeInfo returns an array of hxjson.GetAddedNodeInfoResult structures
 // describing the persistent (added) nodes.
 func (s *server) AddedNodeInfo() []*serverPeer {
 	replyChan := make(chan []*serverPeer)

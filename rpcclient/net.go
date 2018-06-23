@@ -8,7 +8,7 @@ package rpcclient
 import (
 	"encoding/json"
 
-	"github.com/coolsnady/hxd/dcrjson"
+	"github.com/coolsnady/hxd/hxjson"
 )
 
 // AddNodeCommand enumerates the available commands that the AddNode function
@@ -51,7 +51,7 @@ func (r FutureAddNodeResult) Receive() error {
 //
 // See AddNode for the blocking version and more details.
 func (c *Client) AddNodeAsync(host string, command AddNodeCommand) FutureAddNodeResult {
-	cmd := dcrjson.NewAddNodeCmd(host, dcrjson.AddNodeSubCmd(command))
+	cmd := hxjson.NewAddNodeCmd(host, hxjson.AddNodeSubCmd(command))
 	return c.sendCmd(cmd)
 }
 
@@ -70,14 +70,14 @@ type FutureGetAddedNodeInfoResult chan *response
 
 // Receive waits for the response promised by the future and returns information
 // about manually added (persistent) peers.
-func (r FutureGetAddedNodeInfoResult) Receive() ([]dcrjson.GetAddedNodeInfoResult, error) {
+func (r FutureGetAddedNodeInfoResult) Receive() ([]hxjson.GetAddedNodeInfoResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal as an array of getaddednodeinfo result objects.
-	var nodeInfo []dcrjson.GetAddedNodeInfoResult
+	var nodeInfo []hxjson.GetAddedNodeInfoResult
 	err = json.Unmarshal(res, &nodeInfo)
 	if err != nil {
 		return nil, err
@@ -92,7 +92,7 @@ func (r FutureGetAddedNodeInfoResult) Receive() ([]dcrjson.GetAddedNodeInfoResul
 //
 // See GetAddedNodeInfo for the blocking version and more details.
 func (c *Client) GetAddedNodeInfoAsync(peer string) FutureGetAddedNodeInfoResult {
-	cmd := dcrjson.NewGetAddedNodeInfoCmd(true, &peer)
+	cmd := hxjson.NewGetAddedNodeInfoCmd(true, &peer)
 	return c.sendCmd(cmd)
 }
 
@@ -100,7 +100,7 @@ func (c *Client) GetAddedNodeInfoAsync(peer string) FutureGetAddedNodeInfoResult
 //
 // See GetAddedNodeInfoNoDNS to retrieve only a list of the added (persistent)
 // peers.
-func (c *Client) GetAddedNodeInfo(peer string) ([]dcrjson.GetAddedNodeInfoResult, error) {
+func (c *Client) GetAddedNodeInfo(peer string) ([]hxjson.GetAddedNodeInfoResult, error) {
 	return c.GetAddedNodeInfoAsync(peer).Receive()
 }
 
@@ -132,7 +132,7 @@ func (r FutureGetAddedNodeInfoNoDNSResult) Receive() ([]string, error) {
 //
 // See GetAddedNodeInfoNoDNS for the blocking version and more details.
 func (c *Client) GetAddedNodeInfoNoDNSAsync(peer string) FutureGetAddedNodeInfoNoDNSResult {
-	cmd := dcrjson.NewGetAddedNodeInfoCmd(false, &peer)
+	cmd := hxjson.NewGetAddedNodeInfoCmd(false, &peer)
 	return c.sendCmd(cmd)
 }
 
@@ -173,7 +173,7 @@ func (r FutureGetConnectionCountResult) Receive() (int64, error) {
 //
 // See GetConnectionCount for the blocking version and more details.
 func (c *Client) GetConnectionCountAsync() FutureGetConnectionCountResult {
-	cmd := dcrjson.NewGetConnectionCountCmd()
+	cmd := hxjson.NewGetConnectionCountCmd()
 	return c.sendCmd(cmd)
 }
 
@@ -199,7 +199,7 @@ func (r FuturePingResult) Receive() error {
 //
 // See Ping for the blocking version and more details.
 func (c *Client) PingAsync() FuturePingResult {
-	cmd := dcrjson.NewPingCmd()
+	cmd := hxjson.NewPingCmd()
 	return c.sendCmd(cmd)
 }
 
@@ -217,14 +217,14 @@ type FutureGetPeerInfoResult chan *response
 
 // Receive waits for the response promised by the future and returns  data about
 // each connected network peer.
-func (r FutureGetPeerInfoResult) Receive() ([]dcrjson.GetPeerInfoResult, error) {
+func (r FutureGetPeerInfoResult) Receive() ([]hxjson.GetPeerInfoResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal result as an array of getpeerinfo result objects.
-	var peerInfo []dcrjson.GetPeerInfoResult
+	var peerInfo []hxjson.GetPeerInfoResult
 	err = json.Unmarshal(res, &peerInfo)
 	if err != nil {
 		return nil, err
@@ -239,12 +239,12 @@ func (r FutureGetPeerInfoResult) Receive() ([]dcrjson.GetPeerInfoResult, error) 
 //
 // See GetPeerInfo for the blocking version and more details.
 func (c *Client) GetPeerInfoAsync() FutureGetPeerInfoResult {
-	cmd := dcrjson.NewGetPeerInfoCmd()
+	cmd := hxjson.NewGetPeerInfoCmd()
 	return c.sendCmd(cmd)
 }
 
 // GetPeerInfo returns data about each connected network peer.
-func (c *Client) GetPeerInfo() ([]dcrjson.GetPeerInfoResult, error) {
+func (c *Client) GetPeerInfo() ([]hxjson.GetPeerInfoResult, error) {
 	return c.GetPeerInfoAsync().Receive()
 }
 
@@ -254,14 +254,14 @@ type FutureGetNetTotalsResult chan *response
 
 // Receive waits for the response promised by the future and returns network
 // traffic statistics.
-func (r FutureGetNetTotalsResult) Receive() (*dcrjson.GetNetTotalsResult, error) {
+func (r FutureGetNetTotalsResult) Receive() (*hxjson.GetNetTotalsResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal result as a getnettotals result object.
-	var totals dcrjson.GetNetTotalsResult
+	var totals hxjson.GetNetTotalsResult
 	err = json.Unmarshal(res, &totals)
 	if err != nil {
 		return nil, err
@@ -276,11 +276,11 @@ func (r FutureGetNetTotalsResult) Receive() (*dcrjson.GetNetTotalsResult, error)
 //
 // See GetNetTotals for the blocking version and more details.
 func (c *Client) GetNetTotalsAsync() FutureGetNetTotalsResult {
-	cmd := dcrjson.NewGetNetTotalsCmd()
+	cmd := hxjson.NewGetNetTotalsCmd()
 	return c.sendCmd(cmd)
 }
 
 // GetNetTotals returns network traffic statistics.
-func (c *Client) GetNetTotals() (*dcrjson.GetNetTotalsResult, error) {
+func (c *Client) GetNetTotals() (*hxjson.GetNetTotalsResult, error) {
 	return c.GetNetTotalsAsync().Receive()
 }

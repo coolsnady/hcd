@@ -16,7 +16,7 @@ import (
 
 	"github.com/coolsnady/hxd/chaincfg"
 	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/hxd/dcrjson"
+	"github.com/coolsnady/hxd/hxjson"
 	"github.com/coolsnady/hxd/hxutil"
 	"github.com/coolsnady/hxd/txscript"
 	"github.com/coolsnady/hxd/wire"
@@ -182,7 +182,7 @@ func testActiveHarnesses(r *Harness, t *testing.T) {
 
 func testJoinMempools(r *Harness, t *testing.T) {
 	// Assert main test harness has no transactions in its mempool.
-	pooledHashes, err := r.Node.GetRawMempool(dcrjson.GRMAll)
+	pooledHashes, err := r.Node.GetRawMempool(hxjson.GRMAll)
 	if err != nil {
 		t.Fatalf("unable to get mempool for main test harness: %v", err)
 	}
@@ -234,7 +234,7 @@ func testJoinMempools(r *Harness, t *testing.T) {
 	harnessSynced := make(chan struct{})
 	go func() {
 		for {
-			poolHashes, err := r.Node.GetRawMempool(dcrjson.GRMAll)
+			poolHashes, err := r.Node.GetRawMempool(hxjson.GRMAll)
 			if err != nil {
 				t.Fatalf("failed to retrieve harness mempool: %v", err)
 			}

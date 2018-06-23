@@ -8,7 +8,7 @@ import (
 	"bytes"
 	"sort"
 
-	"github.com/coolsnady/hxd/dcrjson"
+	"github.com/coolsnady/hxd/hxjson"
 )
 
 // nodeHeightSorter implements sort.Interface to allow a slice of nodes to
@@ -40,7 +40,7 @@ func (s nodeHeightSorter) Less(i, j int) bool {
 
 // ChainTips returns information, in JSON-RPC format, about all of the currently
 // known chain tips in the block index.
-func (b *BlockChain) ChainTips() []dcrjson.GetChainTipsResult {
+func (b *BlockChain) ChainTips() []hxjson.GetChainTipsResult {
 	b.index.RLock()
 	var chainTips []*blockNode
 	for _, nodes := range b.index.chainTips {
@@ -54,7 +54,7 @@ func (b *BlockChain) ChainTips() []dcrjson.GetChainTipsResult {
 
 	// Generate the results sorted by descending height.
 	sort.Sort(sort.Reverse(nodeHeightSorter(chainTips)))
-	results := make([]dcrjson.GetChainTipsResult, len(chainTips))
+	results := make([]hxjson.GetChainTipsResult, len(chainTips))
 	for i, tip := range chainTips {
 		// Find the fork point in order calculate the branch length later.
 		fork := tip

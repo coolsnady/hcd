@@ -10,7 +10,7 @@ import (
 	"encoding/json"
 
 	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/hxd/dcrjson"
+	"github.com/coolsnady/hxd/hxjson"
 	"github.com/coolsnady/hxd/hxutil"
 	"github.com/coolsnady/hxd/wire"
 )
@@ -25,14 +25,14 @@ type FutureGetTransactionResult chan *response
 
 // Receive waits for the response promised by the future and returns detailed
 // information about a wallet transaction.
-func (r FutureGetTransactionResult) Receive() (*dcrjson.GetTransactionResult, error) {
+func (r FutureGetTransactionResult) Receive() (*hxjson.GetTransactionResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal result as a gettransaction result object
-	var getTx dcrjson.GetTransactionResult
+	var getTx hxjson.GetTransactionResult
 	err = json.Unmarshal(res, &getTx)
 	if err != nil {
 		return nil, err
@@ -52,14 +52,14 @@ func (c *Client) GetTransactionAsync(txHash *chainhash.Hash) FutureGetTransactio
 		hash = txHash.String()
 	}
 
-	cmd := dcrjson.NewGetTransactionCmd(hash, nil)
+	cmd := hxjson.NewGetTransactionCmd(hash, nil)
 	return c.sendCmd(cmd)
 }
 
 // GetTransaction returns detailed information about a wallet transaction.
 //
 // See GetRawTransaction to return the raw transaction instead.
-func (c *Client) GetTransaction(txHash *chainhash.Hash) (*dcrjson.GetTransactionResult, error) {
+func (c *Client) GetTransaction(txHash *chainhash.Hash) (*hxjson.GetTransactionResult, error) {
 	return c.GetTransactionAsync(txHash).Receive()
 }
 
@@ -70,14 +70,14 @@ type FutureListTransactionsResult chan *response
 
 // Receive waits for the response promised by the future and returns a list of
 // the most recent transactions.
-func (r FutureListTransactionsResult) Receive() ([]dcrjson.ListTransactionsResult, error) {
+func (r FutureListTransactionsResult) Receive() ([]hxjson.ListTransactionsResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal result as an array of listtransaction result objects.
-	var transactions []dcrjson.ListTransactionsResult
+	var transactions []hxjson.ListTransactionsResult
 	err = json.Unmarshal(res, &transactions)
 	if err != nil {
 		return nil, err
@@ -92,7 +92,7 @@ func (r FutureListTransactionsResult) Receive() ([]dcrjson.ListTransactionsResul
 //
 // See ListTransactions for the blocking version and more details.
 func (c *Client) ListTransactionsAsync(account string) FutureListTransactionsResult {
-	cmd := dcrjson.NewListTransactionsCmd(&account, nil, nil, nil)
+	cmd := hxjson.NewListTransactionsCmd(&account, nil, nil, nil)
 	return c.sendCmd(cmd)
 }
 
@@ -100,7 +100,7 @@ func (c *Client) ListTransactionsAsync(account string) FutureListTransactionsRes
 //
 // See the ListTransactionsCount and ListTransactionsCountFrom to control the
 // number of transactions returned and starting point, respectively.
-func (c *Client) ListTransactions(account string) ([]dcrjson.ListTransactionsResult, error) {
+func (c *Client) ListTransactions(account string) ([]hxjson.ListTransactionsResult, error) {
 	return c.ListTransactionsAsync(account).Receive()
 }
 
@@ -110,7 +110,7 @@ func (c *Client) ListTransactions(account string) ([]dcrjson.ListTransactionsRes
 //
 // See ListTransactionsCount for the blocking version and more details.
 func (c *Client) ListTransactionsCountAsync(account string, count int) FutureListTransactionsResult {
-	cmd := dcrjson.NewListTransactionsCmd(&account, &count, nil, nil)
+	cmd := hxjson.NewListTransactionsCmd(&account, &count, nil, nil)
 	return c.sendCmd(cmd)
 }
 
@@ -119,7 +119,7 @@ func (c *Client) ListTransactionsCountAsync(account string, count int) FutureLis
 //
 // See the ListTransactions and ListTransactionsCountFrom functions for
 // different options.
-func (c *Client) ListTransactionsCount(account string, count int) ([]dcrjson.ListTransactionsResult, error) {
+func (c *Client) ListTransactionsCount(account string, count int) ([]hxjson.ListTransactionsResult, error) {
 	return c.ListTransactionsCountAsync(account, count).Receive()
 }
 
@@ -129,7 +129,7 @@ func (c *Client) ListTransactionsCount(account string, count int) ([]dcrjson.Lis
 //
 // See ListTransactionsCountFrom for the blocking version and more details.
 func (c *Client) ListTransactionsCountFromAsync(account string, count, from int) FutureListTransactionsResult {
-	cmd := dcrjson.NewListTransactionsCmd(&account, &count, &from, nil)
+	cmd := hxjson.NewListTransactionsCmd(&account, &count, &from, nil)
 	return c.sendCmd(cmd)
 }
 
@@ -137,7 +137,7 @@ func (c *Client) ListTransactionsCountFromAsync(account string, count, from int)
 // to the passed count while skipping the first 'from' transactions.
 //
 // See the ListTransactions and ListTransactionsCount functions to use defaults.
-func (c *Client) ListTransactionsCountFrom(account string, count, from int) ([]dcrjson.ListTransactionsResult, error) {
+func (c *Client) ListTransactionsCountFrom(account string, count, from int) ([]hxjson.ListTransactionsResult, error) {
 	return c.ListTransactionsCountFromAsync(account, count, from).Receive()
 }
 
@@ -151,14 +151,14 @@ type FutureListUnspentResult chan *response
 // future was returned by a call to ListUnspentMinAsync, ListUnspentMinMaxAsync,
 // or ListUnspentMinMaxAddressesAsync, the range may be limited by the
 // parameters of the RPC invocation.
-func (r FutureListUnspentResult) Receive() ([]dcrjson.ListUnspentResult, error) {
+func (r FutureListUnspentResult) Receive() ([]hxjson.ListUnspentResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal result as an array of listunspent results.
-	var unspent []dcrjson.ListUnspentResult
+	var unspent []hxjson.ListUnspentResult
 	err = json.Unmarshal(res, &unspent)
 	if err != nil {
 		return nil, err
@@ -173,7 +173,7 @@ func (r FutureListUnspentResult) Receive() ([]dcrjson.ListUnspentResult, error) 
 //
 // See ListUnspent for the blocking version and more details.
 func (c *Client) ListUnspentAsync() FutureListUnspentResult {
-	cmd := dcrjson.NewListUnspentCmd(nil, nil, nil)
+	cmd := hxjson.NewListUnspentCmd(nil, nil, nil)
 	return c.sendCmd(cmd)
 }
 
@@ -183,7 +183,7 @@ func (c *Client) ListUnspentAsync() FutureListUnspentResult {
 //
 // See ListUnspentMin for the blocking version and more details.
 func (c *Client) ListUnspentMinAsync(minConf int) FutureListUnspentResult {
-	cmd := dcrjson.NewListUnspentCmd(&minConf, nil, nil)
+	cmd := hxjson.NewListUnspentCmd(&minConf, nil, nil)
 	return c.sendCmd(cmd)
 }
 
@@ -193,7 +193,7 @@ func (c *Client) ListUnspentMinAsync(minConf int) FutureListUnspentResult {
 //
 // See ListUnspentMinMax for the blocking version and more details.
 func (c *Client) ListUnspentMinMaxAsync(minConf, maxConf int) FutureListUnspentResult {
-	cmd := dcrjson.NewListUnspentCmd(&minConf, &maxConf, nil)
+	cmd := hxjson.NewListUnspentCmd(&minConf, &maxConf, nil)
 	return c.sendCmd(cmd)
 }
 
@@ -208,35 +208,35 @@ func (c *Client) ListUnspentMinMaxAddressesAsync(minConf, maxConf int, addrs []h
 		addrStrs = append(addrStrs, a.EncodeAddress())
 	}
 
-	cmd := dcrjson.NewListUnspentCmd(&minConf, &maxConf, &addrStrs)
+	cmd := hxjson.NewListUnspentCmd(&minConf, &maxConf, &addrStrs)
 	return c.sendCmd(cmd)
 }
 
 // ListUnspent returns all unspent transaction outputs known to a wallet, using
 // the default number of minimum and maximum number of confirmations as a
 // filter (1 and 9999999, respectively).
-func (c *Client) ListUnspent() ([]dcrjson.ListUnspentResult, error) {
+func (c *Client) ListUnspent() ([]hxjson.ListUnspentResult, error) {
 	return c.ListUnspentAsync().Receive()
 }
 
 // ListUnspentMin returns all unspent transaction outputs known to a wallet,
 // using the specified number of minimum conformations and default number of
 // maximum confiramtions (9999999) as a filter.
-func (c *Client) ListUnspentMin(minConf int) ([]dcrjson.ListUnspentResult, error) {
+func (c *Client) ListUnspentMin(minConf int) ([]hxjson.ListUnspentResult, error) {
 	return c.ListUnspentMinAsync(minConf).Receive()
 }
 
 // ListUnspentMinMax returns all unspent transaction outputs known to a wallet,
 // using the specified number of minimum and maximum number of confirmations as
 // a filter.
-func (c *Client) ListUnspentMinMax(minConf, maxConf int) ([]dcrjson.ListUnspentResult, error) {
+func (c *Client) ListUnspentMinMax(minConf, maxConf int) ([]hxjson.ListUnspentResult, error) {
 	return c.ListUnspentMinMaxAsync(minConf, maxConf).Receive()
 }
 
 // ListUnspentMinMaxAddresses returns all unspent transaction outputs that pay
 // to any of specified addresses in a wallet using the specified number of
 // minimum and maximum number of confirmations as a filter.
-func (c *Client) ListUnspentMinMaxAddresses(minConf, maxConf int, addrs []hxutil.Address) ([]dcrjson.ListUnspentResult, error) {
+func (c *Client) ListUnspentMinMaxAddresses(minConf, maxConf int, addrs []hxutil.Address) ([]hxjson.ListUnspentResult, error) {
 	return c.ListUnspentMinMaxAddressesAsync(minConf, maxConf, addrs).Receive()
 }
 
@@ -248,14 +248,14 @@ type FutureListSinceBlockResult chan *response
 // Receive waits for the response promised by the future and returns all
 // transactions added in blocks since the specified block hash, or all
 // transactions if it is nil.
-func (r FutureListSinceBlockResult) Receive() (*dcrjson.ListSinceBlockResult, error) {
+func (r FutureListSinceBlockResult) Receive() (*hxjson.ListSinceBlockResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal result as a listsinceblock result object.
-	var listResult dcrjson.ListSinceBlockResult
+	var listResult hxjson.ListSinceBlockResult
 	err = json.Unmarshal(res, &listResult)
 	if err != nil {
 		return nil, err
@@ -272,10 +272,10 @@ func (r FutureListSinceBlockResult) Receive() (*dcrjson.ListSinceBlockResult, er
 func (c *Client) ListSinceBlockAsync(blockHash *chainhash.Hash) FutureListSinceBlockResult {
 	var hash *string
 	if blockHash != nil {
-		hash = dcrjson.String(blockHash.String())
+		hash = hxjson.String(blockHash.String())
 	}
 
-	cmd := dcrjson.NewListSinceBlockCmd(hash, nil, nil)
+	cmd := hxjson.NewListSinceBlockCmd(hash, nil, nil)
 	return c.sendCmd(cmd)
 }
 
@@ -284,7 +284,7 @@ func (c *Client) ListSinceBlockAsync(blockHash *chainhash.Hash) FutureListSinceB
 // minimum confirmations as a filter.
 //
 // See ListSinceBlockMinConf to override the minimum number of confirmations.
-func (c *Client) ListSinceBlock(blockHash *chainhash.Hash) (*dcrjson.ListSinceBlockResult, error) {
+func (c *Client) ListSinceBlock(blockHash *chainhash.Hash) (*hxjson.ListSinceBlockResult, error) {
 	return c.ListSinceBlockAsync(blockHash).Receive()
 }
 
@@ -296,10 +296,10 @@ func (c *Client) ListSinceBlock(blockHash *chainhash.Hash) (*dcrjson.ListSinceBl
 func (c *Client) ListSinceBlockMinConfAsync(blockHash *chainhash.Hash, minConfirms int) FutureListSinceBlockResult {
 	var hash *string
 	if blockHash != nil {
-		hash = dcrjson.String(blockHash.String())
+		hash = hxjson.String(blockHash.String())
 	}
 
-	cmd := dcrjson.NewListSinceBlockCmd(hash, &minConfirms, nil)
+	cmd := hxjson.NewListSinceBlockCmd(hash, &minConfirms, nil)
 	return c.sendCmd(cmd)
 }
 
@@ -308,7 +308,7 @@ func (c *Client) ListSinceBlockMinConfAsync(blockHash *chainhash.Hash, minConfir
 // number of minimum confirmations as a filter.
 //
 // See ListSinceBlock to use the default minimum number of confirmations.
-func (c *Client) ListSinceBlockMinConf(blockHash *chainhash.Hash, minConfirms int) (*dcrjson.ListSinceBlockResult, error) {
+func (c *Client) ListSinceBlockMinConf(blockHash *chainhash.Hash, minConfirms int) (*hxjson.ListSinceBlockResult, error) {
 	return c.ListSinceBlockMinConfAsync(blockHash, minConfirms).Receive()
 }
 
@@ -333,15 +333,15 @@ func (r FutureLockUnspentResult) Receive() error {
 //
 // See LockUnspent for the blocking version and more details.
 func (c *Client) LockUnspentAsync(unlock bool, ops []*wire.OutPoint) FutureLockUnspentResult {
-	outputs := make([]dcrjson.TransactionInput, len(ops))
+	outputs := make([]hxjson.TransactionInput, len(ops))
 	for i, op := range ops {
-		outputs[i] = dcrjson.TransactionInput{
+		outputs[i] = hxjson.TransactionInput{
 			Txid: op.Hash.String(),
 			Vout: op.Index,
 			Tree: op.Tree,
 		}
 	}
-	cmd := dcrjson.NewLockUnspentCmd(unlock, outputs)
+	cmd := hxjson.NewLockUnspentCmd(unlock, outputs)
 	return c.sendCmd(cmd)
 }
 
@@ -379,7 +379,7 @@ func (r FutureListLockUnspentResult) Receive() ([]*wire.OutPoint, error) {
 	}
 
 	// Unmarshal as an array of transaction inputs.
-	var inputs []dcrjson.TransactionInput
+	var inputs []hxjson.TransactionInput
 	err = json.Unmarshal(res, &inputs)
 	if err != nil {
 		return nil, err
@@ -404,7 +404,7 @@ func (r FutureListLockUnspentResult) Receive() ([]*wire.OutPoint, error) {
 //
 // See ListLockUnspent for the blocking version and more details.
 func (c *Client) ListLockUnspentAsync() FutureListLockUnspentResult {
-	cmd := dcrjson.NewListLockUnspentCmd()
+	cmd := hxjson.NewListLockUnspentCmd()
 	return c.sendCmd(cmd)
 }
 
@@ -444,7 +444,7 @@ func (r FutureSendToAddressResult) Receive() (*chainhash.Hash, error) {
 // See SendToAddress for the blocking version and more details.
 func (c *Client) SendToAddressAsync(address hxutil.Address, amount hxutil.Amount) FutureSendToAddressResult {
 	addr := address.EncodeAddress()
-	cmd := dcrjson.NewSendToAddressCmd(addr, amount.ToCoin(), nil, nil)
+	cmd := hxjson.NewSendToAddressCmd(addr, amount.ToCoin(), nil, nil)
 	return c.sendCmd(cmd)
 }
 
@@ -470,7 +470,7 @@ func (c *Client) SendToAddressCommentAsync(address hxutil.Address,
 	commentTo string) FutureSendToAddressResult {
 
 	addr := address.EncodeAddress()
-	cmd := dcrjson.NewSendToAddressCmd(addr, amount.ToCoin(), &comment,
+	cmd := hxjson.NewSendToAddressCmd(addr, amount.ToCoin(), &comment,
 		&commentTo)
 	return c.sendCmd(cmd)
 }
@@ -523,7 +523,7 @@ func (r FutureSendFromResult) Receive() (*chainhash.Hash, error) {
 // See SendFrom for the blocking version and more details.
 func (c *Client) SendFromAsync(fromAccount string, toAddress hxutil.Address, amount hxutil.Amount) FutureSendFromResult {
 	addr := toAddress.EncodeAddress()
-	cmd := dcrjson.NewSendFromCmd(fromAccount, addr, amount.ToCoin(), nil,
+	cmd := hxjson.NewSendFromCmd(fromAccount, addr, amount.ToCoin(), nil,
 		nil, nil)
 	return c.sendCmd(cmd)
 }
@@ -547,7 +547,7 @@ func (c *Client) SendFrom(fromAccount string, toAddress hxutil.Address, amount h
 // See SendFromMinConf for the blocking version and more details.
 func (c *Client) SendFromMinConfAsync(fromAccount string, toAddress hxutil.Address, amount hxutil.Amount, minConfirms int) FutureSendFromResult {
 	addr := toAddress.EncodeAddress()
-	cmd := dcrjson.NewSendFromCmd(fromAccount, addr, amount.ToCoin(),
+	cmd := hxjson.NewSendFromCmd(fromAccount, addr, amount.ToCoin(),
 		&minConfirms, nil, nil)
 	return c.sendCmd(cmd)
 }
@@ -576,7 +576,7 @@ func (c *Client) SendFromCommentAsync(fromAccount string,
 	comment, commentTo string) FutureSendFromResult {
 
 	addr := toAddress.EncodeAddress()
-	cmd := dcrjson.NewSendFromCmd(fromAccount, addr, amount.ToCoin(),
+	cmd := hxjson.NewSendFromCmd(fromAccount, addr, amount.ToCoin(),
 		&minConfirms, &comment, &commentTo)
 	return c.sendCmd(cmd)
 }
@@ -634,7 +634,7 @@ func (c *Client) SendManyAsync(fromAccount string, amounts map[hxutil.Address]hx
 	for addr, amount := range amounts {
 		convertedAmounts[addr.EncodeAddress()] = amount.ToCoin()
 	}
-	cmd := dcrjson.NewSendManyCmd(fromAccount, convertedAmounts, nil, nil)
+	cmd := hxjson.NewSendManyCmd(fromAccount, convertedAmounts, nil, nil)
 	return c.sendCmd(cmd)
 }
 
@@ -663,7 +663,7 @@ func (c *Client) SendManyMinConfAsync(fromAccount string,
 	for addr, amount := range amounts {
 		convertedAmounts[addr.EncodeAddress()] = amount.ToCoin()
 	}
-	cmd := dcrjson.NewSendManyCmd(fromAccount, convertedAmounts,
+	cmd := hxjson.NewSendManyCmd(fromAccount, convertedAmounts,
 		&minConfirms, nil)
 	return c.sendCmd(cmd)
 }
@@ -697,7 +697,7 @@ func (c *Client) SendManyCommentAsync(fromAccount string,
 	for addr, amount := range amounts {
 		convertedAmounts[addr.EncodeAddress()] = amount.ToCoin()
 	}
-	cmd := dcrjson.NewSendManyCmd(fromAccount, convertedAmounts,
+	cmd := hxjson.NewSendManyCmd(fromAccount, convertedAmounts,
 		&minConfirms, &comment)
 	return c.sendCmd(cmd)
 }
@@ -803,9 +803,9 @@ func (c *Client) PurchaseTicketAsync(fromAccount string,
 		ticketFeeFloat = ticketFee.ToCoin()
 	}
 
-	cmd := dcrjson.NewPurchaseTicketCmd(fromAccount, spendLimit.ToCoin(),
+	cmd := hxjson.NewPurchaseTicketCmd(fromAccount, spendLimit.ToCoin(),
 		&minConfVal, &ticketAddrStr, &numTicketsVal, &poolAddrStr,
-		&poolFeesFloat, &expiryVal, dcrjson.String(""), ticketChange, &ticketFeeFloat)
+		&poolFeesFloat, &expiryVal, hxjson.String(""), ticketChange, &ticketFeeFloat)
 
 	return c.sendCmd(cmd)
 }
@@ -853,7 +853,7 @@ func (r FutureSendToSStxResult) Receive() (*chainhash.Hash, error) {
 //
 // See SendToSStx for the blocking version and more details.
 func (c *Client) SendToSStxAsync(fromAccount string,
-	inputs []dcrjson.SStxInput,
+	inputs []hxjson.SStxInput,
 	amounts map[hxutil.Address]hxutil.Amount,
 	couts []SStxCommitOut) FutureSendToSStxResult {
 
@@ -861,7 +861,7 @@ func (c *Client) SendToSStxAsync(fromAccount string,
 	for addr, amount := range amounts {
 		convertedAmounts[addr.EncodeAddress()] = int64(amount)
 	}
-	convertedCouts := make([]dcrjson.SStxCommitOut, len(couts))
+	convertedCouts := make([]hxjson.SStxCommitOut, len(couts))
 	for i, cout := range couts {
 		convertedCouts[i].Addr = cout.Addr.String()
 		convertedCouts[i].CommitAmt = int64(cout.CommitAmt)
@@ -869,7 +869,7 @@ func (c *Client) SendToSStxAsync(fromAccount string,
 		convertedCouts[i].ChangeAmt = int64(cout.ChangeAmt)
 	}
 
-	cmd := dcrjson.NewSendToSStxCmd(fromAccount, convertedAmounts,
+	cmd := hxjson.NewSendToSStxCmd(fromAccount, convertedAmounts,
 		inputs, convertedCouts, nil, nil)
 
 	return c.sendCmd(cmd)
@@ -884,7 +884,7 @@ func (c *Client) SendToSStxAsync(fromAccount string,
 // NOTE: This function requires to the wallet to be unlocked.  See the
 // WalletPassphrase function for more details.
 func (c *Client) SendToSStx(fromAccount string,
-	inputs []dcrjson.SStxInput,
+	inputs []hxjson.SStxInput,
 	amounts map[hxutil.Address]hxutil.Amount,
 	couts []SStxCommitOut) (*chainhash.Hash, error) {
 
@@ -897,7 +897,7 @@ func (c *Client) SendToSStx(fromAccount string,
 //
 // See SendToSStxMinConf for the blocking version and more details.
 func (c *Client) SendToSStxMinConfAsync(fromAccount string,
-	inputs []dcrjson.SStxInput,
+	inputs []hxjson.SStxInput,
 	amounts map[hxutil.Address]hxutil.Amount,
 	couts []SStxCommitOut,
 	minConfirms int) FutureSendToSStxResult {
@@ -906,7 +906,7 @@ func (c *Client) SendToSStxMinConfAsync(fromAccount string,
 	for addr, amount := range amounts {
 		convertedAmounts[addr.EncodeAddress()] = int64(amount)
 	}
-	convertedCouts := make([]dcrjson.SStxCommitOut, len(couts))
+	convertedCouts := make([]hxjson.SStxCommitOut, len(couts))
 	for i, cout := range couts {
 		convertedCouts[i].Addr = cout.Addr.String()
 		convertedCouts[i].CommitAmt = int64(cout.CommitAmt)
@@ -914,7 +914,7 @@ func (c *Client) SendToSStxMinConfAsync(fromAccount string,
 		convertedCouts[i].ChangeAmt = int64(cout.ChangeAmt)
 	}
 
-	cmd := dcrjson.NewSendToSStxCmd(fromAccount, convertedAmounts,
+	cmd := hxjson.NewSendToSStxCmd(fromAccount, convertedAmounts,
 		inputs, convertedCouts, &minConfirms, nil)
 
 	return c.sendCmd(cmd)
@@ -930,7 +930,7 @@ func (c *Client) SendToSStxMinConfAsync(fromAccount string,
 // NOTE: This function requires to the wallet to be unlocked.  See the
 // WalletPassphrase function for more details.
 func (c *Client) SendToSStxMinConf(fromAccount string,
-	inputs []dcrjson.SStxInput,
+	inputs []hxjson.SStxInput,
 	amounts map[hxutil.Address]hxutil.Amount,
 	couts []SStxCommitOut,
 	minConfirms int) (*chainhash.Hash, error) {
@@ -944,7 +944,7 @@ func (c *Client) SendToSStxMinConf(fromAccount string,
 //
 // See SendToSStxComment for the blocking version and more details.
 func (c *Client) SendToSStxCommentAsync(fromAccount string,
-	inputs []dcrjson.SStxInput,
+	inputs []hxjson.SStxInput,
 	amounts map[hxutil.Address]hxutil.Amount,
 	couts []SStxCommitOut,
 	minConfirms int,
@@ -954,7 +954,7 @@ func (c *Client) SendToSStxCommentAsync(fromAccount string,
 	for addr, amount := range amounts {
 		convertedAmounts[addr.EncodeAddress()] = int64(amount)
 	}
-	convertedCouts := make([]dcrjson.SStxCommitOut, len(couts))
+	convertedCouts := make([]hxjson.SStxCommitOut, len(couts))
 	for i, cout := range couts {
 		convertedCouts[i].Addr = cout.Addr.String()
 		convertedCouts[i].CommitAmt = int64(cout.CommitAmt)
@@ -962,7 +962,7 @@ func (c *Client) SendToSStxCommentAsync(fromAccount string,
 		convertedCouts[i].ChangeAmt = int64(cout.ChangeAmt)
 	}
 
-	cmd := dcrjson.NewSendToSStxCmd(fromAccount, convertedAmounts,
+	cmd := hxjson.NewSendToSStxCmd(fromAccount, convertedAmounts,
 		inputs, convertedCouts, &minConfirms, &comment)
 
 	return c.sendCmd(cmd)
@@ -979,7 +979,7 @@ func (c *Client) SendToSStxCommentAsync(fromAccount string,
 // NOTE: This function requires to the wallet to be unlocked.  See the
 // WalletPassphrase function for more details.
 func (c *Client) SendToSStxComment(fromAccount string,
-	inputs []dcrjson.SStxInput,
+	inputs []hxjson.SStxInput,
 	amounts map[hxutil.Address]hxutil.Amount,
 	couts []SStxCommitOut,
 	minConfirms int,
@@ -1031,7 +1031,7 @@ func (c *Client) SendToSSGenAsync(fromAccount string,
 	ticketHashString := hex.EncodeToString(tickethash[:])
 	blockHashString := hex.EncodeToString(blockhash[:])
 
-	cmd := dcrjson.NewSendToSSGenCmd(fromAccount, ticketHashString,
+	cmd := hxjson.NewSendToSSGenCmd(fromAccount, ticketHashString,
 		blockHashString, height, votebits, nil)
 
 	return c.sendCmd(cmd)
@@ -1069,7 +1069,7 @@ func (c *Client) SendToSSGenCommentAsync(fromAccount string,
 	ticketHashString := hex.EncodeToString(tickethash[:])
 	blockHashString := hex.EncodeToString(blockhash[:])
 
-	cmd := dcrjson.NewSendToSSGenCmd(fromAccount, ticketHashString,
+	cmd := hxjson.NewSendToSSGenCmd(fromAccount, ticketHashString,
 		blockHashString, height, votebits, &comment)
 
 	return c.sendCmd(cmd)
@@ -1134,7 +1134,7 @@ func (c *Client) SendToSSRtxAsync(fromAccount string,
 
 	ticketHashString := hex.EncodeToString(tickethash[:])
 
-	cmd := dcrjson.NewSendToSSRtxCmd(fromAccount, ticketHashString, nil)
+	cmd := hxjson.NewSendToSSRtxCmd(fromAccount, ticketHashString, nil)
 
 	return c.sendCmd(cmd)
 }
@@ -1163,7 +1163,7 @@ func (c *Client) SendToSSRtxCommentAsync(fromAccount string,
 
 	ticketHashString := hex.EncodeToString(tickethash[:])
 
-	cmd := dcrjson.NewSendToSSRtxCmd(fromAccount, ticketHashString, &comment)
+	cmd := hxjson.NewSendToSSRtxCmd(fromAccount, ticketHashString, &comment)
 
 	return c.sendCmd(cmd)
 }
@@ -1224,7 +1224,7 @@ func (c *Client) AddMultisigAddressAsync(requiredSigs int, addresses []hxutil.Ad
 		addrs = append(addrs, addr.String())
 	}
 
-	cmd := dcrjson.NewAddMultisigAddressCmd(requiredSigs, addrs, &account)
+	cmd := hxjson.NewAddMultisigAddressCmd(requiredSigs, addrs, &account)
 	return c.sendCmd(cmd)
 }
 
@@ -1241,14 +1241,14 @@ type FutureCreateMultisigResult chan *response
 
 // Receive waits for the response promised by the future and returns the
 // multisignature address and script needed to redeem it.
-func (r FutureCreateMultisigResult) Receive() (*dcrjson.CreateMultiSigResult, error) {
+func (r FutureCreateMultisigResult) Receive() (*hxjson.CreateMultiSigResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal result as a createmultisig result object.
-	var multisigRes dcrjson.CreateMultiSigResult
+	var multisigRes hxjson.CreateMultiSigResult
 	err = json.Unmarshal(res, &multisigRes)
 	if err != nil {
 		return nil, err
@@ -1268,14 +1268,14 @@ func (c *Client) CreateMultisigAsync(requiredSigs int, addresses []hxutil.Addres
 		addrs = append(addrs, addr.String())
 	}
 
-	cmd := dcrjson.NewCreateMultisigCmd(requiredSigs, addrs)
+	cmd := hxjson.NewCreateMultisigCmd(requiredSigs, addrs)
 	return c.sendCmd(cmd)
 }
 
 // CreateMultisig creates a multisignature address that requires the specified
 // number of signatures for the provided addresses and returns the
 // multisignature address and script needed to redeem it.
-func (c *Client) CreateMultisig(requiredSigs int, addresses []hxutil.Address) (*dcrjson.CreateMultiSigResult, error) {
+func (c *Client) CreateMultisig(requiredSigs int, addresses []hxutil.Address) (*hxjson.CreateMultiSigResult, error) {
 	return c.CreateMultisigAsync(requiredSigs, addresses).Receive()
 }
 
@@ -1296,7 +1296,7 @@ func (r FutureCreateNewAccountResult) Receive() error {
 //
 // See CreateNewAccount for the blocking version and more details.
 func (c *Client) CreateNewAccountAsync(account string, acctype int32) FutureCreateNewAccountResult {
-	cmd := dcrjson.NewCreateNewAccountCmd(account, acctype)
+	cmd := hxjson.NewCreateNewAccountCmd(account, acctype)
 	return c.sendCmd(cmd)
 }
 
@@ -1345,7 +1345,7 @@ const (
 //
 // See GetNewAddress for the blocking version and more details.
 func (c *Client) GetNewAddressAsync(account string) FutureGetNewAddressResult {
-	cmd := dcrjson.NewGetNewAddressCmd(&account, nil)
+	cmd := hxjson.NewGetNewAddressCmd(&account, nil)
 	return c.sendCmd(cmd)
 }
 
@@ -1355,7 +1355,7 @@ func (c *Client) GetNewAddressAsync(account string) FutureGetNewAddressResult {
 //
 // See GetNewAddressGapPolicy for the blocking version and more details.
 func (c *Client) GetNewAddressGapPolicyAsync(account string, gapPolicy GapPolicy) FutureGetNewAddressResult {
-	cmd := dcrjson.NewGetNewAddressCmd(&account, (*string)(&gapPolicy))
+	cmd := hxjson.NewGetNewAddressCmd(&account, (*string)(&gapPolicy))
 	return c.sendCmd(cmd)
 }
 
@@ -1399,7 +1399,7 @@ func (r FutureGetRawChangeAddressResult) Receive() (hxutil.Address, error) {
 //
 // See GetRawChangeAddress for the blocking version and more details.
 func (c *Client) GetRawChangeAddressAsync(account string) FutureGetRawChangeAddressResult {
-	cmd := dcrjson.NewGetRawChangeAddressCmd(&account)
+	cmd := hxjson.NewGetRawChangeAddressCmd(&account)
 	return c.sendCmd(cmd)
 }
 
@@ -1438,7 +1438,7 @@ func (r FutureGetAccountAddressResult) Receive() (hxutil.Address, error) {
 //
 // See GetAccountAddress for the blocking version and more details.
 func (c *Client) GetAccountAddressAsync(account string) FutureGetAccountAddressResult {
-	cmd := dcrjson.NewGetAccountAddressCmd(account)
+	cmd := hxjson.NewGetAccountAddressCmd(account)
 	return c.sendCmd(cmd)
 }
 
@@ -1477,7 +1477,7 @@ func (r FutureGetAccountResult) Receive() (string, error) {
 // See GetAccount for the blocking version and more details.
 func (c *Client) GetAccountAsync(address hxutil.Address) FutureGetAccountResult {
 	addr := address.EncodeAddress()
-	cmd := dcrjson.NewGetAccountCmd(addr)
+	cmd := hxjson.NewGetAccountCmd(addr)
 	return c.sendCmd(cmd)
 }
 
@@ -1523,7 +1523,7 @@ func (r FutureGetAddressesByAccountResult) Receive() ([]hxutil.Address, error) {
 //
 // See GetAddressesByAccount for the blocking version and more details.
 func (c *Client) GetAddressesByAccountAsync(account string) FutureGetAddressesByAccountResult {
-	cmd := dcrjson.NewGetAddressesByAccountCmd(account)
+	cmd := hxjson.NewGetAddressesByAccountCmd(account)
 	return c.sendCmd(cmd)
 }
 
@@ -1573,7 +1573,7 @@ func (r FutureRenameAccountResult) Receive() error {
 //
 // See RenameAccount for the blocking version and more details.
 func (c *Client) RenameAccountAsync(oldAccount, newAccount string) FutureRenameAccountResult {
-	cmd := dcrjson.NewRenameAccountCmd(oldAccount, newAccount)
+	cmd := hxjson.NewRenameAccountCmd(oldAccount, newAccount)
 	return c.sendCmd(cmd)
 }
 
@@ -1588,14 +1588,14 @@ type FutureValidateAddressResult chan *response
 
 // Receive waits for the response promised by the future and returns information
 // about the given Decred address.
-func (r FutureValidateAddressResult) Receive() (*dcrjson.ValidateAddressWalletResult, error) {
+func (r FutureValidateAddressResult) Receive() (*hxjson.ValidateAddressWalletResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal result as a validateaddress result object.
-	var addrResult dcrjson.ValidateAddressWalletResult
+	var addrResult hxjson.ValidateAddressWalletResult
 	err = json.Unmarshal(res, &addrResult)
 	if err != nil {
 		return nil, err
@@ -1611,12 +1611,12 @@ func (r FutureValidateAddressResult) Receive() (*dcrjson.ValidateAddressWalletRe
 // See ValidateAddress for the blocking version and more details.
 func (c *Client) ValidateAddressAsync(address hxutil.Address) FutureValidateAddressResult {
 	addr := address.EncodeAddress()
-	cmd := dcrjson.NewValidateAddressCmd(addr)
+	cmd := hxjson.NewValidateAddressCmd(addr)
 	return c.sendCmd(cmd)
 }
 
 // ValidateAddress returns information about the given Decred address.
-func (c *Client) ValidateAddress(address hxutil.Address) (*dcrjson.ValidateAddressWalletResult, error) {
+func (c *Client) ValidateAddress(address hxutil.Address) (*hxjson.ValidateAddressWalletResult, error) {
 	return c.ValidateAddressAsync(address).Receive()
 }
 
@@ -1637,7 +1637,7 @@ func (r FutureKeyPoolRefillResult) Receive() error {
 //
 // See KeyPoolRefill for the blocking version and more details.
 func (c *Client) KeyPoolRefillAsync() FutureKeyPoolRefillResult {
-	cmd := dcrjson.NewKeyPoolRefillCmd(nil)
+	cmd := hxjson.NewKeyPoolRefillCmd(nil)
 	return c.sendCmd(cmd)
 }
 
@@ -1654,7 +1654,7 @@ func (c *Client) KeyPoolRefill() error {
 //
 // See KeyPoolRefillSize for the blocking version and more details.
 func (c *Client) KeyPoolRefillSizeAsync(newSize uint) FutureKeyPoolRefillResult {
-	cmd := dcrjson.NewKeyPoolRefillCmd(&newSize)
+	cmd := hxjson.NewKeyPoolRefillCmd(&newSize)
 	return c.sendCmd(cmd)
 }
 
@@ -1707,7 +1707,7 @@ func (r FutureListAccountsResult) Receive() (map[string]hxutil.Amount, error) {
 //
 // See ListAccounts for the blocking version and more details.
 func (c *Client) ListAccountsAsync() FutureListAccountsResult {
-	cmd := dcrjson.NewListAccountsCmd(nil)
+	cmd := hxjson.NewListAccountsCmd(nil)
 	return c.sendCmd(cmd)
 }
 
@@ -1725,7 +1725,7 @@ func (c *Client) ListAccounts() (map[string]hxutil.Amount, error) {
 //
 // See ListAccountsMinConf for the blocking version and more details.
 func (c *Client) ListAccountsMinConfAsync(minConfirms int) FutureListAccountsResult {
-	cmd := dcrjson.NewListAccountsCmd(&minConfirms)
+	cmd := hxjson.NewListAccountsCmd(&minConfirms)
 	return c.sendCmd(cmd)
 }
 
@@ -1744,14 +1744,14 @@ type FutureGetBalanceResult chan *response
 
 // Receive waits for the response promised by the future and returns the
 // available balance from the server for the specified account.
-func (r FutureGetBalanceResult) Receive() (*dcrjson.GetBalanceResult, error) {
+func (r FutureGetBalanceResult) Receive() (*hxjson.GetBalanceResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal result as a floating point number.
-	var balance dcrjson.GetBalanceResult
+	var balance hxjson.GetBalanceResult
 	err = json.Unmarshal(res, &balance)
 	if err != nil {
 		return nil, err
@@ -1766,7 +1766,7 @@ func (r FutureGetBalanceResult) Receive() (*dcrjson.GetBalanceResult, error) {
 //
 // See GetBalance for the blocking version and more details.
 func (c *Client) GetBalanceAsync(account string) FutureGetBalanceResult {
-	cmd := dcrjson.NewGetBalanceCmd(&account, nil)
+	cmd := hxjson.NewGetBalanceCmd(&account, nil)
 	return c.sendCmd(cmd)
 }
 
@@ -1775,7 +1775,7 @@ func (c *Client) GetBalanceAsync(account string) FutureGetBalanceResult {
 // be "*" for all accounts.
 //
 // See GetBalanceMinConf to override the minimum number of confirmations.
-func (c *Client) GetBalance(account string) (*dcrjson.GetBalanceResult, error) {
+func (c *Client) GetBalance(account string) (*hxjson.GetBalanceResult, error) {
 	return c.GetBalanceAsync(account).Receive()
 }
 
@@ -1785,7 +1785,7 @@ func (c *Client) GetBalance(account string) (*dcrjson.GetBalanceResult, error) {
 //
 // See GetBalanceMinConf for the blocking version and more details.
 func (c *Client) GetBalanceMinConfAsync(account string, minConfirms int) FutureGetBalanceResult {
-	cmd := dcrjson.NewGetBalanceCmd(&account, &minConfirms)
+	cmd := hxjson.NewGetBalanceCmd(&account, &minConfirms)
 	return c.sendCmd(cmd)
 }
 
@@ -1794,7 +1794,7 @@ func (c *Client) GetBalanceMinConfAsync(account string, minConfirms int) FutureG
 // account may be "*" for all accounts.
 //
 // See GetBalance to use the default minimum number of confirmations.
-func (c *Client) GetBalanceMinConf(account string, minConfirms int) (*dcrjson.GetBalanceResult, error) {
+func (c *Client) GetBalanceMinConf(account string, minConfirms int) (*hxjson.GetBalanceResult, error) {
 	return c.GetBalanceMinConfAsync(account, minConfirms).Receive()
 }
 
@@ -1832,7 +1832,7 @@ func (r FutureGetReceivedByAccountResult) Receive() (hxutil.Amount, error) {
 //
 // See GetReceivedByAccount for the blocking version and more details.
 func (c *Client) GetReceivedByAccountAsync(account string) FutureGetReceivedByAccountResult {
-	cmd := dcrjson.NewGetReceivedByAccountCmd(account, nil)
+	cmd := hxjson.NewGetReceivedByAccountCmd(account, nil)
 	return c.sendCmd(cmd)
 }
 
@@ -1851,7 +1851,7 @@ func (c *Client) GetReceivedByAccount(account string) (hxutil.Amount, error) {
 //
 // See GetReceivedByAccountMinConf for the blocking version and more details.
 func (c *Client) GetReceivedByAccountMinConfAsync(account string, minConfirms int) FutureGetReceivedByAccountResult {
-	cmd := dcrjson.NewGetReceivedByAccountCmd(account, &minConfirms)
+	cmd := hxjson.NewGetReceivedByAccountCmd(account, &minConfirms)
 	return c.sendCmd(cmd)
 }
 
@@ -1897,7 +1897,7 @@ func (r FutureGetUnconfirmedBalanceResult) Receive() (hxutil.Amount, error) {
 //
 // See GetUnconfirmedBalance for the blocking version and more details.
 func (c *Client) GetUnconfirmedBalanceAsync(account string) FutureGetUnconfirmedBalanceResult {
-	cmd := dcrjson.NewGetUnconfirmedBalanceCmd(&account)
+	cmd := hxjson.NewGetUnconfirmedBalanceCmd(&account)
 	return c.sendCmd(cmd)
 }
 
@@ -1942,7 +1942,7 @@ func (r FutureGetReceivedByAddressResult) Receive() (hxutil.Amount, error) {
 // See GetReceivedByAddress for the blocking version and more details.
 func (c *Client) GetReceivedByAddressAsync(address hxutil.Address) FutureGetReceivedByAddressResult {
 	addr := address.EncodeAddress()
-	cmd := dcrjson.NewGetReceivedByAddressCmd(addr, nil)
+	cmd := hxjson.NewGetReceivedByAddressCmd(addr, nil)
 	return c.sendCmd(cmd)
 
 }
@@ -1963,7 +1963,7 @@ func (c *Client) GetReceivedByAddress(address hxutil.Address) (hxutil.Amount, er
 // See GetReceivedByAddressMinConf for the blocking version and more details.
 func (c *Client) GetReceivedByAddressMinConfAsync(address hxutil.Address, minConfirms int) FutureGetReceivedByAddressResult {
 	addr := address.EncodeAddress()
-	cmd := dcrjson.NewGetReceivedByAddressCmd(addr, &minConfirms)
+	cmd := hxjson.NewGetReceivedByAddressCmd(addr, &minConfirms)
 	return c.sendCmd(cmd)
 }
 
@@ -1983,14 +1983,14 @@ type FutureListReceivedByAccountResult chan *response
 
 // Receive waits for the response promised by the future and returns a list of
 // balances by account.
-func (r FutureListReceivedByAccountResult) Receive() ([]dcrjson.ListReceivedByAccountResult, error) {
+func (r FutureListReceivedByAccountResult) Receive() ([]hxjson.ListReceivedByAccountResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal as an array of listreceivedbyaccount result objects.
-	var received []dcrjson.ListReceivedByAccountResult
+	var received []hxjson.ListReceivedByAccountResult
 	err = json.Unmarshal(res, &received)
 	if err != nil {
 		return nil, err
@@ -2005,7 +2005,7 @@ func (r FutureListReceivedByAccountResult) Receive() ([]dcrjson.ListReceivedByAc
 //
 // See ListReceivedByAccount for the blocking version and more details.
 func (c *Client) ListReceivedByAccountAsync() FutureListReceivedByAccountResult {
-	cmd := dcrjson.NewListReceivedByAccountCmd(nil, nil, nil)
+	cmd := hxjson.NewListReceivedByAccountCmd(nil, nil, nil)
 	return c.sendCmd(cmd)
 }
 
@@ -2016,7 +2016,7 @@ func (c *Client) ListReceivedByAccountAsync() FutureListReceivedByAccountResult 
 // See ListReceivedByAccountMinConf to override the minimum number of
 // confirmations and ListReceivedByAccountIncludeEmpty to filter accounts that
 // haven't received any payments from the results.
-func (c *Client) ListReceivedByAccount() ([]dcrjson.ListReceivedByAccountResult, error) {
+func (c *Client) ListReceivedByAccount() ([]hxjson.ListReceivedByAccountResult, error) {
 	return c.ListReceivedByAccountAsync().Receive()
 }
 
@@ -2026,7 +2026,7 @@ func (c *Client) ListReceivedByAccount() ([]dcrjson.ListReceivedByAccountResult,
 //
 // See ListReceivedByAccountMinConf for the blocking version and more details.
 func (c *Client) ListReceivedByAccountMinConfAsync(minConfirms int) FutureListReceivedByAccountResult {
-	cmd := dcrjson.NewListReceivedByAccountCmd(&minConfirms, nil, nil)
+	cmd := hxjson.NewListReceivedByAccountCmd(&minConfirms, nil, nil)
 	return c.sendCmd(cmd)
 }
 
@@ -2037,7 +2037,7 @@ func (c *Client) ListReceivedByAccountMinConfAsync(minConfirms int) FutureListRe
 // See ListReceivedByAccount to use the default minimum number of confirmations
 // and ListReceivedByAccountIncludeEmpty to also filter accounts that haven't
 // received any payments from the results.
-func (c *Client) ListReceivedByAccountMinConf(minConfirms int) ([]dcrjson.ListReceivedByAccountResult, error) {
+func (c *Client) ListReceivedByAccountMinConf(minConfirms int) ([]hxjson.ListReceivedByAccountResult, error) {
 	return c.ListReceivedByAccountMinConfAsync(minConfirms).Receive()
 }
 
@@ -2047,7 +2047,7 @@ func (c *Client) ListReceivedByAccountMinConf(minConfirms int) ([]dcrjson.ListRe
 //
 // See ListReceivedByAccountIncludeEmpty for the blocking version and more details.
 func (c *Client) ListReceivedByAccountIncludeEmptyAsync(minConfirms int, includeEmpty bool) FutureListReceivedByAccountResult {
-	cmd := dcrjson.NewListReceivedByAccountCmd(&minConfirms, &includeEmpty,
+	cmd := hxjson.NewListReceivedByAccountCmd(&minConfirms, &includeEmpty,
 		nil)
 	return c.sendCmd(cmd)
 }
@@ -2057,7 +2057,7 @@ func (c *Client) ListReceivedByAccountIncludeEmptyAsync(minConfirms int, include
 // haven't received any payments depending on specified flag.
 //
 // See ListReceivedByAccount and ListReceivedByAccountMinConf to use defaults.
-func (c *Client) ListReceivedByAccountIncludeEmpty(minConfirms int, includeEmpty bool) ([]dcrjson.ListReceivedByAccountResult, error) {
+func (c *Client) ListReceivedByAccountIncludeEmpty(minConfirms int, includeEmpty bool) ([]hxjson.ListReceivedByAccountResult, error) {
 	return c.ListReceivedByAccountIncludeEmptyAsync(minConfirms,
 		includeEmpty).Receive()
 }
@@ -2070,14 +2070,14 @@ type FutureListReceivedByAddressResult chan *response
 
 // Receive waits for the response promised by the future and returns a list of
 // balances by address.
-func (r FutureListReceivedByAddressResult) Receive() ([]dcrjson.ListReceivedByAddressResult, error) {
+func (r FutureListReceivedByAddressResult) Receive() ([]hxjson.ListReceivedByAddressResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal as an array of listreceivedbyaddress result objects.
-	var received []dcrjson.ListReceivedByAddressResult
+	var received []hxjson.ListReceivedByAddressResult
 	err = json.Unmarshal(res, &received)
 	if err != nil {
 		return nil, err
@@ -2092,7 +2092,7 @@ func (r FutureListReceivedByAddressResult) Receive() ([]dcrjson.ListReceivedByAd
 //
 // See ListReceivedByAddress for the blocking version and more details.
 func (c *Client) ListReceivedByAddressAsync() FutureListReceivedByAddressResult {
-	cmd := dcrjson.NewListReceivedByAddressCmd(nil, nil, nil)
+	cmd := hxjson.NewListReceivedByAddressCmd(nil, nil, nil)
 	return c.sendCmd(cmd)
 }
 
@@ -2103,7 +2103,7 @@ func (c *Client) ListReceivedByAddressAsync() FutureListReceivedByAddressResult 
 // See ListReceivedByAddressMinConf to override the minimum number of
 // confirmations and ListReceivedByAddressIncludeEmpty to also include addresses
 // that haven't received any payments in the results.
-func (c *Client) ListReceivedByAddress() ([]dcrjson.ListReceivedByAddressResult, error) {
+func (c *Client) ListReceivedByAddress() ([]hxjson.ListReceivedByAddressResult, error) {
 	return c.ListReceivedByAddressAsync().Receive()
 }
 
@@ -2113,7 +2113,7 @@ func (c *Client) ListReceivedByAddress() ([]dcrjson.ListReceivedByAddressResult,
 //
 // See ListReceivedByAddressMinConf for the blocking version and more details.
 func (c *Client) ListReceivedByAddressMinConfAsync(minConfirms int) FutureListReceivedByAddressResult {
-	cmd := dcrjson.NewListReceivedByAddressCmd(&minConfirms, nil, nil)
+	cmd := hxjson.NewListReceivedByAddressCmd(&minConfirms, nil, nil)
 	return c.sendCmd(cmd)
 }
 
@@ -2124,7 +2124,7 @@ func (c *Client) ListReceivedByAddressMinConfAsync(minConfirms int) FutureListRe
 // See ListReceivedByAddress to use the default minimum number of confirmations
 // and ListReceivedByAddressIncludeEmpty to also include addresses that haven't
 // received any payments in the results.
-func (c *Client) ListReceivedByAddressMinConf(minConfirms int) ([]dcrjson.ListReceivedByAddressResult, error) {
+func (c *Client) ListReceivedByAddressMinConf(minConfirms int) ([]hxjson.ListReceivedByAddressResult, error) {
 	return c.ListReceivedByAddressMinConfAsync(minConfirms).Receive()
 }
 
@@ -2134,7 +2134,7 @@ func (c *Client) ListReceivedByAddressMinConf(minConfirms int) ([]dcrjson.ListRe
 //
 // See ListReceivedByAccountIncludeEmpty for the blocking version and more details.
 func (c *Client) ListReceivedByAddressIncludeEmptyAsync(minConfirms int, includeEmpty bool) FutureListReceivedByAddressResult {
-	cmd := dcrjson.NewListReceivedByAddressCmd(&minConfirms, &includeEmpty,
+	cmd := hxjson.NewListReceivedByAddressCmd(&minConfirms, &includeEmpty,
 		nil)
 	return c.sendCmd(cmd)
 }
@@ -2144,7 +2144,7 @@ func (c *Client) ListReceivedByAddressIncludeEmptyAsync(minConfirms int, include
 // haven't received any payments depending on specified flag.
 //
 // See ListReceivedByAddress and ListReceivedByAddressMinConf to use defaults.
-func (c *Client) ListReceivedByAddressIncludeEmpty(minConfirms int, includeEmpty bool) ([]dcrjson.ListReceivedByAddressResult, error) {
+func (c *Client) ListReceivedByAddressIncludeEmpty(minConfirms int, includeEmpty bool) ([]hxjson.ListReceivedByAddressResult, error) {
 	return c.ListReceivedByAddressIncludeEmptyAsync(minConfirms,
 		includeEmpty).Receive()
 }
@@ -2170,7 +2170,7 @@ func (r FutureWalletLockResult) Receive() error {
 //
 // See WalletLock for the blocking version and more details.
 func (c *Client) WalletLockAsync() FutureWalletLockResult {
-	cmd := dcrjson.NewWalletLockCmd()
+	cmd := hxjson.NewWalletLockCmd()
 	return c.sendCmd(cmd)
 }
 
@@ -2187,7 +2187,7 @@ func (c *Client) WalletLock() error {
 // decryption key which is then stored in memory for the specified timeout
 // (in seconds).
 func (c *Client) WalletPassphrase(passphrase string, timeoutSecs int64) error {
-	cmd := dcrjson.NewWalletPassphraseCmd(passphrase, timeoutSecs)
+	cmd := hxjson.NewWalletPassphraseCmd(passphrase, timeoutSecs)
 	_, err := c.sendCmdAndWait(cmd)
 	return err
 }
@@ -2209,7 +2209,7 @@ func (r FutureWalletPassphraseChangeResult) Receive() error {
 //
 // See WalletPassphraseChange for the blocking version and more details.
 func (c *Client) WalletPassphraseChangeAsync(old, new string) FutureWalletPassphraseChangeResult {
-	cmd := dcrjson.NewWalletPassphraseChangeCmd(old, new)
+	cmd := hxjson.NewWalletPassphraseChangeCmd(old, new)
 	return c.sendCmd(cmd)
 }
 
@@ -2252,7 +2252,7 @@ func (r FutureSignMessageResult) Receive() (string, error) {
 // See SignMessage for the blocking version and more details.
 func (c *Client) SignMessageAsync(address hxutil.Address, message string) FutureSignMessageResult {
 	addr := address.EncodeAddress()
-	cmd := dcrjson.NewSignMessageCmd(addr, message)
+	cmd := hxjson.NewSignMessageCmd(addr, message)
 	return c.sendCmd(cmd)
 }
 
@@ -2293,7 +2293,7 @@ func (r FutureVerifyMessageResult) Receive() (bool, error) {
 // See VerifyMessage for the blocking version and more details.
 func (c *Client) VerifyMessageAsync(address hxutil.Address, signature, message string) FutureVerifyMessageResult {
 	addr := address.EncodeAddress()
-	cmd := dcrjson.NewVerifyMessageCmd(addr, signature, message)
+	cmd := hxjson.NewVerifyMessageCmd(addr, signature, message)
 	return c.sendCmd(cmd)
 }
 
@@ -2339,7 +2339,7 @@ func (r FutureDumpPrivKeyResult) Receive() (*hxutil.WIF, error) {
 // See DumpPrivKey for the blocking version and more details.
 func (c *Client) DumpPrivKeyAsync(address hxutil.Address) FutureDumpPrivKeyResult {
 	addr := address.EncodeAddress()
-	cmd := dcrjson.NewDumpPrivKeyCmd(addr)
+	cmd := hxjson.NewDumpPrivKeyCmd(addr)
 	return c.sendCmd(cmd)
 }
 
@@ -2369,7 +2369,7 @@ func (r FutureImportAddressResult) Receive() error {
 //
 // See ImportAddress for the blocking version and more details.
 func (c *Client) ImportAddressAsync(address string) FutureImportAddressResult {
-	cmd := dcrjson.NewImportAddressCmd(address, nil)
+	cmd := hxjson.NewImportAddressCmd(address, nil)
 	return c.sendCmd(cmd)
 }
 
@@ -2384,7 +2384,7 @@ func (c *Client) ImportAddress(address string) error {
 //
 // See ImportAddress for the blocking version and more details.
 func (c *Client) ImportAddressRescanAsync(address string, rescan bool) FutureImportAddressResult {
-	cmd := dcrjson.NewImportAddressCmd(address, &rescan)
+	cmd := hxjson.NewImportAddressCmd(address, &rescan)
 	return c.sendCmd(cmd)
 }
 
@@ -2417,7 +2417,7 @@ func (c *Client) ImportPrivKeyAsync(privKeyWIF *hxutil.WIF) FutureImportPrivKeyR
 		wif = privKeyWIF.String()
 	}
 
-	cmd := dcrjson.NewImportPrivKeyCmd(wif, nil, nil, nil)
+	cmd := hxjson.NewImportPrivKeyCmd(wif, nil, nil, nil)
 	return c.sendCmd(cmd)
 }
 
@@ -2438,7 +2438,7 @@ func (c *Client) ImportPrivKeyLabelAsync(privKeyWIF *hxutil.WIF, label string) F
 		wif = privKeyWIF.String()
 	}
 
-	cmd := dcrjson.NewImportPrivKeyCmd(wif, &label, nil, nil)
+	cmd := hxjson.NewImportPrivKeyCmd(wif, &label, nil, nil)
 	return c.sendCmd(cmd)
 }
 
@@ -2459,7 +2459,7 @@ func (c *Client) ImportPrivKeyRescanAsync(privKeyWIF *hxutil.WIF, label string, 
 		wif = privKeyWIF.String()
 	}
 
-	cmd := dcrjson.NewImportPrivKeyCmd(wif, &label, &rescan, nil)
+	cmd := hxjson.NewImportPrivKeyCmd(wif, &label, &rescan, nil)
 	return c.sendCmd(cmd)
 }
 
@@ -2482,7 +2482,7 @@ func (c *Client) ImportPrivKeyRescanFromAsync(privKeyWIF *hxutil.WIF, label stri
 		wif = privKeyWIF.String()
 	}
 
-	cmd := dcrjson.NewImportPrivKeyCmd(wif, &label, &rescan, &scanFrom)
+	cmd := hxjson.NewImportPrivKeyCmd(wif, &label, &rescan, &scanFrom)
 	return c.sendCmd(cmd)
 }
 
@@ -2511,7 +2511,7 @@ func (r FutureImportPubKeyResult) Receive() error {
 //
 // See ImportPubKey for the blocking version and more details.
 func (c *Client) ImportPubKeyAsync(pubKey string) FutureImportPubKeyResult {
-	cmd := dcrjson.NewImportPubKeyCmd(pubKey, nil)
+	cmd := hxjson.NewImportPubKeyCmd(pubKey, nil)
 	return c.sendCmd(cmd)
 }
 
@@ -2526,7 +2526,7 @@ func (c *Client) ImportPubKey(pubKey string) error {
 //
 // See ImportPubKey for the blocking version and more details.
 func (c *Client) ImportPubKeyRescanAsync(pubKey string, rescan bool) FutureImportPubKeyResult {
-	cmd := dcrjson.NewImportPubKeyCmd(pubKey, &rescan)
+	cmd := hxjson.NewImportPubKeyCmd(pubKey, &rescan)
 	return c.sendCmd(cmd)
 }
 
@@ -2557,7 +2557,7 @@ func (c *Client) ImportScriptAsync(script []byte) FutureImportScriptResult {
 		scriptStr = hex.EncodeToString(script)
 	}
 
-	cmd := dcrjson.NewImportScriptCmd(scriptStr, nil, nil)
+	cmd := hxjson.NewImportScriptCmd(scriptStr, nil, nil)
 	return c.sendCmd(cmd)
 }
 
@@ -2577,7 +2577,7 @@ func (c *Client) ImportScriptRescanAsync(script []byte, rescan bool) FutureImpor
 		scriptStr = hex.EncodeToString(script)
 	}
 
-	cmd := dcrjson.NewImportScriptCmd(scriptStr, &rescan, nil)
+	cmd := hxjson.NewImportScriptCmd(scriptStr, &rescan, nil)
 	return c.sendCmd(cmd)
 }
 
@@ -2598,7 +2598,7 @@ func (c *Client) ImportScriptRescanFromAsync(script []byte, rescan bool, scanFro
 		scriptStr = hex.EncodeToString(script)
 	}
 
-	cmd := dcrjson.NewImportScriptCmd(scriptStr, &rescan, &scanFrom)
+	cmd := hxjson.NewImportScriptCmd(scriptStr, &rescan, &scanFrom)
 	return c.sendCmd(cmd)
 }
 
@@ -2641,7 +2641,7 @@ func (r FutureAccountAddressIndexResult) Receive() (int, error) {
 //
 // See AccountAddressIndex for the blocking version and more details.
 func (c *Client) AccountAddressIndexAsync(account string, branch uint32) FutureAccountAddressIndexResult {
-	cmd := dcrjson.NewAccountAddressIndexCmd(account, int(branch))
+	cmd := hxjson.NewAccountAddressIndexCmd(account, int(branch))
 	return c.sendCmd(cmd)
 }
 
@@ -2668,7 +2668,7 @@ func (r FutureAccountSyncAddressIndexResult) Receive() error {
 //
 // See AccountSyncAddressIndex for the blocking version and more details.
 func (c *Client) AccountSyncAddressIndexAsync(account string, branch uint32, index int) FutureAccountSyncAddressIndexResult {
-	cmd := dcrjson.NewAccountSyncAddressIndexCmd(account, int(branch), index)
+	cmd := hxjson.NewAccountSyncAddressIndexCmd(account, int(branch), index)
 	return c.sendCmd(cmd)
 }
 
@@ -2695,7 +2695,7 @@ func (r FutureRevokeTicketsResult) Receive() error {
 //
 // See RevokeTickets for the blocking version and more details.
 func (c *Client) RevokeTicketsAsync() FutureRevokeTicketsResult {
-	cmd := dcrjson.NewRevokeTicketsCmd()
+	cmd := hxjson.NewRevokeTicketsCmd()
 	return c.sendCmd(cmd)
 }
 
@@ -2722,7 +2722,7 @@ func (r FutureAddTicketResult) Receive() error {
 //
 // See AddTicket for the blocking version and more details.
 func (c *Client) AddTicketAsync(rawHex string) FutureAddTicketResult {
-	cmd := dcrjson.NewAddTicketCmd(rawHex)
+	cmd := hxjson.NewAddTicketCmd(rawHex)
 	return c.sendCmd(cmd)
 }
 
@@ -2744,14 +2744,14 @@ type FutureGenerateVoteResult chan *response
 
 // Receive waits for the response promised by the future and returns the info
 // provided by the server.
-func (r FutureGenerateVoteResult) Receive() (*dcrjson.GenerateVoteResult, error) {
+func (r FutureGenerateVoteResult) Receive() (*hxjson.GenerateVoteResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal result as a getinfo result object.
-	var infoRes dcrjson.GenerateVoteResult
+	var infoRes hxjson.GenerateVoteResult
 	err = json.Unmarshal(res, &infoRes)
 	if err != nil {
 		return nil, err
@@ -2766,12 +2766,12 @@ func (r FutureGenerateVoteResult) Receive() (*dcrjson.GenerateVoteResult, error)
 //
 // See GenerateVote for the blocking version and more details.
 func (c *Client) GenerateVoteAsync(blockHash *chainhash.Hash, height int64, sstxHash *chainhash.Hash, voteBits uint16, voteBitsExt string) FutureGenerateVoteResult {
-	cmd := dcrjson.NewGenerateVoteCmd(blockHash.String(), height, sstxHash.String(), voteBits, voteBitsExt)
+	cmd := hxjson.NewGenerateVoteCmd(blockHash.String(), height, sstxHash.String(), voteBits, voteBitsExt)
 	return c.sendCmd(cmd)
 }
 
 // GenerateVote returns hex of an SSGen.
-func (c *Client) GenerateVote(blockHash *chainhash.Hash, height int64, sstxHash *chainhash.Hash, voteBits uint16, voteBitsExt string) (*dcrjson.GenerateVoteResult, error) {
+func (c *Client) GenerateVote(blockHash *chainhash.Hash, height int64, sstxHash *chainhash.Hash, voteBits uint16, voteBitsExt string) (*hxjson.GenerateVoteResult, error) {
 	return c.GenerateVoteAsync(blockHash, height, sstxHash, voteBits, voteBitsExt).Receive()
 }
 
@@ -2784,14 +2784,14 @@ type FutureGetInfoResult chan *response
 
 // Receive waits for the response promised by the future and returns the info
 // provided by the server.
-func (r FutureGetInfoResult) Receive() (*dcrjson.InfoWalletResult, error) {
+func (r FutureGetInfoResult) Receive() (*hxjson.InfoWalletResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal result as a getinfo result object.
-	var infoRes dcrjson.InfoWalletResult
+	var infoRes hxjson.InfoWalletResult
 	err = json.Unmarshal(res, &infoRes)
 	if err != nil {
 		return nil, err
@@ -2806,14 +2806,14 @@ func (r FutureGetInfoResult) Receive() (*dcrjson.InfoWalletResult, error) {
 //
 // See GetInfo for the blocking version and more details.
 func (c *Client) GetInfoAsync() FutureGetInfoResult {
-	cmd := dcrjson.NewGetInfoCmd()
+	cmd := hxjson.NewGetInfoCmd()
 	return c.sendCmd(cmd)
 }
 
 // GetInfo returns miscellaneous info regarding the RPC server.  The returned
 // info object may be void of wallet information if the remote server does
 // not include wallet functionality.
-func (c *Client) GetInfo() (*dcrjson.InfoWalletResult, error) {
+func (c *Client) GetInfo() (*hxjson.InfoWalletResult, error) {
 	return c.GetInfoAsync().Receive()
 }
 
@@ -2823,14 +2823,14 @@ type FutureGetStakeInfoResult chan *response
 
 // Receive waits for the response promised by the future and returns the stake
 // info provided by the server.
-func (r FutureGetStakeInfoResult) Receive() (*dcrjson.GetStakeInfoResult, error) {
+func (r FutureGetStakeInfoResult) Receive() (*hxjson.GetStakeInfoResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal result as a getstakeinfo result object.
-	var infoRes dcrjson.GetStakeInfoResult
+	var infoRes hxjson.GetStakeInfoResult
 	err = json.Unmarshal(res, &infoRes)
 	if err != nil {
 		return nil, err
@@ -2845,13 +2845,13 @@ func (r FutureGetStakeInfoResult) Receive() (*dcrjson.GetStakeInfoResult, error)
 //
 // See GetStakeInfo for the blocking version and more details.
 func (c *Client) GetStakeInfoAsync() FutureGetStakeInfoResult {
-	cmd := dcrjson.NewGetStakeInfoCmd()
+	cmd := hxjson.NewGetStakeInfoCmd()
 	return c.sendCmd(cmd)
 }
 
 // GetStakeInfo returns stake mining info from a given wallet. This includes
 // various statistics on tickets it owns and votes it has produced.
-func (c *Client) GetStakeInfo() (*dcrjson.GetStakeInfoResult, error) {
+func (c *Client) GetStakeInfo() (*hxjson.GetStakeInfoResult, error) {
 	return c.GetStakeInfoAsync().Receive()
 }
 
@@ -2868,7 +2868,7 @@ func (r FutureGetTicketsResult) Receive() ([]*chainhash.Hash, error) {
 	}
 
 	// Unmarshal result as a gettickets result object.
-	var tixRes dcrjson.GetTicketsResult
+	var tixRes hxjson.GetTicketsResult
 	err = json.Unmarshal(res, &tixRes)
 	if err != nil {
 		return nil, err
@@ -2893,7 +2893,7 @@ func (r FutureGetTicketsResult) Receive() ([]*chainhash.Hash, error) {
 //
 // See GetTicketsfor the blocking version and more details.
 func (c *Client) GetTicketsAsync(includeImmature bool) FutureGetTicketsResult {
-	cmd := dcrjson.NewGetTicketsCmd(includeImmature)
+	cmd := hxjson.NewGetTicketsCmd(includeImmature)
 	return c.sendCmd(cmd)
 }
 
@@ -2917,7 +2917,7 @@ func (r FutureListScriptsResult) Receive() ([][]byte, error) {
 	}
 
 	// Unmarshal result as a listscripts result object.
-	var resScr dcrjson.ListScriptsResult
+	var resScr hxjson.ListScriptsResult
 	err = json.Unmarshal(res, &resScr)
 	if err != nil {
 		return nil, err
@@ -2944,7 +2944,7 @@ func (r FutureListScriptsResult) Receive() ([][]byte, error) {
 //
 // See ListScripts for the blocking version and more details.
 func (c *Client) ListScriptsAsync() FutureListScriptsResult {
-	cmd := dcrjson.NewListScriptsCmd()
+	cmd := hxjson.NewListScriptsCmd()
 	return c.sendCmd(cmd)
 }
 
@@ -2971,7 +2971,7 @@ func (r FutureSetTicketFeeResult) Receive() error {
 //
 // See SetTicketFee for the blocking version and more details.
 func (c *Client) SetTicketFeeAsync(fee hxutil.Amount) FutureSetTicketFeeResult {
-	cmd := dcrjson.NewSetTicketFeeCmd(fee.ToCoin())
+	cmd := hxjson.NewSetTicketFeeCmd(fee.ToCoin())
 	return c.sendCmd(cmd)
 }
 
@@ -2996,7 +2996,7 @@ func (r FutureSetTxFeeResult) Receive() error {
 //
 // See SetTxFee for the blocking version and more details.
 func (c *Client) SetTxFeeAsync(fee hxutil.Amount) FutureSetTxFeeResult {
-	cmd := dcrjson.NewSetTxFeeCmd(fee.ToCoin())
+	cmd := hxjson.NewSetTxFeeCmd(fee.ToCoin())
 	return c.sendCmd(cmd)
 }
 
@@ -3010,14 +3010,14 @@ func (c *Client) SetTxFee(fee hxutil.Amount) error {
 type FutureGetVoteChoicesResult chan *response
 
 // Receive waits for the response promised by the future.
-func (r FutureGetVoteChoicesResult) Receive() (*dcrjson.GetVoteChoicesResult, error) {
+func (r FutureGetVoteChoicesResult) Receive() (*hxjson.GetVoteChoicesResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal result as a getvotechoices result object.
-	var choicesRes dcrjson.GetVoteChoicesResult
+	var choicesRes hxjson.GetVoteChoicesResult
 	err = json.Unmarshal(res, &choicesRes)
 	if err != nil {
 		return nil, err
@@ -3032,13 +3032,13 @@ func (r FutureGetVoteChoicesResult) Receive() (*dcrjson.GetVoteChoicesResult, er
 //
 // See GetVoteChoices for the blocking version and more details.
 func (c *Client) GetVoteChoicesAsync() FutureGetVoteChoicesResult {
-	cmd := dcrjson.NewGetVoteChoicesCmd()
+	cmd := hxjson.NewGetVoteChoicesCmd()
 	return c.sendCmd(cmd)
 }
 
 // GetVoteChoices returns the currently-set vote choices for each agenda in the
 // latest supported stake version.
-func (c *Client) GetVoteChoices() (*dcrjson.GetVoteChoicesResult, error) {
+func (c *Client) GetVoteChoices() (*hxjson.GetVoteChoicesResult, error) {
 	return c.GetVoteChoicesAsync().Receive()
 }
 
@@ -3058,7 +3058,7 @@ func (r FutureSetVoteChoiceResult) Receive() error {
 //
 // See SetVoteChoice for the blocking version and more details.
 func (c *Client) SetVoteChoiceAsync(agendaID, choiceID string) FutureSetVoteChoiceResult {
-	cmd := dcrjson.NewSetVoteChoiceCmd(agendaID, choiceID)
+	cmd := hxjson.NewSetVoteChoiceCmd(agendaID, choiceID)
 	return c.sendCmd(cmd)
 }
 
@@ -3073,14 +3073,14 @@ type FutureStakePoolUserInfoResult chan *response
 
 // Receive waits for the response promised by the future and returns the info
 // provided by the server.
-func (r FutureStakePoolUserInfoResult) Receive() (*dcrjson.StakePoolUserInfoResult, error) {
+func (r FutureStakePoolUserInfoResult) Receive() (*hxjson.StakePoolUserInfoResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal result as a stakepooluserinfo result object.
-	var infoRes dcrjson.StakePoolUserInfoResult
+	var infoRes hxjson.StakePoolUserInfoResult
 	err = json.Unmarshal(res, &infoRes)
 	if err != nil {
 		return nil, err
@@ -3095,13 +3095,13 @@ func (r FutureStakePoolUserInfoResult) Receive() (*dcrjson.StakePoolUserInfoResu
 //
 // See GetInfo for the blocking version and more details.
 func (c *Client) StakePoolUserInfoAsync(addr hxutil.Address) FutureStakePoolUserInfoResult {
-	cmd := dcrjson.NewStakePoolUserInfoCmd(addr.EncodeAddress())
+	cmd := hxjson.NewStakePoolUserInfoCmd(addr.EncodeAddress())
 	return c.sendCmd(cmd)
 }
 
 // StakePoolUserInfo returns a list of tickets and information about them
 // that are paying to the passed address.
-func (c *Client) StakePoolUserInfo(addr hxutil.Address) (*dcrjson.StakePoolUserInfoResult, error) {
+func (c *Client) StakePoolUserInfo(addr hxutil.Address) (*hxjson.StakePoolUserInfoResult, error) {
 	return c.StakePoolUserInfoAsync(addr).Receive()
 }
 
@@ -3111,14 +3111,14 @@ type FutureTicketsForAddressResult chan *response
 
 // Receive waits for the response promised by the future and returns the info
 // provided by the server.
-func (r FutureTicketsForAddressResult) Receive() (*dcrjson.TicketsForAddressResult, error) {
+func (r FutureTicketsForAddressResult) Receive() (*hxjson.TicketsForAddressResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal result as a ticketsforaddress result object.
-	var infoRes dcrjson.TicketsForAddressResult
+	var infoRes hxjson.TicketsForAddressResult
 	err = json.Unmarshal(res, &infoRes)
 	if err != nil {
 		return nil, err
@@ -3133,7 +3133,7 @@ func (r FutureTicketsForAddressResult) Receive() (*dcrjson.TicketsForAddressResu
 //
 // See GetInfo for the blocking version and more details.
 func (c *Client) TicketsForAddressAsync(addr hxutil.Address) FutureTicketsForAddressResult {
-	cmd := dcrjson.NewTicketsForAddressCmd(addr.EncodeAddress())
+	cmd := hxjson.NewTicketsForAddressCmd(addr.EncodeAddress())
 	return c.sendCmd(cmd)
 }
 
@@ -3141,7 +3141,7 @@ func (c *Client) TicketsForAddressAsync(addr hxutil.Address) FutureTicketsForAdd
 // If the daemon server is queried, it returns a search of tickets in the
 // live ticket pool. If the wallet server is queried, it searches all tickets
 // owned by the wallet.
-func (c *Client) TicketsForAddress(addr hxutil.Address) (*dcrjson.TicketsForAddressResult, error) {
+func (c *Client) TicketsForAddress(addr hxutil.Address) (*hxjson.TicketsForAddressResult, error) {
 	return c.TicketsForAddressAsync(addr).Receive()
 }
 
@@ -3151,14 +3151,14 @@ type FutureWalletInfoResult chan *response
 
 // Receive waits for the response promised by the future and returns the stake
 // info provided by the server.
-func (r FutureWalletInfoResult) Receive() (*dcrjson.WalletInfoResult, error) {
+func (r FutureWalletInfoResult) Receive() (*hxjson.WalletInfoResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal result as a walletinfo result object.
-	var infoRes dcrjson.WalletInfoResult
+	var infoRes hxjson.WalletInfoResult
 	err = json.Unmarshal(res, &infoRes)
 	if err != nil {
 		return nil, err
@@ -3173,19 +3173,19 @@ func (r FutureWalletInfoResult) Receive() (*dcrjson.WalletInfoResult, error) {
 //
 // See WalletInfo for the blocking version and more details.
 func (c *Client) WalletInfoAsync() FutureWalletInfoResult {
-	cmd := dcrjson.NewWalletInfoCmd()
+	cmd := hxjson.NewWalletInfoCmd()
 	return c.sendCmd(cmd)
 }
 
 // WalletInfo returns wallet global state info for a given wallet.
-func (c *Client) WalletInfo() (*dcrjson.WalletInfoResult, error) {
+func (c *Client) WalletInfo() (*hxjson.WalletInfoResult, error) {
 	return c.WalletInfoAsync().Receive()
 }
 
 // TODO(davec): Implement
 // backupwallet (NYI in hxwallet)
 // encryptwallet (Won't be supported by hxwallet since it's always encrypted)
-// getwalletinfo (NYI in hxwallet or dcrjson)
+// getwalletinfo (NYI in hxwallet or hxjson)
 // listaddressgroupings (NYI in hxwallet)
 // listreceivedbyaccount (NYI in hxwallet)
 

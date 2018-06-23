@@ -26,7 +26,7 @@ import (
 	"github.com/coolsnady/hxd/blockchain"
 	"github.com/coolsnady/hxd/blockchain/stake"
 	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/hxd/dcrjson"
+	"github.com/coolsnady/hxd/hxjson"
 	"github.com/coolsnady/hxd/hxutil"
 	"github.com/coolsnady/hxd/txscript"
 	"github.com/coolsnady/hxd/wire"
@@ -713,7 +713,7 @@ func (m *wsNotificationManager) notifyBlockConnected(clients map[chan struct{}]*
 		// just accepted, there should be no issues serializing it.
 		panic(err)
 	}
-	ntfn := dcrjson.BlockConnectedNtfn{
+	ntfn := hxjson.BlockConnectedNtfn{
 		Header:        hex.EncodeToString(headerBytes),
 		SubscribedTxs: nil, // Set individually for each client
 	}
@@ -746,7 +746,7 @@ func (m *wsNotificationManager) notifyBlockConnected(clients map[chan struct{}]*
 		ntfn.SubscribedTxs = subscribedTxs[quitChan]
 
 		// Marshal and queue notification.
-		marshalledJSON, err := dcrjson.MarshalCmd("1.0", nil, &ntfn)
+		marshalledJSON, err := hxjson.MarshalCmd("1.0", nil, &ntfn)
 		if err != nil {
 			rpcsLog.Errorf("Failed to marshal block connected "+
 				"notification: %v", err)
@@ -775,10 +775,10 @@ func (*wsNotificationManager) notifyBlockDisconnected(clients map[chan struct{}]
 		// it.
 		panic(err)
 	}
-	ntfn := dcrjson.BlockDisconnectedNtfn{
+	ntfn := hxjson.BlockDisconnectedNtfn{
 		Header: hex.EncodeToString(headerBytes),
 	}
-	marshalledJSON, err := dcrjson.MarshalCmd("1.0", nil, &ntfn)
+	marshalledJSON, err := hxjson.MarshalCmd("1.0", nil, &ntfn)
 	if err != nil {
 		rpcsLog.Errorf("Failed to marshal block disconnected "+
 			"notification: %v", err)
@@ -799,11 +799,11 @@ func (m *wsNotificationManager) notifyReorganization(clients map[chan struct{}]*
 	}
 
 	// Notify interested websocket clients about the disconnected block.
-	ntfn := dcrjson.NewReorganizationNtfn(rd.OldHash.String(),
+	ntfn := hxjson.NewReorganizationNtfn(rd.OldHash.String(),
 		int32(rd.OldHeight),
 		rd.NewHash.String(),
 		int32(rd.NewHeight))
-	marshalledJSON, err := dcrjson.MarshalCmd("1.0", nil, ntfn)
+	marshalledJSON, err := hxjson.MarshalCmd("1.0", nil, ntfn)
 	if err != nil {
 		rpcsLog.Errorf("Failed to marshal reorganization "+
 			"notification: %v", err)
@@ -838,10 +838,10 @@ func (*wsNotificationManager) notifyWinningTickets(
 	}
 
 	// Notify interested websocket clients about the connected block.
-	ntfn := dcrjson.NewWinningTicketsNtfn(wtnd.BlockHash.String(),
+	ntfn := hxjson.NewWinningTicketsNtfn(wtnd.BlockHash.String(),
 		int32(wtnd.BlockHeight), ticketMap)
 
-	marshalledJSON, err := dcrjson.MarshalCmd("1.0", nil, ntfn)
+	marshalledJSON, err := hxjson.MarshalCmd("1.0", nil, ntfn)
 	if err != nil {
 		rpcsLog.Errorf("Failed to marshal winning tickets notification: "+
 			"%v", err)
@@ -878,10 +878,10 @@ func (*wsNotificationManager) notifySpentAndMissedTickets(clients map[chan struc
 	}
 
 	// Notify interested websocket clients about the connected block.
-	ntfn := dcrjson.NewSpentAndMissedTicketsNtfn(tnd.Hash.String(),
+	ntfn := hxjson.NewSpentAndMissedTicketsNtfn(tnd.Hash.String(),
 		int32(tnd.Height), tnd.StakeDifficulty, ticketMap)
 
-	marshalledJSON, err := dcrjson.MarshalCmd("1.0", nil, ntfn)
+	marshalledJSON, err := hxjson.MarshalCmd("1.0", nil, ntfn)
 	if err != nil {
 		rpcsLog.Errorf("Failed to marshal spent and missed tickets "+
 			"notification: %v", err)
@@ -927,10 +927,10 @@ func (*wsNotificationManager) notifyNewTickets(clients map[chan struct{}]*wsClie
 	}
 
 	// Notify interested websocket clients about the connected block.
-	ntfn := dcrjson.NewNewTicketsNtfn(tnd.Hash.String(), int32(tnd.Height),
+	ntfn := hxjson.NewNewTicketsNtfn(tnd.Hash.String(), int32(tnd.Height),
 		tnd.StakeDifficulty, tickets)
 
-	marshalledJSON, err := dcrjson.MarshalCmd("1.0", nil, ntfn)
+	marshalledJSON, err := hxjson.MarshalCmd("1.0", nil, ntfn)
 	if err != nil {
 		rpcsLog.Errorf("Failed to marshal new tickets notification: "+
 			"%v", err)
@@ -945,11 +945,11 @@ func (*wsNotificationManager) notifyNewTickets(clients map[chan struct{}]*wsClie
 // maturing ticket updates.
 func (*wsNotificationManager) notifyStakeDifficulty(clients map[chan struct{}]*wsClient, sdnd *StakeDifficultyNtfnData) {
 	// Notify interested websocket clients about the connected block.
-	ntfn := dcrjson.NewStakeDifficultyNtfn(sdnd.BlockHash.String(),
+	ntfn := hxjson.NewStakeDifficultyNtfn(sdnd.BlockHash.String(),
 		int32(sdnd.BlockHeight),
 		sdnd.StakeDifficulty)
 
-	marshalledJSON, err := dcrjson.MarshalCmd("1.0", nil, ntfn)
+	marshalledJSON, err := hxjson.MarshalCmd("1.0", nil, ntfn)
 	if err != nil {
 		rpcsLog.Errorf("Failed to marshal stake difficulty notification: "+
 			"%v", err)
@@ -983,16 +983,16 @@ func (m *wsNotificationManager) notifyForNewTx(clients map[chan struct{}]*wsClie
 		amount += txOut.Value
 	}
 
-	ntfn := dcrjson.NewTxAcceptedNtfn(txHashStr,
+	ntfn := hxjson.NewTxAcceptedNtfn(txHashStr,
 		hxutil.Amount(amount).ToCoin())
-	marshalledJSON, err := dcrjson.MarshalCmd("1.0", nil, ntfn)
+	marshalledJSON, err := hxjson.MarshalCmd("1.0", nil, ntfn)
 	if err != nil {
 		rpcsLog.Errorf("Failed to marshal tx notification: %s",
 			err.Error())
 		return
 	}
 
-	var verboseNtfn *dcrjson.TxAcceptedVerboseNtfn
+	var verboseNtfn *hxjson.TxAcceptedVerboseNtfn
 	var marshalledJSONVerbose []byte
 	for _, wsc := range clients {
 		if wsc.verboseTxUpdates {
@@ -1008,8 +1008,8 @@ func (m *wsNotificationManager) notifyForNewTx(clients map[chan struct{}]*wsClie
 				return
 			}
 
-			verboseNtfn = dcrjson.NewTxAcceptedVerboseNtfn(*rawTx)
-			marshalledJSONVerbose, err = dcrjson.MarshalCmd("1.0", nil,
+			verboseNtfn = hxjson.NewTxAcceptedVerboseNtfn(*rawTx)
+			marshalledJSONVerbose, err = hxjson.MarshalCmd("1.0", nil,
 				verboseNtfn)
 			if err != nil {
 				rpcsLog.Errorf("Failed to marshal verbose tx "+
@@ -1088,8 +1088,8 @@ func (m *wsNotificationManager) notifyRelevantTxAccepted(tx *hxutil.Tx,
 	}
 
 	if len(clientsToNotify) != 0 {
-		n := dcrjson.NewRelevantTxAcceptedNtfn(txHexString(msgTx))
-		marshalled, err := dcrjson.MarshalCmd("1.0", nil, n)
+		n := hxjson.NewRelevantTxAcceptedNtfn(txHexString(msgTx))
+		marshalled, err := hxjson.MarshalCmd("1.0", nil, n)
 		if err != nil {
 			rpcsLog.Errorf("Failed to marshal notification: %v", err)
 			return
@@ -1240,7 +1240,7 @@ out:
 
 		// Process a single request
 		if !batchedRequest {
-			var req dcrjson.Request
+			var req hxjson.Request
 			var reply json.RawMessage
 			err = json.Unmarshal(msg, &req)
 			if err != nil {
@@ -1249,8 +1249,8 @@ out:
 					break out
 				}
 
-				jsonErr := &dcrjson.RPCError{
-					Code:    dcrjson.ErrRPCParse.Code,
+				jsonErr := &hxjson.RPCError{
+					Code:    hxjson.ErrRPCParse.Code,
 					Message: "Failed to parse request: " + err.Error(),
 				}
 				reply, err = createMarshalledReply("1.0", nil, nil, jsonErr)
@@ -1263,8 +1263,8 @@ out:
 			}
 
 			if req.Method == "" || req.Params == nil {
-				jsonErr := &dcrjson.RPCError{
-					Code:    dcrjson.ErrRPCInvalidRequest.Code,
+				jsonErr := &hxjson.RPCError{
+					Code:    hxjson.ErrRPCInvalidRequest.Code,
 					Message: fmt.Sprintf("Invalid request: malformed"),
 				}
 				reply, err := createMarshalledReply(req.Jsonrpc, req.ID, nil, jsonErr)
@@ -1308,7 +1308,7 @@ out:
 			// the authenticate request, an authenticate request is received
 			// when the client is already authenticated, or incorrect
 			// authentication credentials are provided in the request.
-			switch authCmd, ok := cmd.cmd.(*dcrjson.AuthenticateCmd); {
+			switch authCmd, ok := cmd.cmd.(*hxjson.AuthenticateCmd); {
 			case c.authenticated && ok:
 				rpcsLog.Warnf("Websocket client %s is already authenticated",
 					c.addr)
@@ -1346,8 +1346,8 @@ out:
 			// error when not authorized to call the supplied RPC.
 			if !c.isAdmin {
 				if _, ok := rpcLimited[req.Method]; !ok {
-					jsonErr := &dcrjson.RPCError{
-						Code:    dcrjson.ErrRPCInvalidParams.Code,
+					jsonErr := &hxjson.RPCError{
+						Code:    hxjson.ErrRPCInvalidParams.Code,
 						Message: "limited user not authorized for this method",
 					}
 					// Marshal and send response.
@@ -1403,12 +1403,12 @@ out:
 					break out
 				}
 
-				jsonErr := &dcrjson.RPCError{
-					Code: dcrjson.ErrRPCParse.Code,
+				jsonErr := &hxjson.RPCError{
+					Code: hxjson.ErrRPCParse.Code,
 					Message: fmt.Sprintf("Failed to parse request: %v",
 						err),
 				}
-				reply, err = dcrjson.MarshalResponse("2.0", nil, nil, jsonErr)
+				reply, err = hxjson.MarshalResponse("2.0", nil, nil, jsonErr)
 				if err != nil {
 					rpcsLog.Errorf("Failed to create reply: %v", err)
 				}
@@ -1425,11 +1425,11 @@ out:
 						break out
 					}
 
-					jsonErr := &dcrjson.RPCError{
-						Code:    dcrjson.ErrRPCInvalidRequest.Code,
+					jsonErr := &hxjson.RPCError{
+						Code:    hxjson.ErrRPCInvalidRequest.Code,
 						Message: fmt.Sprint("Invalid request: empty batch"),
 					}
-					reply, err = dcrjson.MarshalResponse("2.0", nil, nil, jsonErr)
+					reply, err = hxjson.MarshalResponse("2.0", nil, nil, jsonErr)
 					if err != nil {
 						rpcsLog.Errorf("Failed to marshal reply: %v", err)
 					}
@@ -1451,12 +1451,12 @@ out:
 								break out
 							}
 
-							jsonErr := &dcrjson.RPCError{
-								Code: dcrjson.ErrRPCInvalidRequest.Code,
+							jsonErr := &hxjson.RPCError{
+								Code: hxjson.ErrRPCInvalidRequest.Code,
 								Message: fmt.Sprintf("Invalid request: %v",
 									err),
 							}
-							reply, err = dcrjson.MarshalResponse("2.0", nil, nil, jsonErr)
+							reply, err = hxjson.MarshalResponse("2.0", nil, nil, jsonErr)
 							if err != nil {
 								rpcsLog.Errorf("Failed to create reply: %v", err)
 								continue
@@ -1468,7 +1468,7 @@ out:
 							continue
 						}
 
-						var req dcrjson.Request
+						var req hxjson.Request
 						err := json.Unmarshal(reqBytes, &req)
 						if err != nil {
 							// Only process requests from authenticated clients
@@ -1476,12 +1476,12 @@ out:
 								break out
 							}
 
-							jsonErr := &dcrjson.RPCError{
-								Code: dcrjson.ErrRPCInvalidRequest.Code,
+							jsonErr := &hxjson.RPCError{
+								Code: hxjson.ErrRPCInvalidRequest.Code,
 								Message: fmt.Sprintf("Invalid request: %v",
 									err),
 							}
-							reply, err = dcrjson.MarshalResponse("2.0", nil, nil, jsonErr)
+							reply, err = hxjson.MarshalResponse("2.0", nil, nil, jsonErr)
 							if err != nil {
 								rpcsLog.Errorf("Failed to create reply: %v", err)
 								continue
@@ -1494,8 +1494,8 @@ out:
 						}
 
 						if req.Method == "" || req.Params == nil {
-							jsonErr := &dcrjson.RPCError{
-								Code:    dcrjson.ErrRPCInvalidRequest.Code,
+							jsonErr := &hxjson.RPCError{
+								Code:    hxjson.ErrRPCInvalidRequest.Code,
 								Message: fmt.Sprintf("Invalid request: malformed"),
 							}
 							reply, err := createMarshalledReply(req.Jsonrpc, req.ID, nil, jsonErr)
@@ -1545,7 +1545,7 @@ out:
 						// the authenticate request, an authenticate request is received
 						// when the client is already authenticated, or incorrect
 						// authentication credentials are provided in the request.
-						switch authCmd, ok := cmd.cmd.(*dcrjson.AuthenticateCmd); {
+						switch authCmd, ok := cmd.cmd.(*hxjson.AuthenticateCmd); {
 						case c.authenticated && ok:
 							rpcsLog.Warnf("Websocket client %s is already authenticated",
 								c.addr)
@@ -1587,8 +1587,8 @@ out:
 						// error when not authorized to call the supplied RPC.
 						if !c.isAdmin {
 							if _, ok := rpcLimited[req.Method]; !ok {
-								jsonErr := &dcrjson.RPCError{
-									Code:    dcrjson.ErrRPCInvalidParams.Code,
+								jsonErr := &hxjson.RPCError{
+									Code:    hxjson.ErrRPCInvalidParams.Code,
 									Message: "limited user not authorized for this method",
 								}
 								// Marshal and send response.
@@ -1925,9 +1925,9 @@ func newWebsocketClient(server *rpcServer, conn *websocket.Conn,
 
 // handleWebsocketHelp implements the help command for websocket connections.
 func handleWebsocketHelp(wsc *wsClient, icmd interface{}) (interface{}, error) {
-	cmd, ok := icmd.(*dcrjson.HelpCmd)
+	cmd, ok := icmd.(*hxjson.HelpCmd)
 	if !ok {
-		return nil, dcrjson.ErrRPCInternal
+		return nil, hxjson.ErrRPCInternal
 	}
 
 	// Provide a usage overview of all commands when no specific command
@@ -1955,8 +1955,8 @@ func handleWebsocketHelp(wsc *wsClient, icmd interface{}) (interface{}, error) {
 		}
 	}
 	if !valid {
-		return nil, &dcrjson.RPCError{
-			Code:    dcrjson.ErrRPCInvalidParameter,
+		return nil, &hxjson.RPCError{
+			Code:    hxjson.ErrRPCInvalidParameter,
 			Message: "Unknown command: " + command,
 		}
 	}
@@ -1973,14 +1973,14 @@ func handleWebsocketHelp(wsc *wsClient, icmd interface{}) (interface{}, error) {
 // handleLoadTxFilter implements the loadtxfilter command extension for
 // websocket connections.
 func handleLoadTxFilter(wsc *wsClient, icmd interface{}) (interface{}, error) {
-	cmd := icmd.(*dcrjson.LoadTxFilterCmd)
+	cmd := icmd.(*hxjson.LoadTxFilterCmd)
 
 	outPoints := make([]*wire.OutPoint, len(cmd.OutPoints))
 	for i := range cmd.OutPoints {
 		hash, err := chainhash.NewHashFromStr(cmd.OutPoints[i].Hash)
 		if err != nil {
-			return nil, &dcrjson.RPCError{
-				Code:    dcrjson.ErrRPCInvalidParameter,
+			return nil, &hxjson.RPCError{
+				Code:    hxjson.ErrRPCInvalidParameter,
 				Message: err.Error(),
 			}
 		}
@@ -2022,7 +2022,7 @@ func handleNotifyBlocks(wsc *wsClient, icmd interface{}) (interface{}, error) {
 // handleSession implements the session command extension for websocket
 // connections.
 func handleSession(wsc *wsClient, icmd interface{}) (interface{}, error) {
-	return &dcrjson.SessionResult{SessionID: wsc.sessionID}, nil
+	return &hxjson.SessionResult{SessionID: wsc.sessionID}, nil
 }
 
 // handleWinningTickets implements the notifywinningtickets command
@@ -2063,9 +2063,9 @@ func handleStopNotifyBlocks(wsc *wsClient, icmd interface{}) (interface{}, error
 // handleNotifyNewTransations implements the notifynewtransactions command
 // extension for websocket connections.
 func handleNotifyNewTransactions(wsc *wsClient, icmd interface{}) (interface{}, error) {
-	cmd, ok := icmd.(*dcrjson.NotifyNewTransactionsCmd)
+	cmd, ok := icmd.(*hxjson.NotifyNewTransactionsCmd)
 	if !ok {
-		return nil, dcrjson.ErrRPCInternal
+		return nil, hxjson.ErrRPCInternal
 	}
 
 	wsc.verboseTxUpdates = cmd.Verbose != nil && *cmd.Verbose
@@ -2166,9 +2166,9 @@ func rescanBlock(filter *wsClientFilter, block *hxutil.Block) []string {
 // handleRescan implements the rescan command extension for websocket
 // connections.
 func handleRescan(wsc *wsClient, icmd interface{}) (interface{}, error) {
-	cmd, ok := icmd.(*dcrjson.RescanCmd)
+	cmd, ok := icmd.(*hxjson.RescanCmd)
 	if !ok {
-		return nil, dcrjson.ErrRPCInternal
+		return nil, hxjson.ErrRPCInternal
 	}
 
 	// Load client's transaction filter.  Must exist in order to continue.
@@ -2176,18 +2176,18 @@ func handleRescan(wsc *wsClient, icmd interface{}) (interface{}, error) {
 	filter := wsc.filterData
 	wsc.Unlock()
 	if filter == nil {
-		return nil, &dcrjson.RPCError{
-			Code:    dcrjson.ErrRPCMisc,
+		return nil, &hxjson.RPCError{
+			Code:    hxjson.ErrRPCMisc,
 			Message: "Transaction filter must be loaded before rescanning",
 		}
 	}
 
-	blockHashes, err := dcrjson.DecodeConcatenatedHashes(cmd.BlockHashes)
+	blockHashes, err := hxjson.DecodeConcatenatedHashes(cmd.BlockHashes)
 	if err != nil {
 		return nil, err
 	}
 
-	discoveredData := make([]dcrjson.RescannedBlock, 0, len(blockHashes))
+	discoveredData := make([]hxjson.RescannedBlock, 0, len(blockHashes))
 
 	// Iterate over each block in the request and rescan.  When a block
 	// contains relevant transactions, add it to the response.
@@ -2196,14 +2196,14 @@ func handleRescan(wsc *wsClient, icmd interface{}) (interface{}, error) {
 	for i := range blockHashes {
 		block, err := bc.BlockByHash(&blockHashes[i])
 		if err != nil {
-			return nil, &dcrjson.RPCError{
-				Code:    dcrjson.ErrRPCBlockNotFound,
+			return nil, &hxjson.RPCError{
+				Code:    hxjson.ErrRPCBlockNotFound,
 				Message: "Failed to fetch block: " + err.Error(),
 			}
 		}
 		if lastBlockHash != nil && block.MsgBlock().Header.PrevBlock != *lastBlockHash {
-			return nil, &dcrjson.RPCError{
-				Code: dcrjson.ErrRPCInvalidParameter,
+			return nil, &hxjson.RPCError{
+				Code: hxjson.ErrRPCInvalidParameter,
 				Message: fmt.Sprintf("Block %v is not a child of %v",
 					&blockHashes[i], lastBlockHash),
 			}
@@ -2212,14 +2212,14 @@ func handleRescan(wsc *wsClient, icmd interface{}) (interface{}, error) {
 
 		transactions := rescanBlock(filter, block)
 		if len(transactions) != 0 {
-			discoveredData = append(discoveredData, dcrjson.RescannedBlock{
+			discoveredData = append(discoveredData, hxjson.RescannedBlock{
 				Hash:         blockHashes[i].String(),
 				Transactions: transactions,
 			})
 		}
 	}
 
-	return &dcrjson.RescanResult{DiscoveredData: discoveredData}, nil
+	return &hxjson.RescanResult{DiscoveredData: discoveredData}, nil
 }
 
 func init() {
