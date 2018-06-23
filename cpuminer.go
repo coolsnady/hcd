@@ -354,10 +354,14 @@ out:
 		// with false when conditions that trigger a stale block, so
 		// a new block template can be generated.  When the return is
 		// true a solution was found, so submit the solved block.
+		minrLog.Info("start to mining block")
 		if m.solveBlock(template.Block, ticker, quit) {
+			minrLog.Info("mining block success")
 			block := hxutil.NewBlock(template.Block)
 			m.submitBlock(block)
 			m.minedOnParents[template.Block.Header.PrevBlock]++
+		} else {
+			minrLog.Info("fail to mining block")
 		}
 	}
 
