@@ -140,7 +140,7 @@ func TestAmountUnitConversions(t *testing.T) {
 			amount:    44433322211100,
 			unit:      AmountCoin,
 			converted: 444333.22211100,
-			s:         "444333.222111 DCR",
+			s:         "444333.222111 HX",
 		},
 		{
 			name:      "mDCR",
@@ -171,7 +171,7 @@ func TestAmountUnitConversions(t *testing.T) {
 			amount:    44433322211100,
 			unit:      AmountUnit(-1),
 			converted: 4443332.2211100,
-			s:         "4443332.22111 1e-1 DCR",
+			s:         "4443332.22111 1e-1 HX",
 		},
 	}
 
@@ -212,52 +212,52 @@ func TestAmountMulF64(t *testing.T) {
 		res  Amount
 	}{
 		{
-			name: "Multiply 0.1 DCR by 2",
-			amt:  100e5, // 0.1 DCR
+			name: "Multiply 0.1 HX by 2",
+			amt:  100e5, // 0.1 HX
 			mul:  2,
-			res:  200e5, // 0.2 DCR
+			res:  200e5, // 0.2 HX
 		},
 		{
-			name: "Multiply 0.2 DCR by 0.02",
-			amt:  200e5, // 0.2 DCR
+			name: "Multiply 0.2 HX by 0.02",
+			amt:  200e5, // 0.2 HX
 			mul:  1.02,
-			res:  204e5, // 0.204 DCR
+			res:  204e5, // 0.204 HX
 		},
 		{
-			name: "Multiply 0.1 DCR by -2",
-			amt:  100e5, // 0.1 DCR
+			name: "Multiply 0.1 HX by -2",
+			amt:  100e5, // 0.1 HX
 			mul:  -2,
-			res:  -200e5, // -0.2 DCR
+			res:  -200e5, // -0.2 HX
 		},
 		{
-			name: "Multiply 0.2 DCR by -0.02",
-			amt:  200e5, // 0.2 DCR
+			name: "Multiply 0.2 HX by -0.02",
+			amt:  200e5, // 0.2 HX
 			mul:  -1.02,
-			res:  -204e5, // -0.204 DCR
+			res:  -204e5, // -0.204 HX
 		},
 		{
-			name: "Multiply -0.1 DCR by 2",
-			amt:  -100e5, // -0.1 DCR
+			name: "Multiply -0.1 HX by 2",
+			amt:  -100e5, // -0.1 HX
 			mul:  2,
-			res:  -200e5, // -0.2 DCR
+			res:  -200e5, // -0.2 HX
 		},
 		{
-			name: "Multiply -0.2 DCR by 0.02",
-			amt:  -200e5, // -0.2 DCR
+			name: "Multiply -0.2 HX by 0.02",
+			amt:  -200e5, // -0.2 HX
 			mul:  1.02,
-			res:  -204e5, // -0.204 DCR
+			res:  -204e5, // -0.204 HX
 		},
 		{
-			name: "Multiply -0.1 DCR by -2",
-			amt:  -100e5, // -0.1 DCR
+			name: "Multiply -0.1 HX by -2",
+			amt:  -100e5, // -0.1 HX
 			mul:  -2,
-			res:  200e5, // 0.2 DCR
+			res:  200e5, // 0.2 HX
 		},
 		{
-			name: "Multiply -0.2 DCR by -0.02",
-			amt:  -200e5, // -0.2 DCR
+			name: "Multiply -0.2 HX by -0.02",
+			amt:  -200e5, // -0.2 HX
 			mul:  -1.02,
-			res:  204e5, // 0.204 DCR
+			res:  204e5, // 0.204 HX
 		},
 		{
 			name: "Round down",
@@ -273,9 +273,9 @@ func TestAmountMulF64(t *testing.T) {
 		},
 		{
 			name: "Multiply by 0.",
-			amt:  1e8, // 1 DCR
+			amt:  1e8, // 1 HX
 			mul:  0,
-			res:  0, // 0 DCR
+			res:  0, // 0 HX
 		},
 		{
 			name: "Multiply 1 by 0.5.",

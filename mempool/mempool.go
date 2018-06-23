@@ -38,7 +38,7 @@ const (
 
 	// maxRelayFeeMultiplier is the factor that we disallow fees / kB above the
 	// minimum tx fee.  At the current default minimum relay fee of 0.0001
-	// DCR/kB, this results in a maximum allowed high fee of 1 DCR/kB.
+	// HX/kB, this results in a maximum allowed high fee of 1 HX/kB.
 	maxRelayFeeMultiplier = 1e4
 
 	// maxSSGensDoubleSpends is the maximum number of SSGen double spends

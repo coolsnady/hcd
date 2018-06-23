@@ -829,7 +829,7 @@ func NewRevokeTicketsCmd() *RevokeTicketsCmd {
 type SendFromCmd struct {
 	FromAccount string
 	ToAddress   string
-	Amount      float64 // In DCR
+	Amount      float64 // In HX
 	MinConf     *int    `jsonrpcdefault:"1"`
 	Comment     *string
 	CommentTo   *string
@@ -854,7 +854,7 @@ func NewSendFromCmd(fromAccount, toAddress string, amount float64, minConf *int,
 // SendManyCmd defines the sendmany JSON-RPC command.
 type SendManyCmd struct {
 	FromAccount string
-	Amounts     map[string]float64 `jsonrpcusage:"{\"address\":amount,...}"` // In DCR
+	Amounts     map[string]float64 `jsonrpcusage:"{\"address\":amount,...}"` // In HX
 	MinConf     *int               `jsonrpcdefault:"1"`
 	Comment     *string
 }
@@ -1004,7 +1004,7 @@ func NewSetBalanceToMaintainCmd(balance float64) *SetBalanceToMaintainCmd {
 
 // SetTxFeeCmd defines the settxfee JSON-RPC command.
 type SetTxFeeCmd struct {
-	Amount float64 // In DCR
+	Amount float64 // In HX
 }
 
 // NewSetTxFeeCmd returns a new instance which can be used to issue a settxfee
