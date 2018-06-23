@@ -22,7 +22,7 @@ import (
 	"github.com/coolsnady/hxd/chaincfg"
 	"github.com/coolsnady/hxd/chaincfg/chainhash"
 	"github.com/coolsnady/hxd/database"
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hxd/hxutil"
 	"github.com/coolsnady/hxd/txscript"
 	"github.com/coolsnady/hxd/wire"
 )
@@ -30,7 +30,7 @@ import (
 // recalculateMsgBlockMerkleRootsSize recalculates the merkle roots for a msgBlock,
 // then stores them in the msgBlock's header. It also updates the block size.
 func recalculateMsgBlockMerkleRootsSize(msgBlock *wire.MsgBlock) {
-	tempBlock := dcrutil.NewBlock(msgBlock)
+	tempBlock := hxutil.NewBlock(msgBlock)
 
 	merkles := BuildMerkleTreeStore(tempBlock.Transactions())
 	merklesStake := BuildMerkleTreeStore(tempBlock.STransactions())
@@ -100,7 +100,7 @@ func TestBlockchainSpendJournal(t *testing.T) {
 	// Load up the short chain
 	finalIdx1 := 179
 	for i := 1; i < finalIdx1+1; i++ {
-		bl, err := dcrutil.NewBlockFromBytes(blockChain[int64(i)])
+		bl, err := hxutil.NewBlockFromBytes(blockChain[int64(i)])
 		if err != nil {
 			t.Fatalf("NewBlockFromBytes error: %v", err.Error())
 		}
@@ -257,7 +257,7 @@ func TestSequenceLocksActive(t *testing.T) {
 func TestCheckBlockSanity(t *testing.T) {
 	params := &chaincfg.SimNetParams
 	timeSource := NewMedianTime()
-	block := dcrutil.NewBlock(&badBlock)
+	block := hxutil.NewBlock(&badBlock)
 	err := CheckBlockSanity(block, timeSource, params)
 	if err == nil {
 		t.Fatalf("block should fail.\n")
@@ -269,7 +269,7 @@ func TestCheckBlockSanity(t *testing.T) {
 func TestCheckWorklessBlockSanity(t *testing.T) {
 	params := &chaincfg.SimNetParams
 	timeSource := NewMedianTime()
-	block := dcrutil.NewBlock(&badBlock)
+	block := hxutil.NewBlock(&badBlock)
 	err := CheckWorklessBlockSanity(block, timeSource, params)
 	if err == nil {
 		t.Fatalf("block should fail.\n")
@@ -311,7 +311,7 @@ func TestCheckBlockHeaderContext(t *testing.T) {
 
 	// Test failing checkBlockHeaderContext when calcNextRequiredDifficulty
 	// fails.
-	block := dcrutil.NewBlock(&badBlock)
+	block := hxutil.NewBlock(&badBlock)
 	newNode := newBlockNode(&block.MsgBlock().Header, nil)
 	err = chain.checkBlockHeaderContext(&block.MsgBlock().Header, newNode, BFNone)
 	if err == nil {
@@ -421,7 +421,7 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 	accepted := func() {
 		msgBlock := g.Tip()
 		blockHeight := msgBlock.Header.Height
-		block := dcrutil.NewBlock(msgBlock)
+		block := hxutil.NewBlock(msgBlock)
 		t.Logf("Testing block %s (hash %s, height %d)",
 			g.TipName(), block.Hash(), blockHeight)
 
@@ -449,7 +449,7 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 	rejected := func(code ErrorCode) {
 		msgBlock := g.Tip()
 		blockHeight := msgBlock.Header.Height
-		block := dcrutil.NewBlock(msgBlock)
+		block := hxutil.NewBlock(msgBlock)
 		t.Logf("Testing block %s (hash %s, height %d)", g.TipName(),
 			block.Hash(), blockHeight)
 
@@ -491,7 +491,7 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 	acceptedToSideChainWithExpectedTip := func(tipName string) {
 		msgBlock := g.Tip()
 		blockHeight := msgBlock.Header.Height
-		block := dcrutil.NewBlock(msgBlock)
+		block := hxutil.NewBlock(msgBlock)
 		t.Logf("Testing block %s (hash %s, height %d)",
 			g.TipName(), block.Hash(), blockHeight)
 
@@ -533,7 +533,7 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 	acceptedBlockTemplate := func() {
 		msgBlock := g.Tip()
 		blockHeight := msgBlock.Header.Height
-		block := dcrutil.NewBlock(msgBlock)
+		block := hxutil.NewBlock(msgBlock)
 		t.Logf("Testing block template %s (hash %s, height %d)",
 			g.TipName(), block.Hash(), blockHeight)
 
@@ -547,7 +547,7 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 	rejectedBlockTemplate := func(code ErrorCode) {
 		msgBlock := g.Tip()
 		blockHeight := msgBlock.Header.Height
-		block := dcrutil.NewBlock(msgBlock)
+		block := hxutil.NewBlock(msgBlock)
 		t.Logf("Testing block template %s (hash %s, height %d)",
 			g.TipName(), block.Hash(), blockHeight)
 

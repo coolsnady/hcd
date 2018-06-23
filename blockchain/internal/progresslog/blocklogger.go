@@ -11,7 +11,7 @@ import (
 
 	"github.com/decred/slog"
 
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hxd/hxutil"
 	"github.com/coolsnady/hxd/wire"
 )
 
@@ -47,8 +47,8 @@ func (b *BlockProgressLogger) LogBlockHeight(block, parent *wire.MsgBlock) {
 	b.Lock()
 	defer b.Unlock()
 	b.receivedLogBlocks++
-	regularTxTreeValid := dcrutil.IsFlagSet16(block.Header.VoteBits,
-		dcrutil.BlockValid)
+	regularTxTreeValid := hxutil.IsFlagSet16(block.Header.VoteBits,
+		hxutil.BlockValid)
 	if regularTxTreeValid {
 		b.receivedLogTx += int64(len(parent.Transactions))
 	}

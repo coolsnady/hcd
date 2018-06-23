@@ -16,7 +16,7 @@ import (
 	"github.com/coolsnady/hxd/blockchain"
 	"github.com/coolsnady/hxd/chaincfg"
 	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hxd/hxutil"
 	"github.com/coolsnady/hxd/mining"
 	"github.com/coolsnady/hxd/wire"
 )
@@ -134,7 +134,7 @@ out:
 
 // submitBlock submits the passed block to network after ensuring it passes all
 // of the consensus validation rules.
-func (m *CPUMiner) submitBlock(block *dcrutil.Block) bool {
+func (m *CPUMiner) submitBlock(block *hxutil.Block) bool {
 	m.submitBlockLock.Lock()
 	defer m.submitBlockLock.Unlock()
 
@@ -179,7 +179,7 @@ func (m *CPUMiner) submitBlock(block *dcrutil.Block) bool {
 	}
 	minrLog.Infof("Block submitted via CPU miner accepted (hash %s, "+
 		"height %v, amount %v)", block.Hash(), block.Height(),
-		dcrutil.Amount(coinbaseTxGenerated))
+		hxutil.Amount(coinbaseTxGenerated))
 	return true
 }
 
@@ -303,7 +303,7 @@ out:
 		m.submitBlockLock.Lock()
 		time.Sleep(100 * time.Millisecond)
 
-		// Hacks to make dcr work with Decred PoC (simnet only)
+		// Hacks to make hx work with Decred PoC (simnet only)
 		// TODO Remove before production.
 		if cfg.SimNet {
 			_, curHeight := m.server.blockManager.chainState.Best()
@@ -355,7 +355,7 @@ out:
 		// a new block template can be generated.  When the return is
 		// true a solution was found, so submit the solved block.
 		if m.solveBlock(template.Block, ticker, quit) {
-			block := dcrutil.NewBlock(template.Block)
+			block := hxutil.NewBlock(template.Block)
 			m.submitBlock(block)
 			m.minedOnParents[template.Block.Header.PrevBlock]++
 		}
@@ -623,7 +623,7 @@ func (m *CPUMiner) GenerateNBlocks(n uint32) ([]*chainhash.Hash, error) {
 		// a new block template can be generated.  When the return is
 		// true a solution was found, so submit the solved block.
 		if m.solveBlock(template.Block, ticker, nil) {
-			block := dcrutil.NewBlock(template.Block)
+			block := hxutil.NewBlock(template.Block)
 			m.submitBlock(block)
 			blockHashes[i] = block.Hash()
 			i++

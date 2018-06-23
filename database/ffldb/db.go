@@ -25,7 +25,7 @@ import (
 	"github.com/coolsnady/hxd/chaincfg/chainhash"
 	"github.com/coolsnady/hxd/database"
 	"github.com/coolsnady/hxd/database/internal/treap"
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hxd/hxutil"
 	"github.com/coolsnady/hxd/wire"
 )
 
@@ -1147,7 +1147,7 @@ func (tx *transaction) hasBlock(hash *chainhash.Hash) bool {
 //   - ErrTxClosed if the transaction has already been closed
 //
 // This function is part of the database.Tx interface implementation.
-func (tx *transaction) StoreBlock(block *dcrutil.Block) error {
+func (tx *transaction) StoreBlock(block *hxutil.Block) error {
 	// Ensure transaction state is valid.
 	if err := tx.checkClosed(); err != nil {
 		return err

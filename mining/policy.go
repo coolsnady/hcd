@@ -7,7 +7,7 @@ package mining
 
 import (
 	"github.com/coolsnady/hxd/blockchain"
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hxd/hxutil"
 	"github.com/coolsnady/hxd/wire"
 )
 
@@ -37,7 +37,7 @@ type Policy struct {
 	// TxMinFreeFee is the minimum fee in Atoms/1000 bytes that is
 	// required for a transaction to be treated as free for mining purposes
 	// (block template generation).
-	TxMinFreeFee dcrutil.Amount
+	TxMinFreeFee hxutil.Amount
 }
 
 // minInt is a helper function to return the minimum of two ints.  This avoids

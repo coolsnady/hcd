@@ -3,14 +3,14 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package dcrutil_test
+package hxutil_test
 
 import (
 	"testing"
 
 	"github.com/coolsnady/hxd/chaincfg"
 	"github.com/coolsnady/hxd/chaincfg/chainec"
-	. "github.com/coolsnady/hxd/dcrutil"
+	. "github.com/coolsnady/hxd/hxutil"
 )
 
 func TestEncodeDecodeWIF(t *testing.T) {

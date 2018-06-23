@@ -16,7 +16,7 @@ import (
 	"github.com/coolsnady/hxd/blockchain/indexers"
 	"github.com/coolsnady/hxd/chaincfg/chainhash"
 	"github.com/coolsnady/hxd/database"
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hxd/hxutil"
 	"github.com/coolsnady/hxd/wire"
 )
 
@@ -97,7 +97,7 @@ func (bi *blockImporter) readBlock() ([]byte, error) {
 // with any potential errors.
 func (bi *blockImporter) processBlock(serializedBlock []byte) (bool, error) {
 	// Deserialize the block which includes checks for malformed blocks.
-	block, err := dcrutil.NewBlockFromBytes(serializedBlock)
+	block, err := hxutil.NewBlockFromBytes(serializedBlock)
 	if err != nil {
 		return false, err
 	}

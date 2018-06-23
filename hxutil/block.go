@@ -3,7 +3,7 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package dcrutil
+package hxutil
 
 import (
 	"bytes"
@@ -113,7 +113,7 @@ func (b *Block) Hash() *chainhash.Hash {
 	return &b.hash
 }
 
-// Tx returns a wrapped transaction (dcrutil.Tx) for the transaction at the
+// Tx returns a wrapped transaction (hxutil.Tx) for the transaction at the
 // specified index in the Block.  The supplied index is 0 based.  That is to
 // say, the first transaction in the block is txNum 0.  This is nearly
 // equivalent to accessing the raw transaction (wire.MsgTx) from the
@@ -146,7 +146,7 @@ func (b *Block) Tx(txNum int) (*Tx, error) {
 	return newTx, nil
 }
 
-// STx returns a wrapped transaction (dcrutil.Tx) for the stake transaction at
+// STx returns a wrapped transaction (hxutil.Tx) for the stake transaction at
 // the specified index in the Block.  The supplied index is 0 based.
 func (b *Block) STx(txNum int) (*Tx, error) {
 	// Ensure the requested transaction is in range.
@@ -175,10 +175,10 @@ func (b *Block) STx(txNum int) (*Tx, error) {
 	return newTx, nil
 }
 
-// Transactions returns a slice of wrapped transactions (dcrutil.Tx) for all
+// Transactions returns a slice of wrapped transactions (hxutil.Tx) for all
 // transactions in the Block.  This is nearly equivalent to accessing the raw
 // transactions (wire.MsgTx) in the underlying wire.MsgBlock, however it
-// instead provides easy access to wrapped versions (dcrutil.Tx) of them.
+// instead provides easy access to wrapped versions (hxutil.Tx) of them.
 func (b *Block) Transactions() []*Tx {
 	// Return transactions if they have ALL already been generated.  This
 	// flag is necessary because the wrapped transactions are lazily
@@ -207,7 +207,7 @@ func (b *Block) Transactions() []*Tx {
 	return b.transactions
 }
 
-// STransactions returns a slice of wrapped stake transactions (dcrutil.Tx) for all
+// STransactions returns a slice of wrapped stake transactions (hxutil.Tx) for all
 // stake transactions in the Block.  This is nearly equivalent to accessing the raw
 // transactions (dcrwire.MsgTx) in the underlying wire.MsgBlock, however it
 // instead provides easy access to wrapped versions (util.Tx) of them.

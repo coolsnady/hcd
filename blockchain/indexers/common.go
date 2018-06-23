@@ -14,7 +14,7 @@ import (
 
 	"github.com/coolsnady/hxd/blockchain"
 	"github.com/coolsnady/hxd/database"
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hxd/hxutil"
 )
 
 var (
@@ -53,11 +53,11 @@ type Indexer interface {
 
 	// ConnectBlock is invoked when the index manager is notified that a new
 	// block has been connected to the main chain.
-	ConnectBlock(dbTx database.Tx, block, parent *dcrutil.Block, view *blockchain.UtxoViewpoint) error
+	ConnectBlock(dbTx database.Tx, block, parent *hxutil.Block, view *blockchain.UtxoViewpoint) error
 
 	// DisconnectBlock is invoked when the index manager is notified that a
 	// block has been disconnected from the main chain.
-	DisconnectBlock(dbTx database.Tx, block, parent *dcrutil.Block, view *blockchain.UtxoViewpoint) error
+	DisconnectBlock(dbTx database.Tx, block, parent *hxutil.Block, view *blockchain.UtxoViewpoint) error
 }
 
 // IndexDropper provides a method to remove an index from the database. Indexers
@@ -105,9 +105,9 @@ type internalBucket interface {
 // approvesParent returns whether or not the vote bits in the header of the
 // passed block indicate the regular transaction tree of the parent block should
 // be considered valid.
-func approvesParent(block *dcrutil.Block) bool {
-	return dcrutil.IsFlagSet16(block.MsgBlock().Header.VoteBits,
-		dcrutil.BlockValid)
+func approvesParent(block *hxutil.Block) bool {
+	return hxutil.IsFlagSet16(block.MsgBlock().Header.VoteBits,
+		hxutil.BlockValid)
 }
 
 // interruptRequested returns true when the provided channel has been closed.

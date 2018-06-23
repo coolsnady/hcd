@@ -14,7 +14,7 @@ import (
 	"github.com/coolsnady/hxd/chaincfg"
 	"github.com/coolsnady/hxd/database"
 	_ "github.com/coolsnady/hxd/database/ffldb"
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hxd/hxutil"
 	"github.com/coolsnady/hxd/wire"
 )
 
@@ -137,7 +137,7 @@ func Example_blockStorageAndRetrieval() {
 	// and example.
 	err = db.Update(func(tx database.Tx) error {
 		genesisBlock := chaincfg.MainNetParams.GenesisBlock
-		return tx.StoreBlock(dcrutil.NewBlock(genesisBlock))
+		return tx.StoreBlock(hxutil.NewBlock(genesisBlock))
 	})
 	if err != nil {
 		fmt.Println(err)

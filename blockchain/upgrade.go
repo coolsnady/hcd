@@ -17,7 +17,7 @@ import (
 	"github.com/coolsnady/hxd/chaincfg"
 	"github.com/coolsnady/hxd/chaincfg/chainhash"
 	"github.com/coolsnady/hxd/database"
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hxd/hxutil"
 	"github.com/coolsnady/hxd/wire"
 )
 
@@ -83,7 +83,7 @@ func deserializeDatabaseInfoV2(dbInfoBytes []byte) (*databaseInfo, error) {
 
 // ticketsVotedInBlock fetches a list of tickets that were voted in the
 // block.
-func ticketsVotedInBlock(bl *dcrutil.Block) []chainhash.Hash {
+func ticketsVotedInBlock(bl *hxutil.Block) []chainhash.Hash {
 	var tickets []chainhash.Hash
 	for _, stx := range bl.MsgBlock().STransactions {
 		if stake.IsSSGen(stx) {
@@ -96,7 +96,7 @@ func ticketsVotedInBlock(bl *dcrutil.Block) []chainhash.Hash {
 
 // ticketsRevokedInBlock fetches a list of tickets that were revoked in the
 // block.
-func ticketsRevokedInBlock(bl *dcrutil.Block) []chainhash.Hash {
+func ticketsRevokedInBlock(bl *hxutil.Block) []chainhash.Hash {
 	var tickets []chainhash.Hash
 	for _, stx := range bl.MsgBlock().STransactions {
 		if stake.DetermineTxType(stx) == stake.TxTypeSSRtx {

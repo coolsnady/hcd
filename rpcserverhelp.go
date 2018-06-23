@@ -816,7 +816,7 @@ var helpDescsEnUS = map[string]string{
 	// -------- Decred-specific help --------
 
 	// EstimateFee help.
-	"estimatefee--synopsis": "Returns the estimated fee in dcr/kb.",
+	"estimatefee--synopsis": "Returns the estimated fee in hx/kb.",
 	"estimatefee-numblocks": "(unused)",
 	"estimatefee--result0":  "Estimated fee.",
 

@@ -17,7 +17,7 @@ import (
 	"testing"
 
 	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hxd/hxutil"
 	"github.com/coolsnady/hxd/wire"
 )
 
@@ -382,7 +382,7 @@ testloop:
 			continue
 		}
 
-		tx, err := dcrutil.NewTxFromBytes(serializedTx)
+		tx, err := hxutil.NewTxFromBytes(serializedTx)
 		if err != nil {
 			t.Errorf("bad test (arg 2 not msgtx %v) %d: %v", err,
 				i, test)
@@ -525,7 +525,7 @@ testloop:
 			continue
 		}
 
-		tx, err := dcrutil.NewTxFromBytes(serializedTx)
+		tx, err := hxutil.NewTxFromBytes(serializedTx)
 		if err != nil {
 			t.Errorf("bad test (arg 2 not msgtx %v) %d: %v", err,
 				i, test)

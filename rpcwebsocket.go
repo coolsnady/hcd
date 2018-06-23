@@ -27,7 +27,7 @@ import (
 	"github.com/coolsnady/hxd/blockchain/stake"
 	"github.com/coolsnady/hxd/chaincfg/chainhash"
 	"github.com/coolsnady/hxd/dcrjson"
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hxd/hxutil"
 	"github.com/coolsnady/hxd/txscript"
 	"github.com/coolsnady/hxd/wire"
 )
@@ -199,7 +199,7 @@ func (m *wsNotificationManager) queueHandler() {
 // NotifyBlockConnected passes a block newly-connected to the best chain
 // to the notification manager for block and transaction notification
 // processing.
-func (m *wsNotificationManager) NotifyBlockConnected(block *dcrutil.Block) {
+func (m *wsNotificationManager) NotifyBlockConnected(block *hxutil.Block) {
 	// As NotifyBlockConnected will be called by the block manager
 	// and the RPC server may no longer be running, use a select
 	// statement to unblock enqueuing the notification once the RPC
@@ -212,7 +212,7 @@ func (m *wsNotificationManager) NotifyBlockConnected(block *dcrutil.Block) {
 
 // NotifyBlockDisconnected passes a block disconnected from the best chain
 // to the notification manager for block notification processing.
-func (m *wsNotificationManager) NotifyBlockDisconnected(block *dcrutil.Block) {
+func (m *wsNotificationManager) NotifyBlockDisconnected(block *hxutil.Block) {
 	// As NotifyBlockDisconnected will be called by the block manager
 	// and the RPC server may no longer be running, use a select
 	// statement to unblock enqueuing the notification once the RPC
@@ -297,7 +297,7 @@ func (m *wsNotificationManager) NotifyStakeDifficulty(
 // notification manager for transaction notification processing.  If
 // isNew is true, the tx is is a new transaction, rather than one
 // added to the mempool during a reorg.
-func (m *wsNotificationManager) NotifyMempoolTx(tx *dcrutil.Tx, isNew bool) {
+func (m *wsNotificationManager) NotifyMempoolTx(tx *hxutil.Tx, isNew bool) {
 	n := &notificationTxAcceptedByMempool{
 		isNew: isNew,
 		tx:    tx,
@@ -368,15 +368,15 @@ func makeWSClientFilter(addresses []string, unspentOutPoints []*wire.OutPoint) *
 	return filter
 }
 
-func (f *wsClientFilter) addAddress(a dcrutil.Address) {
+func (f *wsClientFilter) addAddress(a hxutil.Address) {
 	switch a := a.(type) {
-	case *dcrutil.AddressPubKeyHash:
+	case *hxutil.AddressPubKeyHash:
 		f.pubKeyHashes[*a.Hash160()] = struct{}{}
 		return
-	case *dcrutil.AddressScriptHash:
+	case *hxutil.AddressScriptHash:
 		f.scriptHashes[*a.Hash160()] = struct{}{}
 		return
-	case *dcrutil.AddressSecpPubKey:
+	case *hxutil.AddressSecpPubKey:
 		serializedPubKey := a.ScriptAddress()
 		switch len(serializedPubKey) {
 		case 33: // compressed
@@ -396,7 +396,7 @@ func (f *wsClientFilter) addAddress(a dcrutil.Address) {
 }
 
 func (f *wsClientFilter) addAddressStr(s string) {
-	a, err := dcrutil.DecodeAddress(s)
+	a, err := hxutil.DecodeAddress(s)
 	// If address can't be decoded, no point in saving it since it should also
 	// impossible to create the address from an inspected transaction output
 	// script.
@@ -406,15 +406,15 @@ func (f *wsClientFilter) addAddressStr(s string) {
 	f.addAddress(a)
 }
 
-func (f *wsClientFilter) existsAddress(a dcrutil.Address) bool {
+func (f *wsClientFilter) existsAddress(a hxutil.Address) bool {
 	switch a := a.(type) {
-	case *dcrutil.AddressPubKeyHash:
+	case *hxutil.AddressPubKeyHash:
 		_, ok := f.pubKeyHashes[*a.Hash160()]
 		return ok
-	case *dcrutil.AddressScriptHash:
+	case *hxutil.AddressScriptHash:
 		_, ok := f.scriptHashes[*a.Hash160()]
 		return ok
-	case *dcrutil.AddressSecpPubKey:
+	case *hxutil.AddressSecpPubKey:
 		serializedPubKey := a.ScriptAddress()
 		switch len(serializedPubKey) {
 		case 33: // compressed
@@ -450,8 +450,8 @@ func (f *wsClientFilter) existsUnspentOutPoint(op *wire.OutPoint) bool {
 }
 
 // Notification types
-type notificationBlockConnected dcrutil.Block
-type notificationBlockDisconnected dcrutil.Block
+type notificationBlockConnected hxutil.Block
+type notificationBlockDisconnected hxutil.Block
 type notificationReorganization blockchain.ReorganizationNtfnsData
 type notificationWinningTickets WinningTicketsNtfnData
 type notificationSpentAndMissedTickets blockchain.TicketNotificationsData
@@ -459,7 +459,7 @@ type notificationNewTickets blockchain.TicketNotificationsData
 type notificationStakeDifficulty StakeDifficultyNtfnData
 type notificationTxAcceptedByMempool struct {
 	isNew bool
-	tx    *dcrutil.Tx
+	tx    *hxutil.Tx
 }
 
 // Notification control requests
@@ -508,7 +508,7 @@ out:
 			}
 			switch n := n.(type) {
 			case *notificationBlockConnected:
-				block := (*dcrutil.Block)(n)
+				block := (*hxutil.Block)(n)
 
 				// Skip iterating through all txs if no tx
 				// notification requests exist.
@@ -520,7 +520,7 @@ out:
 
 			case *notificationBlockDisconnected:
 				m.notifyBlockDisconnected(blockNotifications,
-					(*dcrutil.Block)(n))
+					(*hxutil.Block)(n))
 
 			case *notificationReorganization:
 				m.notifyReorganization(blockNotifications,
@@ -652,7 +652,7 @@ func (m *wsNotificationManager) UnregisterBlockUpdates(wsc *wsClient) {
 // spending a watched output or outputting to a watched address.  Matching
 // client's filters are updated based on this transaction's outputs and output
 // addresses that may be relevant for a client.
-func (m *wsNotificationManager) subscribedClients(tx *dcrutil.Tx, clients map[chan struct{}]*wsClient) map[chan struct{}]struct{} {
+func (m *wsNotificationManager) subscribedClients(tx *hxutil.Tx, clients map[chan struct{}]*wsClient) map[chan struct{}]struct{} {
 	// Use a map of client quit channels as keys to prevent duplicates when
 	// multiple inputs and/or outputs are relevant to the client.
 	subscribed := make(map[chan struct{}]struct{})
@@ -703,7 +703,7 @@ func (m *wsNotificationManager) subscribedClients(tx *dcrutil.Tx, clients map[ch
 
 // notifyBlockConnected notifies websocket clients that have registered for
 // block updates when a block is connected to the main chain.
-func (m *wsNotificationManager) notifyBlockConnected(clients map[chan struct{}]*wsClient, block *dcrutil.Block) {
+func (m *wsNotificationManager) notifyBlockConnected(clients map[chan struct{}]*wsClient, block *hxutil.Block) {
 	// Create the common portion of the notification that is the same for
 	// every client.
 	headerBytes, err := block.MsgBlock().Header.Bytes()
@@ -759,7 +759,7 @@ func (m *wsNotificationManager) notifyBlockConnected(clients map[chan struct{}]*
 // notifyBlockDisconnected notifies websocket clients that have registered for
 // block updates when a block is disconnected from the main chain (due to a
 // reorganize).
-func (*wsNotificationManager) notifyBlockDisconnected(clients map[chan struct{}]*wsClient, block *dcrutil.Block) {
+func (*wsNotificationManager) notifyBlockDisconnected(clients map[chan struct{}]*wsClient, block *hxutil.Block) {
 	// Skip notification creation if no clients have requested block
 	// connected/disconnected notifications.
 	if len(clients) == 0 {
@@ -974,7 +974,7 @@ func (m *wsNotificationManager) UnregisterNewMempoolTxsUpdates(wsc *wsClient) {
 
 // notifyForNewTx notifies websocket clients that have registered for updates
 // when a new transaction is added to the memory pool.
-func (m *wsNotificationManager) notifyForNewTx(clients map[chan struct{}]*wsClient, tx *dcrutil.Tx) {
+func (m *wsNotificationManager) notifyForNewTx(clients map[chan struct{}]*wsClient, tx *hxutil.Tx) {
 	txHashStr := tx.Hash().String()
 	mtx := tx.MsgTx()
 
@@ -984,7 +984,7 @@ func (m *wsNotificationManager) notifyForNewTx(clients map[chan struct{}]*wsClie
 	}
 
 	ntfn := dcrjson.NewTxAcceptedNtfn(txHashStr,
-		dcrutil.Amount(amount).ToCoin())
+		hxutil.Amount(amount).ToCoin())
 	marshalledJSON, err := dcrjson.MarshalCmd("1.0", nil, ntfn)
 	if err != nil {
 		rpcsLog.Errorf("Failed to marshal tx notification: %s",
@@ -1036,7 +1036,7 @@ func txHexString(tx *wire.MsgTx) string {
 // address and inputs spending a watched outpoint.  Any outputs paying to a
 // watched address result in the output being watched as well for future
 // notifications.
-func (m *wsNotificationManager) notifyRelevantTxAccepted(tx *dcrutil.Tx,
+func (m *wsNotificationManager) notifyRelevantTxAccepted(tx *hxutil.Tx,
 	clients map[chan struct{}]*wsClient) {
 
 	var clientsToNotify map[chan struct{}]*wsClient
@@ -2083,7 +2083,7 @@ func handleStopNotifyNewTransactions(wsc *wsClient, icmd interface{}) (interface
 // rescanBlock rescans a block for any relevant transactions for the passed
 // lookup keys.  Any discovered transactions are returned hex encoded as a
 // string slice.
-func rescanBlock(filter *wsClientFilter, block *dcrutil.Block) []string {
+func rescanBlock(filter *wsClientFilter, block *hxutil.Block) []string {
 	var transactions []string
 
 	// Need to iterate over both the stake and regular transactions in a

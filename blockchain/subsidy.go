@@ -12,7 +12,7 @@ import (
 
 	"github.com/coolsnady/hxd/blockchain/stake"
 	"github.com/coolsnady/hxd/chaincfg"
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hxd/hxutil"
 	"github.com/coolsnady/hxd/txscript"
 	"github.com/coolsnady/hxd/wire"
 )
@@ -201,7 +201,7 @@ func CalcBlockTaxSubsidy(subsidyCache *SubsidyCache, height int64, voters uint16
 
 // BlockOneCoinbasePaysTokens checks to see if the first block coinbase pays
 // out to the network initial token ledger.
-func BlockOneCoinbasePaysTokens(tx *dcrutil.Tx, params *chaincfg.Params) error {
+func BlockOneCoinbasePaysTokens(tx *hxutil.Tx, params *chaincfg.Params) error {
 	// If no ledger is specified, just return true.
 	if len(params.BlockOneLedger) == 0 {
 		return nil
@@ -253,7 +253,7 @@ func BlockOneCoinbasePaysTokens(tx *dcrutil.Tx, params *chaincfg.Params) error {
 			return ruleError(ErrBlockOneOutputs, errStr)
 		}
 
-		addrLedger, err := dcrutil.DecodeAddress(ledger[i].Address)
+		addrLedger, err := hxutil.DecodeAddress(ledger[i].Address)
 		if err != nil {
 			return err
 		}
@@ -281,7 +281,7 @@ func BlockOneCoinbasePaysTokens(tx *dcrutil.Tx, params *chaincfg.Params) error {
 
 // CoinbasePaysTax checks to see if a given block's coinbase correctly pays
 // tax to the developer organization.
-func CoinbasePaysTax(subsidyCache *SubsidyCache, tx *dcrutil.Tx, height int64, voters uint16, params *chaincfg.Params) error {
+func CoinbasePaysTax(subsidyCache *SubsidyCache, tx *hxutil.Tx, height int64, voters uint16, params *chaincfg.Params) error {
 	// Taxes only apply from block 2 onwards.
 	if height <= 1 {
 		return nil
@@ -325,7 +325,7 @@ func CoinbasePaysTax(subsidyCache *SubsidyCache, tx *dcrutil.Tx, height int64, v
 // and its parent. The blocks passed to this function MUST be valid blocks
 // that have already been confirmed to abide by the consensus rules of the
 // network, or the function might panic.
-func CalculateAddedSubsidy(block, parent *dcrutil.Block) int64 {
+func CalculateAddedSubsidy(block, parent *hxutil.Block) int64 {
 	var subsidy int64
 	if headerApprovesParent(&block.MsgBlock().Header) {
 		subsidy += parent.MsgBlock().Transactions[0].TxIn[0].ValueIn

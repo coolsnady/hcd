@@ -17,7 +17,7 @@ import (
 	"github.com/coolsnady/hxd/chaincfg"
 	"github.com/coolsnady/hxd/chaincfg/chainhash"
 	"github.com/coolsnady/hxd/database"
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hxd/hxutil"
 	"github.com/coolsnady/hxd/txscript"
 	"github.com/coolsnady/hxd/wire"
 )
@@ -150,7 +150,7 @@ func TestFullBlocks(t *testing.T) {
 	// specified in the test.
 	testAcceptedBlock := func(item fullblocktests.AcceptedBlock) {
 		blockHeight := item.Block.Header.Height
-		block := dcrutil.NewBlock(item.Block)
+		block := hxutil.NewBlock(item.Block)
 		t.Logf("Testing block %s (hash %s, height %d)",
 			item.Name, block.Hash(), blockHeight)
 
@@ -184,7 +184,7 @@ func TestFullBlocks(t *testing.T) {
 	// specified in the test.
 	testRejectedBlock := func(item fullblocktests.RejectedBlock) {
 		blockHeight := item.Block.Header.Height
-		block := dcrutil.NewBlock(item.Block)
+		block := hxutil.NewBlock(item.Block)
 		t.Logf("Testing block %s (hash %s, height %d)",
 			item.Name, block.Hash(), blockHeight)
 
@@ -241,7 +241,7 @@ func TestFullBlocks(t *testing.T) {
 	// orphan or rejected with a rule violation.
 	testOrphanOrRejectedBlock := func(item fullblocktests.OrphanOrRejectedBlock) {
 		blockHeight := item.Block.Header.Height
-		block := dcrutil.NewBlock(item.Block)
+		block := hxutil.NewBlock(item.Block)
 		t.Logf("Testing block %s (hash %s, height %d)",
 			item.Name, block.Hash(), blockHeight)
 
@@ -268,7 +268,7 @@ func TestFullBlocks(t *testing.T) {
 	// block specified in the provided test instance.
 	testExpectedTip := func(item fullblocktests.ExpectedTip) {
 		blockHeight := item.Block.Header.Height
-		block := dcrutil.NewBlock(item.Block)
+		block := hxutil.NewBlock(item.Block)
 		t.Logf("Testing tip for block %s (hash %s, height %d)",
 			item.Name, block.Hash(), blockHeight)
 

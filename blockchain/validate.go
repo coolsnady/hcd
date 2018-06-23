@@ -16,7 +16,7 @@ import (
 	"github.com/coolsnady/hxd/chaincfg"
 	"github.com/coolsnady/hxd/chaincfg/chainhash"
 	"github.com/coolsnady/hxd/database"
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hxd/hxutil"
 	"github.com/coolsnady/hxd/txscript"
 	"github.com/coolsnady/hxd/wire"
 )
@@ -69,7 +69,7 @@ var (
 // voteBitsApproveParent returns whether or not the passed vote bits indicate
 // the regular transaction tree of the parent block should be considered valid.
 func voteBitsApproveParent(voteBits uint16) bool {
-	return dcrutil.IsFlagSet16(voteBits, dcrutil.BlockValid)
+	return hxutil.IsFlagSet16(voteBits, hxutil.BlockValid)
 }
 
 // approvesParent returns whether or not the vote bits in the passed header
@@ -135,7 +135,7 @@ func IsCoinBaseTx(msgTx *wire.MsgTx) bool {
 //
 // This function only differs from IsCoinBaseTx in that it works with a higher
 // level util transaction as opposed to a raw wire transaction.
-func IsCoinBase(tx *dcrutil.Tx) bool {
+func IsCoinBase(tx *hxutil.Tx) bool {
 	return IsCoinBaseTx(tx.MsgTx())
 }
 
@@ -154,7 +154,7 @@ func IsExpiredTx(tx *wire.MsgTx, blockHeight int64) bool {
 //
 // This function only differs from IsExpiredTx in that it works with a higher
 // level util transaction as opposed to a raw wire transaction.
-func IsExpired(tx *dcrutil.Tx, blockHeight int64) bool {
+func IsExpired(tx *hxutil.Tx, blockHeight int64) bool {
 	return IsExpiredTx(tx.MsgTx(), blockHeight)
 }
 
@@ -211,10 +211,10 @@ func CheckTransactionSanity(tx *wire.MsgTx, params *chaincfg.Params) error {
 				"value of %v", atom)
 			return ruleError(ErrBadTxOutValue, str)
 		}
-		if atom > dcrutil.MaxAmount {
+		if atom > hxutil.MaxAmount {
 			str := fmt.Sprintf("transaction output value of %v is "+
 				"higher than max allowed value of %v", atom,
-				dcrutil.MaxAmount)
+				hxutil.MaxAmount)
 			return ruleError(ErrBadTxOutValue, str)
 		}
 
@@ -226,14 +226,14 @@ func CheckTransactionSanity(tx *wire.MsgTx, params *chaincfg.Params) error {
 		if totalAtom < 0 {
 			str := fmt.Sprintf("total value of all transaction "+
 				"outputs exceeds max allowed value of %v",
-				dcrutil.MaxAmount)
+				hxutil.MaxAmount)
 			return ruleError(ErrBadTxOutValue, str)
 		}
-		if totalAtom > dcrutil.MaxAmount {
+		if totalAtom > hxutil.MaxAmount {
 			str := fmt.Sprintf("total value of all transaction "+
 				"outputs is %v which is higher than max "+
 				"allowed value of %v", totalAtom,
-				dcrutil.MaxAmount)
+				hxutil.MaxAmount)
 			return ruleError(ErrBadTxOutValue, str)
 		}
 	}
@@ -320,7 +320,7 @@ func CheckTransactionSanity(tx *wire.MsgTx, params *chaincfg.Params) error {
 // checkProofOfStake ensures that all ticket purchases in the block pay at least
 // the amount required by the block header stake bits which indicate the target
 // stake difficulty (aka ticket price) as claimed.
-func checkProofOfStake(block *dcrutil.Block, posLimit int64) error {
+func checkProofOfStake(block *hxutil.Block, posLimit int64) error {
 	msgBlock := block.MsgBlock()
 	for _, staketx := range block.STransactions() {
 		msgTx := staketx.MsgTx()
@@ -355,7 +355,7 @@ func checkProofOfStake(block *dcrutil.Block, posLimit int64) error {
 // CheckProofOfStake ensures that all ticket purchases in the block pay at least
 // the amount required by the block header stake bits which indicate the target
 // stake difficulty (aka ticket price) as claimed.
-func CheckProofOfStake(block *dcrutil.Block, posLimit int64) error {
+func CheckProofOfStake(block *hxutil.Block, posLimit int64) error {
 	return checkProofOfStake(block, posLimit)
 }
 
@@ -527,7 +527,7 @@ func checkBlockHeaderSanity(header *wire.BlockHeader, timeSource MedianTimeSourc
 //
 // The flags do not modify the behavior of this function directly, however they
 // are needed to pass along to checkBlockHeaderSanity.
-func checkBlockSanity(block *dcrutil.Block, timeSource MedianTimeSource, flags BehaviorFlags, chainParams *chaincfg.Params) error {
+func checkBlockSanity(block *hxutil.Block, timeSource MedianTimeSource, flags BehaviorFlags, chainParams *chaincfg.Params) error {
 	msgBlock := block.MsgBlock()
 	header := &msgBlock.Header
 	err := checkBlockHeaderSanity(header, timeSource, flags, chainParams)
@@ -822,14 +822,14 @@ func checkBlockSanity(block *dcrutil.Block, timeSource MedianTimeSource, flags B
 // CheckBlockSanity performs some preliminary checks on a block to ensure it is
 // sane before continuing with block processing.  These checks are context
 // free.
-func CheckBlockSanity(block *dcrutil.Block, timeSource MedianTimeSource, chainParams *chaincfg.Params) error {
+func CheckBlockSanity(block *hxutil.Block, timeSource MedianTimeSource, chainParams *chaincfg.Params) error {
 	return checkBlockSanity(block, timeSource, BFNone, chainParams)
 }
 
 // CheckWorklessBlockSanity performs some preliminary checks on a block to
 // ensure it is sane before continuing with block processing.  These checks are
 // context free.
-func CheckWorklessBlockSanity(block *dcrutil.Block, timeSource MedianTimeSource, chainParams *chaincfg.Params) error {
+func CheckWorklessBlockSanity(block *hxutil.Block, timeSource MedianTimeSource, chainParams *chaincfg.Params) error {
 	return checkBlockSanity(block, timeSource, BFNoPoWCheck, chainParams)
 }
 
@@ -1087,7 +1087,7 @@ func (b *BlockChain) checkAllowedRevocations(parentStakeNode *stake.Node, block 
 //
 // The flags are also passed to checkBlockHeaderContext.  See its documentation
 // for how the flags modify its behavior.
-func (b *BlockChain) checkBlockContext(block *dcrutil.Block, prevNode *blockNode, flags BehaviorFlags) error {
+func (b *BlockChain) checkBlockContext(block *hxutil.Block, prevNode *blockNode, flags BehaviorFlags) error {
 	// The genesis block is valid by definition.
 	if prevNode == nil {
 		return nil
@@ -1210,7 +1210,7 @@ func (b *BlockChain) checkBlockContext(block *dcrutil.Block, prevNode *blockNode
 //
 // Decred: Check the stake transactions to make sure they don't have this txid
 // too.
-func (b *BlockChain) checkDupTxs(txSet []*dcrutil.Tx, view *UtxoViewpoint) error {
+func (b *BlockChain) checkDupTxs(txSet []*hxutil.Tx, view *UtxoViewpoint) error {
 	if !chaincfg.CheckForDuplicateHashes {
 		return nil
 	}
@@ -1253,7 +1253,7 @@ func (b *BlockChain) checkDupTxs(txSet []*dcrutil.Tx, view *UtxoViewpoint) error
 //
 // NOTE: The transaction MUST have already been sanity checked with the
 // CheckTransactionSanity function prior to calling this function.
-func CheckTransactionInputs(subsidyCache *SubsidyCache, tx *dcrutil.Tx, txHeight int64, utxoView *UtxoViewpoint, checkFraudProof bool, chainParams *chaincfg.Params) (int64, error) {
+func CheckTransactionInputs(subsidyCache *SubsidyCache, tx *hxutil.Tx, txHeight int64, utxoView *UtxoViewpoint, checkFraudProof bool, chainParams *chaincfg.Params) (int64, error) {
 	msgTx := tx.MsgTx()
 
 	ticketMaturity := int64(chainParams.TicketMaturity)
@@ -1796,10 +1796,10 @@ func CheckTransactionInputs(subsidyCache *SubsidyCache, tx *dcrutil.Tx, txHeight
 				"value of %v", originTxAtom)
 			return 0, ruleError(ErrBadTxOutValue, str)
 		}
-		if originTxAtom > dcrutil.MaxAmount {
+		if originTxAtom > hxutil.MaxAmount {
 			str := fmt.Sprintf("transaction output value of %v is "+
 				"higher than max allowed value of %v",
-				originTxAtom, dcrutil.MaxAmount)
+				originTxAtom, hxutil.MaxAmount)
 			return 0, ruleError(ErrBadTxOutValue, str)
 		}
 
@@ -1809,11 +1809,11 @@ func CheckTransactionInputs(subsidyCache *SubsidyCache, tx *dcrutil.Tx, txHeight
 		lastAtomIn := totalAtomIn
 		totalAtomIn += originTxAtom
 		if totalAtomIn < lastAtomIn ||
-			totalAtomIn > dcrutil.MaxAmount {
+			totalAtomIn > hxutil.MaxAmount {
 			str := fmt.Sprintf("total value of all transaction "+
 				"inputs is %v which is higher than max "+
 				"allowed value of %v", totalAtomIn,
-				dcrutil.MaxAmount)
+				hxutil.MaxAmount)
 			return 0, ruleError(ErrBadTxOutValue, str)
 		}
 	}
@@ -1878,7 +1878,7 @@ func CheckTransactionInputs(subsidyCache *SubsidyCache, tx *dcrutil.Tx, txHeight
 // input and output scripts in the provided transaction.  This uses the
 // quicker, but imprecise, signature operation counting mechanism from
 // txscript.
-func CountSigOps(tx *dcrutil.Tx, isCoinBaseTx bool, isSSGen bool) int {
+func CountSigOps(tx *hxutil.Tx, isCoinBaseTx bool, isSSGen bool) int {
 	msgTx := tx.MsgTx()
 
 	// Accumulate the number of signature operations in all transaction
@@ -1912,7 +1912,7 @@ func CountSigOps(tx *dcrutil.Tx, isCoinBaseTx bool, isSSGen bool) int {
 // transactions which are of the pay-to-script-hash type.  This uses the
 // precise, signature operation counting mechanism from the script engine which
 // requires access to the input transaction scripts.
-func CountP2SHSigOps(tx *dcrutil.Tx, isCoinBaseTx bool, isStakeBaseTx bool, utxoView *UtxoViewpoint) (int, error) {
+func CountP2SHSigOps(tx *hxutil.Tx, isCoinBaseTx bool, isStakeBaseTx bool, utxoView *UtxoViewpoint) (int, error) {
 	// Coinbase transactions have no interesting inputs.
 	if isCoinBaseTx {
 		return 0, nil
@@ -1973,7 +1973,7 @@ func CountP2SHSigOps(tx *dcrutil.Tx, isCoinBaseTx bool, isStakeBaseTx bool, utxo
 // sure they don't overflow the limits.  It takes a cumulative number of sig
 // ops as an argument and increments will each call.
 // TxTree true == Regular, false == Stake
-func checkNumSigOps(tx *dcrutil.Tx, utxoView *UtxoViewpoint, index int, txTree bool, cumulativeSigOps int) (int, error) {
+func checkNumSigOps(tx *hxutil.Tx, utxoView *UtxoViewpoint, index int, txTree bool, cumulativeSigOps int) (int, error) {
 	msgTx := tx.MsgTx()
 	isSSGen := stake.IsSSGen(msgTx)
 	numsigOps := CountSigOps(tx, (index == 0) && txTree, isSSGen)
@@ -2010,7 +2010,7 @@ func checkNumSigOps(tx *dcrutil.Tx, utxoView *UtxoViewpoint, index int, txTree b
 // checkStakeBaseAmounts calculates the total amount given as subsidy from
 // single stakebase transactions (votes) within a block.  This function skips a
 // ton of checks already performed by CheckTransactionInputs.
-func checkStakeBaseAmounts(subsidyCache *SubsidyCache, height int64, params *chaincfg.Params, txs []*dcrutil.Tx, utxoView *UtxoViewpoint) error {
+func checkStakeBaseAmounts(subsidyCache *SubsidyCache, height int64, params *chaincfg.Params, txs []*hxutil.Tx, utxoView *UtxoViewpoint) error {
 	for _, tx := range txs {
 		msgTx := tx.MsgTx()
 		if stake.IsSSGen(msgTx) {
@@ -2054,7 +2054,7 @@ func checkStakeBaseAmounts(subsidyCache *SubsidyCache, height int64, params *cha
 // getStakeBaseAmounts calculates the total amount given as subsidy from the
 // collective stakebase transactions (votes) within a block.  This function
 // skips a ton of checks already performed by CheckTransactionInputs.
-func getStakeBaseAmounts(txs []*dcrutil.Tx, utxoView *UtxoViewpoint) (int64, error) {
+func getStakeBaseAmounts(txs []*hxutil.Tx, utxoView *UtxoViewpoint) (int64, error) {
 	totalInputs := int64(0)
 	totalOutputs := int64(0)
 	for _, tx := range txs {
@@ -2086,7 +2086,7 @@ func getStakeBaseAmounts(txs []*dcrutil.Tx, utxoView *UtxoViewpoint) (int64, err
 
 // getStakeTreeFees determines the amount of fees for in the stake tx tree of
 // some node given a transaction store.
-func getStakeTreeFees(subsidyCache *SubsidyCache, height int64, params *chaincfg.Params, txs []*dcrutil.Tx, utxoView *UtxoViewpoint) (dcrutil.Amount, error) {
+func getStakeTreeFees(subsidyCache *SubsidyCache, height int64, params *chaincfg.Params, txs []*hxutil.Tx, utxoView *UtxoViewpoint) (hxutil.Amount, error) {
 	totalInputs := int64(0)
 	totalOutputs := int64(0)
 	for _, tx := range txs {
@@ -2133,14 +2133,14 @@ func getStakeTreeFees(subsidyCache *SubsidyCache, height int64, params *chaincfg
 		return 0, ruleError(ErrStakeFees, str)
 	}
 
-	return dcrutil.Amount(totalInputs - totalOutputs), nil
+	return hxutil.Amount(totalInputs - totalOutputs), nil
 }
 
 // checkTransactionsAndConnect is the local function used to check the
 // transaction inputs for a transaction list given a predetermined TxStore.
 // After ensuring the transaction is valid, the transaction is connected to the
 // UTXO viewpoint.  TxTree true == Regular, false == Stake
-func (b *BlockChain) checkTransactionsAndConnect(subsidyCache *SubsidyCache, inputFees dcrutil.Amount, node *blockNode, txs []*dcrutil.Tx, utxoView *UtxoViewpoint, stxos *[]spentTxOut, txTree bool) error {
+func (b *BlockChain) checkTransactionsAndConnect(subsidyCache *SubsidyCache, inputFees hxutil.Amount, node *blockNode, txs []*hxutil.Tx, utxoView *UtxoViewpoint, stxos *[]spentTxOut, txTree bool) error {
 	// Perform several checks on the inputs for each transaction.  Also
 	// accumulate the total fees.  This could technically be combined with
 	// the loop above instead of running another loop over the
@@ -2324,7 +2324,7 @@ func (b *BlockChain) consensusScriptVerifyFlags(node *blockNode) (txscript.Scrip
 // the bulk of its work.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (b *BlockChain) checkConnectBlock(node *blockNode, block, parent *dcrutil.Block, utxoView *UtxoViewpoint, stxos *[]spentTxOut) error {
+func (b *BlockChain) checkConnectBlock(node *blockNode, block, parent *hxutil.Block, utxoView *UtxoViewpoint, stxos *[]spentTxOut) error {
 	// If the side chain blocks end up in the database, a call to
 	// CheckBlockSanity should be done here in case a previous version
 	// allowed a block that is no longer valid.  However, since the
@@ -2559,7 +2559,7 @@ func (b *BlockChain) checkConnectBlock(node *blockNode, block, parent *dcrutil.B
 // the current tip of the main chain or its parent.
 //
 // This function is safe for concurrent access.
-func (b *BlockChain) CheckConnectBlockTemplate(block *dcrutil.Block) error {
+func (b *BlockChain) CheckConnectBlockTemplate(block *hxutil.Block) error {
 	b.chainLock.Lock()
 	defer b.chainLock.Unlock()
 
@@ -2629,7 +2629,7 @@ func (b *BlockChain) CheckConnectBlockTemplate(block *dcrutil.Block) error {
 	view := NewUtxoViewpoint()
 	view.SetBestHash(&tip.hash)
 	view.SetStakeViewpoint(ViewpointPrevValidInitial)
-	var nextBlockToDetach *dcrutil.Block
+	var nextBlockToDetach *hxutil.Block
 	for e := detachNodes.Front(); e != nil; e = e.Next() {
 		// Grab the block to detach based on the node.  Use the fact that the
 		// parent of the block is already required, and the next block to detach
@@ -2690,7 +2690,7 @@ func (b *BlockChain) CheckConnectBlockTemplate(block *dcrutil.Block) error {
 
 	// The requested node is on a side chain, so we need to apply the
 	// transactions and spend information from each of the nodes to attach.
-	var prevAttachBlock *dcrutil.Block
+	var prevAttachBlock *hxutil.Block
 	for e := attachNodes.Front(); e != nil; e = e.Next() {
 		// Grab the block to attach based on the node.  Use the fact that the
 		// parent of the block is either the fork point for the first node being

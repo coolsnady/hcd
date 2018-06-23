@@ -10,7 +10,7 @@ import (
 	"math"
 	"runtime"
 
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hxd/hxutil"
 	"github.com/coolsnady/hxd/txscript"
 	"github.com/coolsnady/hxd/wire"
 )
@@ -19,7 +19,7 @@ import (
 type txValidateItem struct {
 	txInIndex int
 	txIn      *wire.TxIn
-	tx        *dcrutil.Tx
+	tx        *hxutil.Tx
 }
 
 // txValidator provides a type which asynchronously validates transaction
@@ -195,7 +195,7 @@ func newTxValidator(utxoView *UtxoViewpoint, flags txscript.ScriptFlags, sigCach
 
 // ValidateTransactionScripts validates the scripts for the passed transaction
 // using multiple goroutines.
-func ValidateTransactionScripts(tx *dcrutil.Tx, utxoView *UtxoViewpoint, flags txscript.ScriptFlags, sigCache *txscript.SigCache) error {
+func ValidateTransactionScripts(tx *hxutil.Tx, utxoView *UtxoViewpoint, flags txscript.ScriptFlags, sigCache *txscript.SigCache) error {
 	// Collect all of the transaction inputs and required information for
 	// validation.
 	txIns := tx.MsgTx().TxIn
@@ -222,13 +222,13 @@ func ValidateTransactionScripts(tx *dcrutil.Tx, utxoView *UtxoViewpoint, flags t
 // checkBlockScripts executes and validates the scripts for all transactions in
 // the passed block using multiple goroutines.
 // txTree = true is TxTreeRegular, txTree = false is TxTreeStake.
-func checkBlockScripts(block *dcrutil.Block, utxoView *UtxoViewpoint, txTree bool,
+func checkBlockScripts(block *hxutil.Block, utxoView *UtxoViewpoint, txTree bool,
 	scriptFlags txscript.ScriptFlags, sigCache *txscript.SigCache) error {
 
 	// Collect all of the transaction inputs and required information for
 	// validation for all transactions in the block into a single slice.
 	numInputs := 0
-	var txs []*dcrutil.Tx
+	var txs []*hxutil.Tx
 
 	// TxTreeRegular handling.
 	if txTree {

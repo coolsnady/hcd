@@ -1,4 +1,4 @@
-module github.com/coolsnady/hxd/dcrutil
+module github.com/coolsnady/hxd/hxutil
 
 require (
 	github.com/coolsnady/hxd v1.3.0

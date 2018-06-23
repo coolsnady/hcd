@@ -13,14 +13,14 @@ import (
 
 	"github.com/coolsnady/hxd/blockchain/stake"
 	"github.com/coolsnady/hxd/database"
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hxd/hxutil"
 	"github.com/coolsnady/hxd/txscript"
 )
 
 // checkCoinbaseUniqueHeight checks to ensure that for all blocks height > 1 the
 // coinbase contains the height encoding to make coinbase hash collisions
 // impossible.
-func checkCoinbaseUniqueHeight(blockHeight int64, block *dcrutil.Block) error {
+func checkCoinbaseUniqueHeight(blockHeight int64, block *hxutil.Block) error {
 	// Coinbase TxOut[0] is always tax, TxOut[1] is always
 	// height + extranonce, so at least two outputs must
 	// exist.
@@ -68,7 +68,7 @@ func checkCoinbaseUniqueHeight(blockHeight int64, block *dcrutil.Block) error {
 }
 
 // IsFinalizedTransaction determines whether or not a transaction is finalized.
-func IsFinalizedTransaction(tx *dcrutil.Tx, blockHeight int64, blockTime time.Time) bool {
+func IsFinalizedTransaction(tx *hxutil.Tx, blockHeight int64, blockTime time.Time) bool {
 	// Lock time of zero means the transaction is finalized.
 	msgTx := tx.MsgTx()
 	lockTime := msgTx.LockTime
@@ -113,7 +113,7 @@ func IsFinalizedTransaction(tx *dcrutil.Tx, blockHeight int64, blockTime time.Ti
 // their documentation for how the flags modify their behavior.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (b *BlockChain) maybeAcceptBlock(block *dcrutil.Block, flags BehaviorFlags) (int64, error) {
+func (b *BlockChain) maybeAcceptBlock(block *hxutil.Block, flags BehaviorFlags) (int64, error) {
 	// This function should never be called with orphan blocks or the
 	// genesis block.
 	prevHash := &block.MsgBlock().Header.PrevBlock

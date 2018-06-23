@@ -10,7 +10,7 @@ cases which are either not possible or can't reliably be tested via the public
 interface. The functions are only exported while the tests are being run.
 */
 
-package dcrutil
+package hxutil
 
 import (
 	"github.com/decred/base58"

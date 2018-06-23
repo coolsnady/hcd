@@ -16,7 +16,7 @@ import (
 	"github.com/coolsnady/hxd/chaincfg"
 	"github.com/coolsnady/hxd/database"
 	"github.com/coolsnady/hxd/database/ffldb"
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hxd/hxutil"
 )
 
 // dbType is the database type name for this driver.
@@ -172,7 +172,7 @@ func TestPersistence(t *testing.T) {
 		"b1key2": "foo2",
 		"b1key3": "foo3",
 	}
-	genesisBlock := dcrutil.NewBlock(chaincfg.MainNetParams.GenesisBlock)
+	genesisBlock := hxutil.NewBlock(chaincfg.MainNetParams.GenesisBlock)
 	genesisHash := chaincfg.MainNetParams.GenesisHash
 	err = db.Update(func(tx database.Tx) error {
 		metadataBucket := tx.Metadata()

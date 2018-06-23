@@ -14,11 +14,11 @@ import (
 	"github.com/coolsnady/hxd/chaincfg"
 	"github.com/coolsnady/hxd/database"
 	_ "github.com/coolsnady/hxd/database/ffldb"
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hxd/hxutil"
 )
 
 var (
-	dcrdHomeDir     = dcrutil.AppDataDir("hxd", false)
+	dcrdHomeDir     = hxutil.AppDataDir("hxd", false)
 	knownDbTypes    = database.SupportedDrivers()
 	activeNetParams = &chaincfg.MainNetParams
 

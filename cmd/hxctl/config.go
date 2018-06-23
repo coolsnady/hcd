@@ -17,7 +17,7 @@ import (
 	"strings"
 
 	"github.com/coolsnady/hxd/dcrjson"
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hxd/hxutil"
 
 	flags "github.com/jessevdk/go-flags"
 )
@@ -30,9 +30,9 @@ const (
 )
 
 var (
-	dcrdHomeDir            = dcrutil.AppDataDir("hxd", false)
-	hxctlHomeDir          = dcrutil.AppDataDir("hxctl", false)
-	hxwalletHomeDir       = dcrutil.AppDataDir("hxwallet", false)
+	dcrdHomeDir            = hxutil.AppDataDir("hxd", false)
+	hxctlHomeDir          = hxutil.AppDataDir("hxctl", false)
+	hxwalletHomeDir       = hxutil.AppDataDir("hxwallet", false)
 	defaultConfigFile      = filepath.Join(hxctlHomeDir, "hxctl.conf")
 	defaultRPCServer       = "localhost"
 	defaultWalletRPCServer = "localhost"

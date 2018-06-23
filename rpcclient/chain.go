@@ -13,7 +13,7 @@ import (
 
 	"github.com/coolsnady/hxd/chaincfg/chainhash"
 	"github.com/coolsnady/hxd/dcrjson"
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hxd/hxutil"
 	"github.com/coolsnady/hxd/gcs"
 	"github.com/coolsnady/hxd/gcs/blockcf"
 	"github.com/coolsnady/hxd/wire"
@@ -400,7 +400,7 @@ type FutureGetCoinSupplyResult chan *response
 
 // Receive waits for the response promised by the future and returns the
 // current coin supply
-func (r FutureGetCoinSupplyResult) Receive() (dcrutil.Amount, error) {
+func (r FutureGetCoinSupplyResult) Receive() (hxutil.Amount, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return 0, err
@@ -412,7 +412,7 @@ func (r FutureGetCoinSupplyResult) Receive() (dcrutil.Amount, error) {
 	if err != nil {
 		return 0, err
 	}
-	return dcrutil.Amount(cs), nil
+	return hxutil.Amount(cs), nil
 }
 
 // GetCoinSupplyAsync returns an instance of a type that can be used to
@@ -426,7 +426,7 @@ func (c *Client) GetCoinSupplyAsync() FutureGetCoinSupplyResult {
 }
 
 // GetCoinSupply returns the current coin supply
-func (c *Client) GetCoinSupply() (dcrutil.Amount, error) {
+func (c *Client) GetCoinSupply() (hxutil.Amount, error) {
 	return c.GetCoinSupplyAsync().Receive()
 }
 

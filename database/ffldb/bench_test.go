@@ -12,7 +12,7 @@ import (
 
 	"github.com/coolsnady/hxd/chaincfg"
 	"github.com/coolsnady/hxd/database"
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hxd/hxutil"
 )
 
 // BenchmarkBlockHeader benchmarks how long it takes to load the mainnet genesis
@@ -29,7 +29,7 @@ func BenchmarkBlockHeader(b *testing.B) {
 	defer os.RemoveAll(dbPath)
 	defer db.Close()
 	err = db.Update(func(tx database.Tx) error {
-		block := dcrutil.NewBlock(chaincfg.MainNetParams.GenesisBlock)
+		block := hxutil.NewBlock(chaincfg.MainNetParams.GenesisBlock)
 		return tx.StoreBlock(block)
 	})
 	if err != nil {
@@ -70,7 +70,7 @@ func BenchmarkBlock(b *testing.B) {
 	defer os.RemoveAll(dbPath)
 	defer db.Close()
 	err = db.Update(func(tx database.Tx) error {
-		block := dcrutil.NewBlock(chaincfg.MainNetParams.GenesisBlock)
+		block := hxutil.NewBlock(chaincfg.MainNetParams.GenesisBlock)
 		return tx.StoreBlock(block)
 	})
 	if err != nil {

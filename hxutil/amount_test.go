@@ -3,7 +3,7 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package dcrutil_test
+package hxutil_test
 
 import (
 	"math"
@@ -11,7 +11,7 @@ import (
 	"sort"
 	"testing"
 
-	. "github.com/coolsnady/hxd/dcrutil"
+	. "github.com/coolsnady/hxd/hxutil"
 )
 
 func TestAmountCreation(t *testing.T) {

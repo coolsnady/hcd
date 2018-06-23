@@ -13,7 +13,7 @@ import (
 	"github.com/coolsnady/hxd/chaincfg"
 	"github.com/coolsnady/hxd/chaincfg/chainhash"
 	"github.com/coolsnady/hxd/database"
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hxd/hxutil"
 	"github.com/coolsnady/hxd/gcs"
 	"github.com/coolsnady/hxd/gcs/blockcf"
 	"github.com/coolsnady/hxd/wire"
@@ -164,7 +164,7 @@ func (idx *CFIndex) Create(dbTx database.Tx) error {
 
 // storeFilter stores a given filter, and performs the steps needed to
 // generate the filter's header.
-func storeFilter(dbTx database.Tx, block *dcrutil.Block, f *gcs.Filter, filterType wire.FilterType) error {
+func storeFilter(dbTx database.Tx, block *hxutil.Block, f *gcs.Filter, filterType wire.FilterType) error {
 	if uint8(filterType) > maxFilterType {
 		return errors.New("unsupported filter type")
 	}
@@ -203,7 +203,7 @@ func storeFilter(dbTx database.Tx, block *dcrutil.Block, f *gcs.Filter, filterTy
 // ConnectBlock is invoked by the index manager when a new block has been
 // connected to the main chain. This indexer adds a hash-to-cf mapping for
 // every passed block. This is part of the Indexer interface.
-func (idx *CFIndex) ConnectBlock(dbTx database.Tx, block, parent *dcrutil.Block, view *blockchain.UtxoViewpoint) error {
+func (idx *CFIndex) ConnectBlock(dbTx database.Tx, block, parent *hxutil.Block, view *blockchain.UtxoViewpoint) error {
 	f, err := blockcf.Regular(block.MsgBlock())
 	if err != nil && err != gcs.ErrNoData {
 		return err
@@ -225,7 +225,7 @@ func (idx *CFIndex) ConnectBlock(dbTx database.Tx, block, parent *dcrutil.Block,
 // DisconnectBlock is invoked by the index manager when a block has been
 // disconnected from the main chain.  This indexer removes the hash-to-cf
 // mapping for every passed block. This is part of the Indexer interface.
-func (idx *CFIndex) DisconnectBlock(dbTx database.Tx, block, parent *dcrutil.Block, view *blockchain.UtxoViewpoint) error {
+func (idx *CFIndex) DisconnectBlock(dbTx database.Tx, block, parent *hxutil.Block, view *blockchain.UtxoViewpoint) error {
 	for _, key := range cfIndexKeys {
 		err := dbDeleteFilter(dbTx, key, block.Hash())
 		if err != nil {

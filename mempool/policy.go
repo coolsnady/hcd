@@ -11,7 +11,7 @@ import (
 
 	"github.com/coolsnady/hxd/blockchain"
 	"github.com/coolsnady/hxd/blockchain/stake"
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hxd/hxutil"
 	"github.com/coolsnady/hxd/txscript"
 	"github.com/coolsnady/hxd/wire"
 )
@@ -52,7 +52,7 @@ const (
 	// It is also used to help determine if a transaction is considered dust
 	// and as a base for calculating minimum required fees for larger
 	// transactions.  This value is in Atoms/1000 bytes.
-	DefaultMinRelayTxFee = dcrutil.Amount(1e4)
+	DefaultMinRelayTxFee = hxutil.Amount(1e4)
 
 	// maxStandardMultiSigKeys is the maximum number of public keys allowed
 	// in a multi-signature transaction output script for it to be
@@ -79,7 +79,7 @@ const (
 // calcMinRequiredTxRelayFee returns the minimum transaction fee required for a
 // transaction with the passed serialized size to be accepted into the memory
 // pool and relayed.
-func calcMinRequiredTxRelayFee(serializedSize int64, minRelayTxFee dcrutil.Amount) int64 {
+func calcMinRequiredTxRelayFee(serializedSize int64, minRelayTxFee hxutil.Amount) int64 {
 	// Calculate the minimum fee for a transaction to be allowed into the
 	// mempool and relayed by scaling the base fee (which is the minimum
 	// free transaction relay fee).  minTxRelayFee is in Atom/KB, so
@@ -93,8 +93,8 @@ func calcMinRequiredTxRelayFee(serializedSize int64, minRelayTxFee dcrutil.Amoun
 
 	// Set the minimum fee to the maximum possible value if the calculated
 	// fee is not in the valid range for monetary amounts.
-	if minFee < 0 || minFee > dcrutil.MaxAmount {
-		minFee = dcrutil.MaxAmount
+	if minFee < 0 || minFee > hxutil.MaxAmount {
+		minFee = hxutil.MaxAmount
 	}
 
 	return minFee
@@ -110,7 +110,7 @@ func calcMinRequiredTxRelayFee(serializedSize int64, minRelayTxFee dcrutil.Amoun
 // not perform those checks because the script engine already does this more
 // accurately and concisely via the txscript.ScriptVerifyCleanStack and
 // txscript.ScriptVerifySigPushOnly flags.
-func checkInputsStandard(tx *dcrutil.Tx, txType stake.TxType, utxoView *blockchain.UtxoViewpoint) error {
+func checkInputsStandard(tx *hxutil.Tx, txType stake.TxType, utxoView *blockchain.UtxoViewpoint) error {
 	// NOTE: The reference implementation also does a coinbase check here,
 	// but coinbases have already been rejected prior to calling this
 	// function so no need to recheck.
@@ -214,7 +214,7 @@ func checkPkScriptStandard(version uint16, pkScript []byte,
 // Dust is defined in terms of the minimum transaction relay fee.  In
 // particular, if the cost to the network to spend coins is more than 1/3 of the
 // minimum transaction relay fee, it is considered dust.
-func isDust(txOut *wire.TxOut, minRelayTxFee dcrutil.Amount) bool {
+func isDust(txOut *wire.TxOut, minRelayTxFee hxutil.Amount) bool {
 	// Unspendable outputs are considered dust.
 	if txscript.IsUnspendable(txOut.Value, txOut.PkScript) {
 		return true
@@ -289,8 +289,8 @@ func isDust(txOut *wire.TxOut, minRelayTxFee dcrutil.Amount) bool {
 // finalized, conforming to more stringent size constraints, having scripts
 // of recognized forms, and not containing "dust" outputs (those that are
 // so small it costs more to process them than they are worth).
-func checkTransactionStandard(tx *dcrutil.Tx, txType stake.TxType, height int64,
-	medianTime time.Time, minRelayTxFee dcrutil.Amount,
+func checkTransactionStandard(tx *hxutil.Tx, txType stake.TxType, height int64,
+	medianTime time.Time, minRelayTxFee hxutil.Amount,
 	maxTxVersion uint16) error {
 
 	// The transaction must be a currently supported version and serialize

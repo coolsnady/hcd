@@ -15,7 +15,7 @@ import (
 	"github.com/coolsnady/hxd/chaincfg"
 	"github.com/coolsnady/hxd/chaincfg/chainhash"
 	"github.com/coolsnady/hxd/dcrec/secp256k1"
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hxd/hxutil"
 	"github.com/coolsnady/hxd/hdkeychain"
 	"github.com/coolsnady/hxd/rpcclient"
 	"github.com/coolsnady/hxd/txscript"
@@ -39,7 +39,7 @@ var (
 // maturity period of direct coinbase outputs.
 type utxo struct {
 	pkScript       []byte
-	value          dcrutil.Amount
+	value          hxutil.Amount
 	maturityHeight int64
 	keyIndex       uint32
 	isLocked       bool
@@ -56,7 +56,7 @@ func (u *utxo) isMature(height int64) bool {
 // chain.
 type chainUpdate struct {
 	blockHeight  int64
-	filteredTxns []*dcrutil.Tx
+	filteredTxns []*hxutil.Tx
 }
 
 // undoEntry is functionally the opposite of a chainUpdate. An undoEntry is
@@ -72,7 +72,7 @@ type undoEntry struct {
 // hierarchy which promotes reproducibility between harness test runs.
 type memWallet struct {
 	coinbaseKey  *secp256k1.PrivateKey
-	coinbaseAddr dcrutil.Address
+	coinbaseAddr hxutil.Address
 
 	// hdRoot is the root master private key for the wallet.
 	hdRoot *hdkeychain.ExtendedKey
@@ -86,7 +86,7 @@ type memWallet struct {
 
 	// addrs tracks all addresses belonging to the wallet. The addresses
 	// are indexed by their keypath from the hdRoot.
-	addrs map[uint32]dcrutil.Address
+	addrs map[uint32]hxutil.Address
 
 	// utxos is the set of utxos spendable by the wallet.
 	utxos map[wire.OutPoint]*utxo
@@ -140,7 +140,7 @@ func newMemWallet(net *chaincfg.Params, harnessID uint32) (*memWallet, error) {
 
 	// Track the coinbase generation address to ensure we properly track
 	// newly generated coins we can spend.
-	addrs := make(map[uint32]dcrutil.Address)
+	addrs := make(map[uint32]hxutil.Address)
 	addrs[0] = coinbaseAddr
 
 	return &memWallet{
@@ -186,9 +186,9 @@ func (m *memWallet) IngestBlock(header []byte, filteredTxns [][]byte) {
 	}
 	height := int64(hdr.Height)
 
-	txns := make([]*dcrutil.Tx, 0, len(filteredTxns))
+	txns := make([]*hxutil.Tx, 0, len(filteredTxns))
 	for _, txBytes := range filteredTxns {
-		tx, err := dcrutil.NewTxFromBytes(txBytes)
+		tx, err := hxutil.NewTxFromBytes(txBytes)
 		if err != nil {
 			panic(err)
 		}
@@ -273,7 +273,7 @@ func (m *memWallet) evalOutputs(outputs []*wire.TxOut, txHash *chainhash.Hash, i
 
 			op := wire.OutPoint{Hash: *txHash, Index: uint32(i)}
 			m.utxos[op] = &utxo{
-				value:          dcrutil.Amount(output.Value),
+				value:          hxutil.Amount(output.Value),
 				keyIndex:       keyIndex,
 				maturityHeight: maturityHeight,
 				pkScript:       pkScript,
@@ -327,7 +327,7 @@ func (m *memWallet) UnwindBlock(header []byte) {
 // newAddress returns a new address from the wallet's hd key chain.  It also
 // loads the address into the RPC client's transaction filter to ensure any
 // transactions that involve it are delivered via the notifications.
-func (m *memWallet) newAddress() (dcrutil.Address, error) {
+func (m *memWallet) newAddress() (hxutil.Address, error) {
 	index := m.hdIndex
 
 	childKey, err := m.hdRoot.Child(index)
@@ -344,7 +344,7 @@ func (m *memWallet) newAddress() (dcrutil.Address, error) {
 		return nil, err
 	}
 
-	err = m.rpc.LoadTxFilter(false, []dcrutil.Address{addr}, nil)
+	err = m.rpc.LoadTxFilter(false, []hxutil.Address{addr}, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -359,7 +359,7 @@ func (m *memWallet) newAddress() (dcrutil.Address, error) {
 // NewAddress returns a fresh address spendable by the wallet.
 //
 // This function is safe for concurrent access.
-func (m *memWallet) NewAddress() (dcrutil.Address, error) {
+func (m *memWallet) NewAddress() (hxutil.Address, error) {
 	m.Lock()
 	defer m.Unlock()
 
@@ -372,7 +372,7 @@ func (m *memWallet) NewAddress() (dcrutil.Address, error) {
 // atoms-per-byte.
 //
 // NOTE: The memWallet's mutex must be held when this function is called.
-func (m *memWallet) fundTx(tx *wire.MsgTx, amt dcrutil.Amount, feeRate dcrutil.Amount) error {
+func (m *memWallet) fundTx(tx *wire.MsgTx, amt hxutil.Amount, feeRate hxutil.Amount) error {
 	const (
 		// spendSize is the largest number of bytes of a sigScript
 		// which spends a p2pkh output: OP_DATA_73 <sig> OP_DATA_33 <pubkey>
@@ -380,7 +380,7 @@ func (m *memWallet) fundTx(tx *wire.MsgTx, amt dcrutil.Amount, feeRate dcrutil.A
 	)
 
 	var (
-		amtSelected dcrutil.Amount
+		amtSelected hxutil.Amount
 		txSize      int
 	)
 
@@ -403,7 +403,7 @@ func (m *memWallet) fundTx(tx *wire.MsgTx, amt dcrutil.Amount, feeRate dcrutil.A
 		// observing the specified fee rate. If we don't have enough
 		// coins from he current amount selected to pay the fee, then
 		// continue to grab more coins.
-		reqFee := dcrutil.Amount(txSize * int(feeRate))
+		reqFee := hxutil.Amount(txSize * int(feeRate))
 		if amtSelected-reqFee < amt {
 			continue
 		}
@@ -438,7 +438,7 @@ func (m *memWallet) fundTx(tx *wire.MsgTx, amt dcrutil.Amount, feeRate dcrutil.A
 // SendOutputs creates, then sends a transaction paying to the specified output
 // while observing the passed fee rate. The passed fee rate should be expressed
 // in atoms-per-byte.
-func (m *memWallet) SendOutputs(outputs []*wire.TxOut, feeRate dcrutil.Amount) (*chainhash.Hash, error) {
+func (m *memWallet) SendOutputs(outputs []*wire.TxOut, feeRate hxutil.Amount) (*chainhash.Hash, error) {
 	tx, err := m.CreateTransaction(outputs, feeRate)
 	if err != nil {
 		return nil, err
@@ -452,7 +452,7 @@ func (m *memWallet) SendOutputs(outputs []*wire.TxOut, feeRate dcrutil.Amount) (
 // expressed in atoms-per-byte.
 //
 // This function is safe for concurrent access.
-func (m *memWallet) CreateTransaction(outputs []*wire.TxOut, feeRate dcrutil.Amount) (*wire.MsgTx, error) {
+func (m *memWallet) CreateTransaction(outputs []*wire.TxOut, feeRate hxutil.Amount) (*wire.MsgTx, error) {
 	m.Lock()
 	defer m.Unlock()
 
@@ -460,9 +460,9 @@ func (m *memWallet) CreateTransaction(outputs []*wire.TxOut, feeRate dcrutil.Amo
 
 	// Tally up the total amount to be sent in order to perform coin
 	// selection shortly below.
-	var outputAmt dcrutil.Amount
+	var outputAmt hxutil.Amount
 	for _, output := range outputs {
-		outputAmt += dcrutil.Amount(output.Value)
+		outputAmt += hxutil.Amount(output.Value)
 		tx.AddTxOut(output)
 	}
 
@@ -532,11 +532,11 @@ func (m *memWallet) UnlockOutputs(inputs []*wire.TxIn) {
 // ConfirmedBalance returns the confirmed balance of the wallet.
 //
 // This function is safe for concurrent access.
-func (m *memWallet) ConfirmedBalance() dcrutil.Amount {
+func (m *memWallet) ConfirmedBalance() hxutil.Amount {
 	m.RLock()
 	defer m.RUnlock()
 
-	var balance dcrutil.Amount
+	var balance hxutil.Amount
 	for _, utxo := range m.utxos {
 		// Prevent any immature or locked outputs from contributing to
 		// the wallet's total confirmed balance.
@@ -551,10 +551,10 @@ func (m *memWallet) ConfirmedBalance() dcrutil.Amount {
 }
 
 // keyToAddr maps the passed private to corresponding p2pkh address.
-func keyToAddr(key *secp256k1.PrivateKey, net *chaincfg.Params) (dcrutil.Address, error) {
+func keyToAddr(key *secp256k1.PrivateKey, net *chaincfg.Params) (hxutil.Address, error) {
 	pubKey := (*secp256k1.PublicKey)(&key.PublicKey)
 	serializedKey := pubKey.SerializeCompressed()
-	pubKeyAddr, err := dcrutil.NewAddressSecpPubKey(serializedKey, net)
+	pubKeyAddr, err := hxutil.NewAddressSecpPubKey(serializedKey, net)
 	if err != nil {
 		return nil, err
 	}

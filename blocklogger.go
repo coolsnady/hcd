@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hxd/hxutil"
 	"github.com/decred/slog"
 )
 
@@ -43,7 +43,7 @@ func newBlockProgressLogger(progressMessage string, logger slog.Logger) *blockPr
 // logBlockHeight logs a new block height as an information message to show
 // progress to the user. In order to prevent spam, it limits logging to one
 // message every 10 seconds with duration and totals included.
-func (b *blockProgressLogger) logBlockHeight(block *dcrutil.Block) {
+func (b *blockProgressLogger) logBlockHeight(block *hxutil.Block) {
 	b.Lock()
 	defer b.Unlock()
 	b.receivedLogBlocks++

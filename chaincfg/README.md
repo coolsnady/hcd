@@ -24,7 +24,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hxd/hxutil"
 	"github.com/coolsnady/hxd/chaincfg"
 )
 

@@ -26,7 +26,7 @@ import (
 	"github.com/coolsnady/hxd/chaincfg/chainec"
 	"github.com/coolsnady/hxd/chaincfg/chainhash"
 	dcrcrypto "github.com/coolsnady/hxd/crypto/bliss"
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hxd/hxutil"
 	"github.com/decred/base58"
 	"golang.org/x/crypto/sha3"
 )
@@ -358,7 +358,7 @@ func (k *ExtendedKey) Child(i uint32) (*ExtendedKey, error) {
 	}
 	// The fingerprint of the parent for the derived child is the first 4
 	// bytes of the RIPEMD160(SHA256(parentPubKey)).
-	parentFP := dcrutil.Hash160(k.pubKeyBytes())[:4]
+	parentFP := hxutil.Hash160(k.pubKeyBytes())[:4]
 	return newExtendedKey(k.version, childKey, childChainCode, parentFP,
 		k.depth+1, i, isPrivate, k.algtype), nil
 }
@@ -422,12 +422,12 @@ func (k *ExtendedKey) ECPrivKey() (chainec.PrivateKey, error) {
 
 // Address converts the extended key to a standard decred pay-to-pubkey-hash
 // address for the passed network.
-func (k *ExtendedKey) Address(net *chaincfg.Params, addrtype uint8) (*dcrutil.AddressPubKeyHash, error) {
-	pkHash := dcrutil.Hash160(k.pubKeyBytes())
+func (k *ExtendedKey) Address(net *chaincfg.Params, addrtype uint8) (*hxutil.AddressPubKeyHash, error) {
+	pkHash := hxutil.Hash160(k.pubKeyBytes())
 	if addrtype == 1 {
-		return dcrutil.NewAddressPubKeyHash(pkHash, net, 4)
+		return hxutil.NewAddressPubKeyHash(pkHash, net, 4)
 	}
-	return dcrutil.NewAddressPubKeyHash(pkHash, net, chainec.ECTypeSecp256k1)
+	return hxutil.NewAddressPubKeyHash(pkHash, net, chainec.ECTypeSecp256k1)
 }
 
 // paddedAppend appends the src byte slice to dst, returning the new slice.
@@ -723,7 +723,7 @@ func (k *ExtendedKey) SwitchChild(i uint32, acctype uint8) (*ExtendedKey, error)
 	}
 	// The fingerprint of the parent for the derived child is the first 4
 	// bytes of the RIPEMD160(SHA256(parentPubKey)).
-	parentFP := dcrutil.Hash160(k.pubKeyBytes())[:4]
+	parentFP := hxutil.Hash160(k.pubKeyBytes())[:4]
 	return newExtendedKey(k.version, childKey, childChainCode, parentFP,
 		k.depth+1, i, isPrivate, acctype), nil
 }

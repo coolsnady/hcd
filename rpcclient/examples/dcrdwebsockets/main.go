@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hxd/hxutil"
 	"github.com/coolsnady/hxd/rpcclient"
 )
 
@@ -30,7 +30,7 @@ func main() {
 	}
 
 	// Connect to local hxd RPC server using websockets.
-	dcrdHomeDir := dcrutil.AppDataDir("hxd", false)
+	dcrdHomeDir := hxutil.AppDataDir("hxd", false)
 	certs, err := ioutil.ReadFile(filepath.Join(dcrdHomeDir, "rpc.cert"))
 	if err != nil {
 		log.Fatal(err)

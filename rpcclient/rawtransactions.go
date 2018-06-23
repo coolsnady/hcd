@@ -12,7 +12,7 @@ import (
 
 	"github.com/coolsnady/hxd/chaincfg/chainhash"
 	"github.com/coolsnady/hxd/dcrjson"
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hxd/hxutil"
 	"github.com/coolsnady/hxd/wire"
 )
 
@@ -65,7 +65,7 @@ type FutureGetRawTransactionResult chan *response
 
 // Receive waits for the response promised by the future and returns a
 // transaction given its hash.
-func (r FutureGetRawTransactionResult) Receive() (*dcrutil.Tx, error) {
+func (r FutureGetRawTransactionResult) Receive() (*hxutil.Tx, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
@@ -89,7 +89,7 @@ func (r FutureGetRawTransactionResult) Receive() (*dcrutil.Tx, error) {
 	if err := msgTx.Deserialize(bytes.NewReader(serializedTx)); err != nil {
 		return nil, err
 	}
-	return dcrutil.NewTx(&msgTx), nil
+	return hxutil.NewTx(&msgTx), nil
 }
 
 // GetRawTransactionAsync returns an instance of a type that can be used to get
@@ -111,7 +111,7 @@ func (c *Client) GetRawTransactionAsync(txHash *chainhash.Hash) FutureGetRawTran
 //
 // See GetRawTransactionVerbose to obtain additional information about the
 // transaction.
-func (c *Client) GetRawTransaction(txHash *chainhash.Hash) (*dcrutil.Tx, error) {
+func (c *Client) GetRawTransaction(txHash *chainhash.Hash) (*hxutil.Tx, error) {
 	return c.GetRawTransactionAsync(txHash).Receive()
 }
 
@@ -240,7 +240,7 @@ func (r FutureCreateRawTransactionResult) Receive() (*wire.MsgTx, error) {
 //
 // See CreateRawTransaction for the blocking version and more details.
 func (c *Client) CreateRawTransactionAsync(inputs []dcrjson.TransactionInput,
-	amounts map[dcrutil.Address]dcrutil.Amount, lockTime *int64, expiry *int64) FutureCreateRawTransactionResult {
+	amounts map[hxutil.Address]hxutil.Amount, lockTime *int64, expiry *int64) FutureCreateRawTransactionResult {
 
 	convertedAmts := make(map[string]float64, len(amounts))
 	for addr, amount := range amounts {
@@ -253,7 +253,7 @@ func (c *Client) CreateRawTransactionAsync(inputs []dcrjson.TransactionInput,
 // CreateRawTransaction returns a new transaction spending the provided inputs
 // and sending to the provided addresses.
 func (c *Client) CreateRawTransaction(inputs []dcrjson.TransactionInput,
-	amounts map[dcrutil.Address]dcrutil.Amount, lockTime *int64, expiry *int64) (*wire.MsgTx, error) {
+	amounts map[hxutil.Address]hxutil.Amount, lockTime *int64, expiry *int64) (*wire.MsgTx, error) {
 
 	return c.CreateRawTransactionAsync(inputs, amounts, lockTime, expiry).Receive()
 }
@@ -296,10 +296,10 @@ func (r FutureCreateRawSStxResult) Receive() (*wire.MsgTx, error) {
 // a commitment address and amount, and a change address and amount. Same
 // name as the JSON lib, but different internal structures.
 type SStxCommitOut struct {
-	Addr       dcrutil.Address
-	CommitAmt  dcrutil.Amount
-	ChangeAddr dcrutil.Address
-	ChangeAmt  dcrutil.Amount
+	Addr       hxutil.Address
+	CommitAmt  hxutil.Amount
+	ChangeAddr hxutil.Address
+	ChangeAmt  hxutil.Amount
 }
 
 // CreateRawSStxAsync returns an instance of a type that can be used to
@@ -308,7 +308,7 @@ type SStxCommitOut struct {
 //
 // See CreateRawSStx for the blocking version and more details.
 func (c *Client) CreateRawSStxAsync(inputs []dcrjson.SStxInput,
-	amount map[dcrutil.Address]dcrutil.Amount,
+	amount map[hxutil.Address]hxutil.Amount,
 	couts []SStxCommitOut) FutureCreateRawSStxResult {
 
 	convertedAmt := make(map[string]int64, len(amount))
@@ -333,7 +333,7 @@ func (c *Client) CreateRawSStxAsync(inputs []dcrjson.SStxInput,
 // CreateRawSStx returns a new transaction spending the provided inputs
 // and sending to the provided addresses.
 func (c *Client) CreateRawSStx(inputs []dcrjson.SStxInput,
-	amount map[dcrutil.Address]dcrutil.Amount,
+	amount map[hxutil.Address]hxutil.Amount,
 	couts []SStxCommitOut) (*wire.MsgTx, error) {
 
 	return c.CreateRawSStxAsync(inputs, amount, couts).Receive()
@@ -432,14 +432,14 @@ func (r FutureCreateRawSSRtxResult) Receive() (*wire.MsgTx, error) {
 // function on the returned instance.
 //
 // See CreateRawSSRtx for the blocking version and more details.
-func (c *Client) CreateRawSSRtxAsync(inputs []dcrjson.TransactionInput, fee dcrutil.Amount) FutureCreateRawSSRtxResult {
+func (c *Client) CreateRawSSRtxAsync(inputs []dcrjson.TransactionInput, fee hxutil.Amount) FutureCreateRawSSRtxResult {
 	feeF64 := fee.ToCoin()
 	cmd := dcrjson.NewCreateRawSSRtxCmd(inputs, &feeF64)
 	return c.sendCmd(cmd)
 }
 
 // CreateRawSSRtx returns a new SSR transactionm (revoking an sstx).
-func (c *Client) CreateRawSSRtx(inputs []dcrjson.TransactionInput, fee dcrutil.Amount) (*wire.MsgTx, error) {
+func (c *Client) CreateRawSSRtx(inputs []dcrjson.TransactionInput, fee hxutil.Amount) (*wire.MsgTx, error) {
 	return c.CreateRawSSRtxAsync(inputs, fee).Receive()
 }
 
@@ -772,7 +772,7 @@ func (r FutureSearchRawTransactionsResult) Receive() ([]*wire.MsgTx, error) {
 // function on the returned instance.
 //
 // See SearchRawTransactions for the blocking version and more details.
-func (c *Client) SearchRawTransactionsAsync(address dcrutil.Address, skip,
+func (c *Client) SearchRawTransactionsAsync(address hxutil.Address, skip,
 	count int, reverse bool,
 	filterAddrs []string) FutureSearchRawTransactionsResult {
 
@@ -791,7 +791,7 @@ func (c *Client) SearchRawTransactionsAsync(address dcrutil.Address, skip,
 //
 // See SearchRawTransactionsVerbose to retrieve a list of data structures with
 // information about the transactions instead of the transactions themselves.
-func (c *Client) SearchRawTransactions(address dcrutil.Address, skip, count int,
+func (c *Client) SearchRawTransactions(address hxutil.Address, skip, count int,
 	reverse bool, filterAddrs []string) ([]*wire.MsgTx, error) {
 
 	return c.SearchRawTransactionsAsync(address, skip, count, reverse,
@@ -826,7 +826,7 @@ func (r FutureSearchRawTransactionsVerboseResult) Receive() ([]*dcrjson.SearchRa
 // function on the returned instance.
 //
 // See SearchRawTransactionsVerbose for the blocking version and more details.
-func (c *Client) SearchRawTransactionsVerboseAsync(address dcrutil.Address, skip,
+func (c *Client) SearchRawTransactionsVerboseAsync(address hxutil.Address, skip,
 	count int, includePrevOut bool, reverse bool,
 	filterAddrs *[]string) FutureSearchRawTransactionsVerboseResult {
 
@@ -848,7 +848,7 @@ func (c *Client) SearchRawTransactionsVerboseAsync(address dcrutil.Address, skip
 // specifically been enabled.
 //
 // See SearchRawTransactions to retrieve a list of raw transactions instead.
-func (c *Client) SearchRawTransactionsVerbose(address dcrutil.Address, skip,
+func (c *Client) SearchRawTransactionsVerbose(address hxutil.Address, skip,
 	count int, includePrevOut bool, reverse bool,
 	filterAddrs []string) ([]*dcrjson.SearchRawTransactionsResult, error) {
 

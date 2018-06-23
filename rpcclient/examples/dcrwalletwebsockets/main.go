@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hxd/hxutil"
 	"github.com/coolsnady/hxd/rpcclient"
 )
 
@@ -22,14 +22,14 @@ func main() {
 	// for notifications.  See the documentation of the rpcclient
 	// NotificationHandlers type for more details about each handler.
 	ntfnHandlers := rpcclient.NotificationHandlers{
-		OnAccountBalance: func(account string, balance dcrutil.Amount, confirmed bool) {
+		OnAccountBalance: func(account string, balance hxutil.Amount, confirmed bool) {
 			log.Printf("New balance for account %s: %v", account,
 				balance)
 		},
 	}
 
 	// Connect to local hxwallet RPC server using websockets.
-	certHomeDir := dcrutil.AppDataDir("hxwallet", false)
+	certHomeDir := hxutil.AppDataDir("hxwallet", false)
 	certs, err := ioutil.ReadFile(filepath.Join(certHomeDir, "rpc.cert"))
 	if err != nil {
 		log.Fatal(err)

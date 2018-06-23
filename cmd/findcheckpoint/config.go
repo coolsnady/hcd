@@ -13,7 +13,7 @@ import (
 	"github.com/coolsnady/hxd/chaincfg"
 	"github.com/coolsnady/hxd/database"
 	_ "github.com/coolsnady/hxd/database/ffldb"
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hxd/hxutil"
 	"github.com/coolsnady/hxd/wire"
 	flags "github.com/jessevdk/go-flags"
 )
@@ -26,7 +26,7 @@ const (
 )
 
 var (
-	dcrdHomeDir     = dcrutil.AppDataDir("hxd", false)
+	dcrdHomeDir     = hxutil.AppDataDir("hxd", false)
 	defaultDataDir  = filepath.Join(dcrdHomeDir, "data")
 	knownDbTypes    = database.SupportedDrivers()
 	activeNetParams = &chaincfg.MainNetParams

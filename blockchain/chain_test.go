@@ -18,7 +18,7 @@ import (
 	"github.com/coolsnady/hxd/blockchain/chaingen"
 	"github.com/coolsnady/hxd/chaincfg"
 	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hxd/hxutil"
 	"github.com/coolsnady/hxd/wire"
 )
 
@@ -79,7 +79,7 @@ func TestBlockchainFunctions(t *testing.T) {
 
 	// Insert blocks 1 to 168 and perform various tests.
 	for i := 1; i <= 168; i++ {
-		bl, err := dcrutil.NewBlockFromBytes(blockChain[int64(i)])
+		bl, err := hxutil.NewBlockFromBytes(blockChain[int64(i)])
 		if err != nil {
 			t.Errorf("NewBlockFromBytes error: %v", err.Error())
 		}
@@ -94,13 +94,13 @@ func TestBlockchainFunctions(t *testing.T) {
 	if err != nil {
 		t.Errorf("Failed to get ticket pool value: %v", err)
 	}
-	expectedVal := dcrutil.Amount(3495091704)
+	expectedVal := hxutil.Amount(3495091704)
 	if val != expectedVal {
 		t.Errorf("Failed to get correct result for ticket pool value; "+
 			"want %v, got %v", expectedVal, val)
 	}
 
-	a, _ := dcrutil.DecodeAddress("SsbKpMkPnadDcZFFZqRPY8nvdFagrktKuzB")
+	a, _ := hxutil.DecodeAddress("SsbKpMkPnadDcZFFZqRPY8nvdFagrktKuzB")
 	hs, err := chain.TicketsWithAddress(a)
 	if err != nil {
 		t.Errorf("Failed to do TicketsWithAddress: %v", err)
@@ -157,7 +157,7 @@ func TestForceHeadReorg(t *testing.T) {
 	accepted := func() {
 		msgBlock := g.Tip()
 		blockHeight := msgBlock.Header.Height
-		block := dcrutil.NewBlock(msgBlock)
+		block := hxutil.NewBlock(msgBlock)
 		t.Logf("Testing block %s (hash %s, height %d)",
 			g.TipName(), block.Hash(), blockHeight)
 
@@ -197,7 +197,7 @@ func TestForceHeadReorg(t *testing.T) {
 	acceptedToSideChainWithExpectedTip := func(tipName string) {
 		msgBlock := g.Tip()
 		blockHeight := msgBlock.Header.Height
-		block := dcrutil.NewBlock(msgBlock)
+		block := hxutil.NewBlock(msgBlock)
 		t.Logf("Testing block %s (hash %s, height %d)",
 			g.TipName(), block.Hash(), blockHeight)
 
