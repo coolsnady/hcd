@@ -83,11 +83,12 @@ func TestWalletSvrCmds(t *testing.T) {
 				return dcrjson.NewCmd("createnewaccount", "acct")
 			},
 			staticCmd: func() interface{} {
-				return dcrjson.NewCreateNewAccountCmd("acct")
+				return dcrjson.NewCreateNewAccountCmd("acct",0)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"createnewaccount","params":["acct"],"id":1}`,
 			unmarshalled: &dcrjson.CreateNewAccountCmd{
 				Account: "acct",
+				AccountType: 0,
 			},
 		},
 		{
