@@ -606,17 +606,13 @@ func (b *blockManager) syncMiningStateAfterSync(sp *serverPeer) {
 		for {
 			time.Sleep(3 * time.Second)
 			if !sp.Connected() {
-				fmt.Println("syncMiningState not connected")
 				return
 			}
 
 			if b.IsCurrent() {
-				fmt.Println("syncMiningState")
 				msg := wire.NewMsgGetMiningState()
 				sp.QueueMessage(msg, nil)
 				return
-			}else {
-				fmt.Println("syncMiningState is not current")
 			}
 		}
 	}()
