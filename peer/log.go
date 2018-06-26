@@ -1,5 +1,5 @@
 // Copyright (c) 2015-2016 The btcsuite developers
-// Copyright (c) 2016-2018 The Decred developers
+// Copyright (c) 2016 The Decred developers
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
@@ -10,10 +10,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/hxd/txscript"
-	"github.com/coolsnady/hxd/wire"
-	"github.com/decred/slog"
+	"github.com/btcsuite/btclog"
+	"github.com/coolsnady/hcd/chaincfg/chainhash"
+	"github.com/coolsnady/hcd/txscript"
+	"github.com/coolsnady/hcd/wire"
 )
 
 const (
@@ -25,7 +25,7 @@ const (
 // log is a logger that is initialized with no output filters.  This
 // means the package will not perform any logging by default until the caller
 // requests it.
-var log slog.Logger
+var log btclog.Logger
 
 // The default amount of logging is none.
 func init() {
@@ -35,11 +35,11 @@ func init() {
 // DisableLog disables all library log output.  Logging output is disabled
 // by default until UseLogger is called.
 func DisableLog() {
-	log = slog.Disabled
+	log = btclog.Disabled
 }
 
 // UseLogger uses a specified Logger to output package logging info.
-func UseLogger(logger slog.Logger) {
+func UseLogger(logger btclog.Logger) {
 	log = logger
 }
 
@@ -161,6 +161,9 @@ func messageSummary(msg wire.Message) string {
 
 	case *wire.MsgPong:
 		// No summary - perhaps add nonce.
+
+	case *wire.MsgAlert:
+		// No summary.
 
 	case *wire.MsgMemPool:
 		// No summary.

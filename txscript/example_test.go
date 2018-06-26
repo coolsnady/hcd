@@ -1,5 +1,5 @@
 // Copyright (c) 2014-2016 The btcsuite developers
-// Copyright (c) 2015-2018 The Decred developers
+// Copyright (c) 2015-2016 The Decred developers
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
@@ -9,15 +9,19 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	"github.com/coolsnady/hxd/chaincfg"
-	"github.com/coolsnady/hxd/chaincfg/chainec"
-	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/hxd/dcrutil"
-	"github.com/coolsnady/hxd/txscript"
-	"github.com/coolsnady/hxd/wire"
+	"github.com/coolsnady/hcd/chaincfg"
+	"github.com/coolsnady/hcd/chaincfg/chainec"
+	"github.com/coolsnady/hcd/chaincfg/chainhash"
+	"github.com/coolsnady/hcd/txscript"
+	"github.com/coolsnady/hcd/wire"
+	dcrutil "github.com/coolsnady/hcutil"
 )
 
-// This example demonstrates creating a script which pays to a Decred address.
+var secp = 0
+var edwards = 1
+var secSchnorr = 2
+
+// This example demonstrates creating a script which pays to a decred address.
 // It also prints the created script hex and uses the DisasmString function to
 // display the disassembled script.
 func ExamplePayToAddrScript() {
@@ -154,8 +158,7 @@ func ExampleSignTxOutput() {
 	// being signed.
 	sigScript, err := txscript.SignTxOutput(&chaincfg.MainNetParams,
 		redeemTx, 0, originTx.TxOut[0].PkScript, txscript.SigHashAll,
-		txscript.KeyClosure(lookupKey), nil, nil,
-		chainec.ECTypeSecp256k1)
+		txscript.KeyClosure(lookupKey), nil, nil, secp)
 	if err != nil {
 		fmt.Println(err)
 		return

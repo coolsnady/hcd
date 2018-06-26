@@ -43,4 +43,6 @@ func TestMemPool(t *testing.T) {
 	if err != nil {
 		t.Errorf("decode of MsgMemPool failed [%v] err <%v>", buf, err)
 	}
+
+	return
 }

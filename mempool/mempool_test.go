@@ -9,24 +9,23 @@ import (
 	"encoding/hex"
 	"fmt"
 	"reflect"
-	"runtime"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/coolsnady/hxd/blockchain"
-	"github.com/coolsnady/hxd/chaincfg"
-	"github.com/coolsnady/hxd/chaincfg/chainec"
-	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/hxd/dcrec/secp256k1"
-	"github.com/coolsnady/hxd/dcrutil"
-	"github.com/coolsnady/hxd/txscript"
-	"github.com/coolsnady/hxd/wire"
+	"github.com/coolsnady/hcd/blockchain"
+	"github.com/coolsnady/hcd/chaincfg"
+	"github.com/coolsnady/hcd/chaincfg/chainec"
+	"github.com/coolsnady/hcd/chaincfg/chainhash"
+	"github.com/coolsnady/hcd/dcrec/secp256k1"
+	"github.com/coolsnady/hcd/txscript"
+	"github.com/coolsnady/hcd/wire"
+	dcrutil "github.com/coolsnady/hcutil"
 )
 
 // fakeChain is used by the pool harness to provide generated test utxos and
 // a current faked chain height to the pool callbacks.  This, in turn, allows
-// transactions to be appear as though they are spending completely valid utxos.
+// transations to be appear as though they are spending completely valid utxos.
 type fakeChain struct {
 	sync.RWMutex
 	nextStakeDiff int64
@@ -351,7 +350,7 @@ func newPoolHarness(chainParams *chaincfg.Params) (*poolHarness, []spendableOutp
 	if err != nil {
 		return nil, nil, err
 	}
-	signKey, signPub := secp256k1.PrivKeyFromBytes(keyBytes)
+	signKey, signPub := secp256k1.PrivKeyFromBytes(secp256k1.S256(), keyBytes)
 
 	// Generate associated pay-to-script-hash address and resulting payment
 	// script.
@@ -429,43 +428,6 @@ func newPoolHarness(chainParams *chaincfg.Params) (*poolHarness, []spendableOutp
 	return &harness, outputs, nil
 }
 
-// testContext houses a test-related state that is useful to pass to helper
-// functions as a single argument.
-type testContext struct {
-	t       *testing.T
-	harness *poolHarness
-}
-
-// testPoolMembership tests the transaction pool associated with the provided
-// test context to determine if the passed transaction matches the provided
-// orphan pool and transaction pool status.  It also further determines if it
-// should be reported as available by the HaveTransaction function based upon
-// the two flags and tests that condition as well.
-func testPoolMembership(tc *testContext, tx *dcrutil.Tx, inOrphanPool, inTxPool bool) {
-	txHash := tx.Hash()
-	gotOrphanPool := tc.harness.txPool.IsOrphanInPool(txHash)
-	if inOrphanPool != gotOrphanPool {
-		_, file, line, _ := runtime.Caller(1)
-		tc.t.Fatalf("%s:%d -- IsOrphanInPool: want %v, got %v", file,
-			line, inOrphanPool, gotOrphanPool)
-	}
-
-	gotTxPool := tc.harness.txPool.IsTransactionInPool(txHash)
-	if inTxPool != gotTxPool {
-		_, file, line, _ := runtime.Caller(1)
-		tc.t.Fatalf("%s:%d -- IsTransactionInPool: want %v, got %v",
-			file, line, inTxPool, gotTxPool)
-	}
-
-	gotHaveTx := tc.harness.txPool.HaveTransaction(txHash)
-	wantHaveTx := inOrphanPool || inTxPool
-	if wantHaveTx != gotHaveTx {
-		_, file, line, _ := runtime.Caller(1)
-		tc.t.Fatalf("%s:%d -- HaveTransaction: want %v, got %v", file,
-			line, wantHaveTx, gotHaveTx)
-	}
-}
-
 // TestSimpleOrphanChain ensures that a simple chain of orphans is handled
 // properly.  In particular, it generates a chain of single input, single output
 // transactions and inserts them while skipping the first linking transaction so
@@ -478,7 +440,6 @@ func TestSimpleOrphanChain(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
-	tc := &testContext{t, harness}
 
 	// Create a chain of transactions rooted with the first spendable output
 	// provided by the harness.
@@ -505,9 +466,20 @@ func TestSimpleOrphanChain(t *testing.T) {
 				len(acceptedTxns))
 		}
 
-		// Ensure the transaction is in the orphan pool, is not in the
-		// transaction pool, and is reported as available.
-		testPoolMembership(tc, tx, true, false)
+		// Ensure the transaction is in the orphan pool.
+		if !harness.txPool.IsOrphanInPool(tx.Hash()) {
+			t.Fatal("IsOrphanInPool: false for accepted orphan")
+		}
+
+		// Ensure the transaction is not in the transaction pool.
+		if harness.txPool.IsTransactionInPool(tx.Hash()) {
+			t.Fatal("IsTransactionInPool: true for accepted orphan")
+		}
+
+		// Ensure the transaction is reported as available.
+		if !harness.txPool.HaveTransaction(tx.Hash()) {
+			t.Fatal("HaveTransaction: false for accepted orphan")
+		}
 	}
 
 	// Add the transaction which completes the orphan chain and ensure they
@@ -526,9 +498,18 @@ func TestSimpleOrphanChain(t *testing.T) {
 			len(acceptedTxns), len(chainedTxns))
 	}
 	for _, tx := range acceptedTxns {
-		// Ensure the transaction is no longer in the orphan pool, is
-		// now in the transaction pool, and is reported as available.
-		testPoolMembership(tc, tx, false, true)
+		// Ensure none of the transactions are still in the orphan pool.
+		if harness.txPool.IsOrphanInPool(tx.Hash()) {
+			t.Fatalf("IsOrphanInPool: true for accepted tx %v",
+				tx.Hash())
+		}
+
+		// Ensure all of the transactions are now in the transaction
+		// pool.
+		if !harness.txPool.IsTransactionInPool(tx.Hash()) {
+			t.Fatalf("IsTransactionInPool: false for accepted tx %v",
+				tx.Hash())
+		}
 	}
 }
 
@@ -541,7 +522,6 @@ func TestOrphanReject(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
-	tc := &testContext{t, harness}
 
 	// Create a chain of transactions rooted with the first spendable output
 	// provided by the harness.
@@ -581,9 +561,20 @@ func TestOrphanReject(t *testing.T) {
 				len(acceptedTxns))
 		}
 
-		// Ensure the transaction is not in the orphan pool, not in the
-		// transaction pool, and not reported as available
-		testPoolMembership(tc, tx, false, false)
+		// Ensure the transaction is not in the orphan pool.
+		if harness.txPool.IsOrphanInPool(tx.Hash()) {
+			t.Fatal("IsOrphanInPool: true for rejected orphan")
+		}
+
+		// Ensure the transaction is not in the transaction pool.
+		if harness.txPool.IsTransactionInPool(tx.Hash()) {
+			t.Fatal("IsTransactionInPool: true for rejected orphan")
+		}
+
+		// Ensure the transaction is not reported as available.
+		if harness.txPool.HaveTransaction(tx.Hash()) {
+			t.Fatal("HaveTransaction: true for rejected orphan")
+		}
 	}
 }
 
@@ -596,7 +587,6 @@ func TestOrphanEviction(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
-	tc := &testContext{t, harness}
 
 	// Create a chain of transactions rooted with the first spendable output
 	// provided by the harness that is long enough to be able to force
@@ -624,9 +614,20 @@ func TestOrphanEviction(t *testing.T) {
 				len(acceptedTxns))
 		}
 
-		// Ensure the transaction is in the orphan pool, is not in the
-		// transaction pool, and is reported as available.
-		testPoolMembership(tc, tx, true, false)
+		// Ensure the transaction is in the orphan pool.
+		if !harness.txPool.IsOrphanInPool(tx.Hash()) {
+			t.Fatal("IsOrphanInPool: false for accepted orphan")
+		}
+
+		// Ensure the transaction is not in the transaction pool.
+		if harness.txPool.IsTransactionInPool(tx.Hash()) {
+			t.Fatal("IsTransactionInPool: true for accepted orphan")
+		}
+
+		// Ensure the transaction is reported as available.
+		if !harness.txPool.HaveTransaction(tx.Hash()) {
+			t.Fatal("HaveTransaction: false for accepted orphan")
+		}
 	}
 
 	// Figure out which transactions were evicted and make sure the number
@@ -643,9 +644,11 @@ func TestOrphanEviction(t *testing.T) {
 			len(evictedTxns), expectedEvictions)
 	}
 
-	// Ensure none of the evicted transactions ended up in the transaction
+	// Ensure none of the evicted transactioned ended up the transaction
 	// pool.
 	for _, tx := range evictedTxns {
-		testPoolMembership(tc, tx, false, false)
+		if harness.txPool.IsTransactionInPool(tx.Hash()) {
+			t.Fatalf("IsTransactionInPool: true for evicted orphan")
+		}
 	}
 }

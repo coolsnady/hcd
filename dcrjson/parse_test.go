@@ -8,12 +8,12 @@ import (
 	"bytes"
 	"encoding/hex"
 	"reflect"
-	"strings"
 	"testing"
 
-	"github.com/coolsnady/hxd/blockchain/stake"
-	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/hxd/dcrjson"
+	"github.com/coolsnady/hcd/blockchain/stake"
+	"github.com/coolsnady/hcd/chaincfg/chainhash"
+	"github.com/coolsnady/hcd/dcrjson"
+	"strings"
 )
 
 func decodeHash(reversedHash string) chainhash.Hash {
@@ -158,7 +158,7 @@ func TestDecodeConcatenatedVoteBits(t *testing.T) {
 	}
 	encodedBytesStr = hex.EncodeToString(encodedBytes)
 
-	_, err = dcrjson.DecodeConcatenatedVoteBits(encodedBytesStr)
+	decodedSlice, err = dcrjson.DecodeConcatenatedVoteBits(encodedBytesStr)
 	if err == nil {
 		t.Fatalf("expected short read error")
 	}
@@ -173,7 +173,7 @@ func TestDecodeConcatenatedVoteBits(t *testing.T) {
 	}
 	encodedBytesStr = hex.EncodeToString(encodedBytes)
 
-	_, err = dcrjson.DecodeConcatenatedVoteBits(encodedBytesStr)
+	decodedSlice, err = dcrjson.DecodeConcatenatedVoteBits(encodedBytesStr)
 	if err == nil {
 		t.Fatalf("expected corruption error")
 	}
@@ -188,7 +188,7 @@ func TestDecodeConcatenatedVoteBits(t *testing.T) {
 	}
 	encodedBytesStr = hex.EncodeToString(encodedBytes)
 
-	_, err = dcrjson.DecodeConcatenatedVoteBits(encodedBytesStr)
+	decodedSlice, err = dcrjson.DecodeConcatenatedVoteBits(encodedBytesStr)
 	if err == nil {
 		t.Fatalf("expected corruption error")
 	}
@@ -225,7 +225,7 @@ func TestInvalidDecodeConcatenatedHashes(t *testing.T) {
 		_, err := dcrjson.DecodeConcatenatedHashes(str.str)
 		if err == nil {
 			t.Fatalf("DecodeConcatenatedHashes passed on '%s' "+
-				"when it should have failed", str.str)
+				"when it should have failed", str)
 		}
 		rpcError, ok := err.(*dcrjson.RPCError)
 		if !ok {

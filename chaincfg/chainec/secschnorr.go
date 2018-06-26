@@ -9,8 +9,8 @@ import (
 	"io"
 	"math/big"
 
-	"github.com/coolsnady/hxd/dcrec/secp256k1"
-	"github.com/coolsnady/hxd/dcrec/secp256k1/schnorr"
+	"github.com/coolsnady/hcd/dcrec/secp256k1"
+	"github.com/coolsnady/hcd/dcrec/secp256k1/schnorr"
 )
 
 type secSchnorrDSA struct {
@@ -36,6 +36,7 @@ type secSchnorrDSA struct {
 	pubKeyBytesLen             func() int
 	pubKeyBytesLenUncompressed func() int
 	pubKeyBytesLenCompressed   func() int
+	pubKeyBytesLenHybrid       func() int
 
 	// Signatures
 	newSignature      func(r *big.Int, s *big.Int) Signature
@@ -105,6 +106,9 @@ func (sp secSchnorrDSA) PubKeyBytesLenUncompressed() int {
 	return sp.pubKeyBytesLenUncompressed()
 }
 func (sp secSchnorrDSA) PubKeyBytesLenCompressed() int {
+	return sp.pubKeyBytesLenCompressed()
+}
+func (sp secSchnorrDSA) PubKeyBytesLenHybrid() int {
 	return sp.pubKeyBytesLenCompressed()
 }
 
@@ -181,14 +185,14 @@ func newSecSchnorrDSA() DSA {
 
 		// Private keys
 		newPrivateKey: func(d *big.Int) PrivateKey {
-			pk := secp256k1.NewPrivateKey(d)
+			pk := secp256k1.NewPrivateKey(secp256k1Curve, d)
 			if pk != nil {
 				return PrivateKey(pk)
 			}
 			return nil
 		},
 		privKeyFromBytes: func(pk []byte) (PrivateKey, PublicKey) {
-			priv, pub := secp256k1.PrivKeyFromBytes(pk)
+			priv, pub := secp256k1.PrivKeyFromBytes(secp256k1Curve, pk)
 			if priv == nil {
 				return nil, nil
 			}
@@ -200,7 +204,7 @@ func newSecSchnorrDSA() DSA {
 			return tpriv, tpub
 		},
 		privKeyFromScalar: func(pk []byte) (PrivateKey, PublicKey) {
-			priv, pub := secp256k1.PrivKeyFromScalar(pk)
+			priv, pub := secp256k1.PrivKeyFromScalar(secp256k1Curve, pk)
 			if priv == nil {
 				return nil, nil
 			}
@@ -220,7 +224,7 @@ func newSecSchnorrDSA() DSA {
 		// as they are secp256k1 you still have access to the other
 		// serialization types.
 		newPublicKey: func(x *big.Int, y *big.Int) PublicKey {
-			pk := secp256k1.NewPublicKey(x, y)
+			pk := secp256k1.NewPublicKey(secp256k1Curve, x, y)
 			tpk := PublicKey(pk)
 			return tpk
 		},
@@ -241,6 +245,9 @@ func newSecSchnorrDSA() DSA {
 		pubKeyBytesLenCompressed: func() int {
 			return schnorr.PubKeyBytesLen
 		},
+		pubKeyBytesLenHybrid: func() int {
+			return schnorr.PubKeyBytesLen
+		},
 
 		// Signatures
 		newSignature: func(r *big.Int, s *big.Int) Signature {
@@ -259,7 +266,7 @@ func newSecSchnorrDSA() DSA {
 			return ts, err
 		},
 		recoverCompact: func(signature, hash []byte) (PublicKey, bool, error) {
-			pk, bl, err := schnorr.RecoverPubkey(signature,
+			pk, bl, err := schnorr.RecoverPubkey(secp256k1Curve, signature,
 				hash)
 			tpk := PublicKey(pk)
 			return tpk, bl, err
@@ -267,34 +274,34 @@ func newSecSchnorrDSA() DSA {
 
 		// ECDSA
 		generateKey: func(rand io.Reader) ([]byte, *big.Int, *big.Int, error) {
-			return secp256k1.GenerateKey(rand)
+			return secp256k1.GenerateKey(secp256k1Curve, rand)
 		},
 		sign: func(priv PrivateKey, hash []byte) (r, s *big.Int, err error) {
-			spriv := secp256k1.NewPrivateKey(priv.GetD())
-			return schnorr.Sign(spriv, hash)
+			spriv := secp256k1.NewPrivateKey(secp256k1Curve, priv.GetD())
+			return schnorr.Sign(secp256k1Curve, spriv, hash)
 		},
 		verify: func(pub PublicKey, hash []byte, r, s *big.Int) bool {
-			spub := secp256k1.NewPublicKey(pub.GetX(), pub.GetY())
-			return schnorr.Verify(spub, hash, r, s)
+			spub := secp256k1.NewPublicKey(secp256k1Curve, pub.GetX(), pub.GetY())
+			return schnorr.Verify(secp256k1Curve, spub, hash, r, s)
 		},
 
 		// Symmetric cipher encryption
 		generateSharedSecret: func(privkey []byte, x, y *big.Int) []byte {
-			sprivkey, _ := secp256k1.PrivKeyFromBytes(privkey)
+			sprivkey, _ := secp256k1.PrivKeyFromBytes(secp256k1Curve, privkey)
 			if sprivkey == nil {
 				return nil
 			}
-			spubkey := secp256k1.NewPublicKey(x, y)
+			spubkey := secp256k1.NewPublicKey(secp256k1Curve, x, y)
 
 			return secp256k1.GenerateSharedSecret(sprivkey, spubkey)
 		},
 		encrypt: func(x, y *big.Int, in []byte) ([]byte, error) {
-			spubkey := secp256k1.NewPublicKey(x, y)
+			spubkey := secp256k1.NewPublicKey(secp256k1Curve, x, y)
 
 			return secp256k1.Encrypt(spubkey, in)
 		},
 		decrypt: func(privkey []byte, in []byte) ([]byte, error) {
-			sprivkey, _ := secp256k1.PrivKeyFromBytes(privkey)
+			sprivkey, _ := secp256k1.PrivKeyFromBytes(secp256k1Curve, privkey)
 			if sprivkey == nil {
 				return nil, fmt.Errorf("failure deserializing privkey")
 			}

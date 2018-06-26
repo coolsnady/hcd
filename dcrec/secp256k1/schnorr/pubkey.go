@@ -8,7 +8,7 @@ package schnorr
 import (
 	"fmt"
 
-	"github.com/coolsnady/hxd/dcrec/secp256k1"
+	"github.com/coolsnady/hcd/dcrec/secp256k1"
 )
 
 // These constants define the lengths of serialized public keys.
@@ -22,8 +22,8 @@ const (
 )
 
 // ParsePubKey parses a public key for a koblitz curve from a bytestring into a
-// ecdsa.Publickey, verifying that it is valid. It supports compressed signature
-// formats only.
+// ecdsa.Publickey, verifying that it is valid. It supports compressed,
+// uncompressed and hybrid signature formats.
 func ParsePubKey(curve *secp256k1.KoblitzCurve,
 	pubKeyStr []byte) (key *secp256k1.PublicKey, err error) {
 	if pubKeyStr == nil {
@@ -42,5 +42,5 @@ func ParsePubKey(curve *secp256k1.KoblitzCurve,
 		return
 	}
 
-	return secp256k1.ParsePubKey(pubKeyStr)
+	return secp256k1.ParsePubKey(pubKeyStr, curve)
 }

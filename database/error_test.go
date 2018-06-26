@@ -9,7 +9,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/coolsnady/hxd/database"
+	"github.com/coolsnady/hcd/database"
 )
 
 // TestErrorCodeStringer tests the stringized output for the ErrorCode type.

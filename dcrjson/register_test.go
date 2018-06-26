@@ -10,7 +10,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/coolsnady/hxd/dcrjson"
+	"github.com/coolsnady/hcd/dcrjson"
 )
 
 // TestUsageFlagStringer tests the stringized output for the UsageFlag type.
@@ -248,7 +248,7 @@ func TestMustRegisterCmdPanic(t *testing.T) {
 func TestRegisteredCmdMethods(t *testing.T) {
 	t.Parallel()
 
-	// Ensure the registered methods are returned.
+	// Ensure the registerd methods are returned.
 	methods := dcrjson.RegisteredCmdMethods()
 	if len(methods) == 0 {
 		t.Fatal("RegisteredCmdMethods: no methods")

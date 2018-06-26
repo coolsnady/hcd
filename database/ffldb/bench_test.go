@@ -10,9 +10,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/coolsnady/hxd/chaincfg"
-	"github.com/coolsnady/hxd/database"
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hcd/chaincfg"
+	"github.com/coolsnady/hcd/database"
+	dcrutil "github.com/coolsnady/hcutil"
 )
 
 // BenchmarkBlockHeader benchmarks how long it takes to load the mainnet genesis

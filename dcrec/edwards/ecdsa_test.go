@@ -112,10 +112,6 @@ func TestGolden(t *testing.T) {
 
 		// Deserialize pubkey and test functions.
 		pubkeyP, err := ParsePubKey(curve, pubKeyBytes)
-		if err != nil {
-			t.Fatalf("ParsePubKey: %v", err)
-		}
-
 		pubkP := pubkeyP.Serialize()
 		cmp = bytes.Equal(pubkS1[:], pubkP[:])
 		if !cmp {
@@ -134,9 +130,6 @@ func TestGolden(t *testing.T) {
 
 		// Deserialize signature and test functions.
 		internalSig, err := ParseSignature(curve, sig)
-		if err != nil {
-			t.Fatalf("ParseSignature failed: %v", err)
-		}
 		iSigSerialized := internalSig.Serialize()
 		cmp = bytes.Equal(sigArray[:], copyBytes64(iSigSerialized)[:])
 		if !cmp {
@@ -144,9 +137,6 @@ func TestGolden(t *testing.T) {
 		}
 
 		sig2r, sig2s, err := Sign(curve, privkeyS2, msg)
-		if err != nil {
-			t.Fatalf("Sign failed: %v", err)
-		}
 		sig2 := &Signature{sig2r, sig2s}
 		sig2B := sig2.Serialize()
 		if !bytes.Equal(sig, sig2B[:]) {
@@ -165,7 +155,7 @@ func TestGolden(t *testing.T) {
 func randPrivScalarKeyList(curve *TwistedEdwardsCurve, i int) []*PrivateKey {
 	r := rand.New(rand.NewSource(54321))
 
-	privKeyList := make([]*PrivateKey, i)
+	privKeyList := make([]*PrivateKey, i, i)
 	for j := 0; j < i; j++ {
 		for {
 			bIn := new([32]byte)
@@ -295,7 +285,7 @@ func TestNonStandardSignatures(t *testing.T) {
 func randPrivKeyList(curve *TwistedEdwardsCurve, i int) []*PrivateKey {
 	r := rand.New(rand.NewSource(54321))
 
-	privKeyList := make([]*PrivateKey, i)
+	privKeyList := make([]*PrivateKey, i, i)
 	for j := 0; j < i; j++ {
 		for {
 			bIn := new([32]byte)
@@ -392,7 +382,7 @@ type SignatureVerParams struct {
 func randSigList(curve *TwistedEdwardsCurve, i int) []*SignatureVerParams {
 	r := rand.New(rand.NewSource(54321))
 
-	privKeyList := make([]*PrivateKey, i)
+	privKeyList := make([]*PrivateKey, i, i)
 	for j := 0; j < i; j++ {
 		for {
 			bIn := new([32]byte)
@@ -411,9 +401,9 @@ func randSigList(curve *TwistedEdwardsCurve, i int) []*SignatureVerParams {
 		}
 	}
 
-	msgList := make([][]byte, i)
+	msgList := make([][]byte, i, i)
 	for j := 0; j < i; j++ {
-		m := make([]byte, 32)
+		m := make([]byte, 32, 32)
 		for k := 0; k < fieldIntSize; k++ {
 			randByte := r.Intn(255)
 			m[k] = uint8(randByte)
@@ -422,7 +412,7 @@ func randSigList(curve *TwistedEdwardsCurve, i int) []*SignatureVerParams {
 		r.Seed(int64(j) + 54321)
 	}
 
-	sigsList := make([]*Signature, i)
+	sigsList := make([]*Signature, i, i)
 	for j := 0; j < i; j++ {
 		r, s, err := Sign(curve, privKeyList[j], msgList[j])
 		if err != nil {
@@ -432,7 +422,7 @@ func randSigList(curve *TwistedEdwardsCurve, i int) []*SignatureVerParams {
 		sigsList[j] = sig
 	}
 
-	sigStructList := make([]*SignatureVerParams, i)
+	sigStructList := make([]*SignatureVerParams, i, i)
 	for j := 0; j < i; j++ {
 		ss := new(SignatureVerParams)
 		pkx, pky := privKeyList[j].Public()

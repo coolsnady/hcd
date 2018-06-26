@@ -17,7 +17,7 @@ const (
 	fileLimitMin  = 1024
 )
 
-// SetLimits raises some process limits to values which allow hxd and
+// SetLimits raises some process limits to values which allow hcd and
 // associated utilities to run.
 func SetLimits() error {
 	var rLimit syscall.Rlimit

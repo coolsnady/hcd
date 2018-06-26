@@ -11,11 +11,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/coolsnady/hxd/blockchain"
-	"github.com/coolsnady/hxd/chaincfg"
-	"github.com/coolsnady/hxd/database"
-	_ "github.com/coolsnady/hxd/database/ffldb"
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hcd/blockchain"
+	"github.com/coolsnady/hcd/chaincfg"
+	"github.com/coolsnady/hcd/database"
+	_ "github.com/coolsnady/hcd/database/ffldb"
+	dcrutil "github.com/coolsnady/hcutil"
 )
 
 // This example demonstrates how to create a new chain instance and use
@@ -60,13 +60,12 @@ func ExampleBlockChain_ProcessBlock() {
 	// cause an error by trying to process the genesis block which already
 	// exists.
 	genesisBlock := dcrutil.NewBlock(chaincfg.MainNetParams.GenesisBlock)
-	forkLen, isOrphan, err := chain.ProcessBlock(genesisBlock,
+	isMainChain, isOrphan, err := chain.ProcessBlock(genesisBlock,
 		blockchain.BFNone)
 	if err != nil {
 		fmt.Printf("Failed to create chain instance: %v\n", err)
 		return
 	}
-	isMainChain := !isOrphan && forkLen == 0
 	fmt.Printf("Block accepted. Is it on the main chain?: %v", isMainChain)
 	fmt.Printf("Block accepted. Is it an orphan?: %v", isOrphan)
 

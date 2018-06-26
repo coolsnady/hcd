@@ -13,7 +13,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/coolsnady/hxd/wire"
+	"github.com/coolsnady/hcd/wire"
 )
 
 // testScriptFlags are the script flags which are used in the tests when
@@ -92,7 +92,7 @@ func TestOpcodeDisasm(t *testing.T) {
 		0xa9: "OP_HASH160", 0xaa: "OP_HASH256", 0xab: "OP_CODESEPARATOR",
 		0xac: "OP_CHECKSIG", 0xad: "OP_CHECKSIGVERIFY",
 		0xae: "OP_CHECKMULTISIG", 0xaf: "OP_CHECKMULTISIGVERIFY",
-		0xf9: "OP_INVALID249", 0xfa: "OP_SMALLINTEGER",
+		0xf9: "OP_SMALLDATA", 0xfa: "OP_SMALLINTEGER",
 		0xfb: "OP_PUBKEYS", 0xfd: "OP_PUBKEYHASH", 0xfe: "OP_PUBKEY",
 		0xff: "OP_INVALIDOPCODE", 0xba: "OP_SSTX", 0xbb: "OP_SSGEN",
 		0xbc: "OP_SSRTX", 0xbd: "OP_SSTXCHANGE", 0xbe: "OP_CHECKSIGALT",
@@ -508,12 +508,12 @@ func TestNewlyEnabledOpCodes(t *testing.T) {
 func randByteSliceSlice(i int, maxLen int, src int) [][]byte {
 	r := rand.New(rand.NewSource(int64(src)))
 
-	slices := make([][]byte, i)
+	slices := make([][]byte, i, i)
 	for j := 0; j < i; j++ {
 		for {
 			sz := r.Intn(maxLen) + 1
 
-			sl := make([]byte, sz)
+			sl := make([]byte, sz, sz)
 			for k := 0; k < sz; k++ {
 				randByte := r.Intn(255)
 				sl[k] = uint8(randByte)

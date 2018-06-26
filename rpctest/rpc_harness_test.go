@@ -14,12 +14,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/coolsnady/hxd/chaincfg"
-	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/hxd/dcrjson"
-	"github.com/coolsnady/hxd/dcrutil"
-	"github.com/coolsnady/hxd/txscript"
-	"github.com/coolsnady/hxd/wire"
+	"github.com/coolsnady/hcd/chaincfg"
+	"github.com/coolsnady/hcd/chaincfg/chainhash"
+	"github.com/coolsnady/hcd/dcrjson"
+	"github.com/coolsnady/hcd/txscript"
+	"github.com/coolsnady/hcd/wire"
+	dcrutil "github.com/coolsnady/hcutil"
 )
 
 const (
@@ -213,9 +213,6 @@ func testJoinMempools(r *Harness, t *testing.T) {
 	// Generate a coinbase spend to a new address within the main harness'
 	// mempool.
 	addr, err := r.NewAddress()
-	if err != nil {
-		t.Fatalf("unable to get new address: %v", err)
-	}
 	addrScript, err := txscript.PayToAddrScript(addr)
 	if err != nil {
 		t.Fatalf("unable to generate pkscript to addr: %v", err)

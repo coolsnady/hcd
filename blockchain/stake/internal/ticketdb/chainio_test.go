@@ -13,12 +13,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/coolsnady/hxd/blockchain/stake/internal/dbnamespace"
-	"github.com/coolsnady/hxd/blockchain/stake/internal/tickettreap"
-	"github.com/coolsnady/hxd/chaincfg"
-	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/hxd/database"
-	_ "github.com/coolsnady/hxd/database/ffldb"
+	"github.com/coolsnady/hcd/blockchain/stake/internal/dbnamespace"
+	"github.com/coolsnady/hcd/blockchain/stake/internal/tickettreap"
+	"github.com/coolsnady/hcd/chaincfg"
+	"github.com/coolsnady/hcd/chaincfg/chainhash"
+	"github.com/coolsnady/hcd/database"
+	_ "github.com/coolsnady/hcd/database/ffldb"
 )
 
 const (

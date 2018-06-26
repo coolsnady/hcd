@@ -14,13 +14,12 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/coolsnady/hxd/blockchain/stake/internal/tickettreap"
-	"github.com/coolsnady/hxd/chaincfg"
-	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/hxd/database"
-	_ "github.com/coolsnady/hxd/database/ffldb"
-	"github.com/coolsnady/hxd/dcrutil"
-	"github.com/coolsnady/hxd/wire"
+	"github.com/coolsnady/hcd/blockchain/stake/internal/tickettreap"
+	"github.com/coolsnady/hcd/chaincfg"
+	"github.com/coolsnady/hcd/chaincfg/chainhash"
+	"github.com/coolsnady/hcd/database"
+	_ "github.com/coolsnady/hcd/database/ffldb"
+	dcrutil "github.com/coolsnady/hcutil"
 )
 
 const (
@@ -30,17 +29,6 @@ const (
 	// testDbRoot is the root directory used to create all test databases.
 	testDbRoot = "testdbs"
 )
-
-// calcHash256PRNGIVFromHeader calculates the initialization vector for a
-// Hash256PRNG instance based on using the serialized bytes for the provided
-// header as a seed.
-func calcHash256PRNGIVFromHeader(header *wire.BlockHeader) (chainhash.Hash, error) {
-	hB, err := header.Bytes()
-	if err != nil {
-		return chainhash.Hash{}, err
-	}
-	return CalcHash256PRNGIV(hB), nil
-}
 
 // copyNode copies a stake node so that it can be manipulated for tests.
 func copyNode(n *Node) *Node {
@@ -96,7 +84,7 @@ func ticketsInBlock(bl *dcrutil.Block) []chainhash.Hash {
 
 // ticketsSpentInBlock finds all the tickets spent in the block.
 func ticketsSpentInBlock(bl *dcrutil.Block) []chainhash.Hash {
-	tickets := make([]chainhash.Hash, 0, bl.MsgBlock().Header.Voters)
+	tickets := make([]chainhash.Hash, 0)
 	for _, stx := range bl.STransactions() {
 		if DetermineTxType(stx.MsgTx()) == TxTypeSSGen {
 			tickets = append(tickets, stx.MsgTx().TxIn[1].PreviousOutPoint.Hash)
@@ -106,9 +94,22 @@ func ticketsSpentInBlock(bl *dcrutil.Block) []chainhash.Hash {
 	return tickets
 }
 
+// votesInBlock finds all the votes in the block.
+func votesInBlock(bl *dcrutil.Block) []chainhash.Hash {
+	votes := make([]chainhash.Hash, 0)
+	for _, stx := range bl.STransactions() {
+		if DetermineTxType(stx.MsgTx()) == TxTypeSSGen {
+			h := stx.Hash()
+			votes = append(votes, *h)
+		}
+	}
+
+	return votes
+}
+
 // revokedTicketsInBlock finds all the revoked tickets in the block.
 func revokedTicketsInBlock(bl *dcrutil.Block) []chainhash.Hash {
-	tickets := make([]chainhash.Hash, 0, bl.MsgBlock().Header.Revocations)
+	tickets := make([]chainhash.Hash, 0)
 	for _, stx := range bl.STransactions() {
 		if DetermineTxType(stx.MsgTx()) == TxTypeSSRtx {
 			tickets = append(tickets, stx.MsgTx().TxIn[0].PreviousOutPoint.Hash)
@@ -204,15 +205,53 @@ func nodesEqual(a *Node, b *Node) error {
 	return nil
 }
 
+// findDifferences finds individual differences in two treaps and prints
+// them.  For use in debugging.
+func findDifferences(a *tickettreap.Immutable, b *tickettreap.Immutable) {
+	aMap := make(map[tickettreap.Key]*tickettreap.Value)
+	a.ForEach(func(k tickettreap.Key, v *tickettreap.Value) bool {
+		aMap[k] = v
+		return true
+	})
+
+	bMap := make(map[tickettreap.Key]*tickettreap.Value)
+	b.ForEach(func(k tickettreap.Key, v *tickettreap.Value) bool {
+		bMap[k] = v
+		return true
+	})
+
+	for k, v := range aMap {
+		h := chainhash.Hash(k)
+		vB := bMap[k]
+		if vB == nil {
+			fmt.Printf("Second map missing key %v\n", h)
+		} else {
+			if *v != *vB {
+				fmt.Printf("Second map val for %v is %v, first map %v\n", h,
+					vB, v)
+			}
+		}
+	}
+	for k, v := range bMap {
+		h := chainhash.Hash(k)
+		vA := aMap[k]
+		if vA == nil {
+			fmt.Printf("First map missing key %v\n", h)
+		} else {
+			if *v != *vA {
+				fmt.Printf("First map val for %v is %v, second map %v\n", h,
+					vA, v)
+			}
+		}
+	}
+}
+
 func TestTicketDBLongChain(t *testing.T) {
 	// Declare some useful variables.
 	params := &chaincfg.SimNetParams
 	testBCHeight := int64(1001)
 	filename := filepath.Join("..", "/../blockchain/testdata", "testexpiry.bz2")
 	fi, err := os.Open(filename)
-	if err != nil {
-		t.Fatalf("failed ot open test data: %v", err)
-	}
 	bcStream := bzip2.NewReader(fi)
 	defer fi.Close()
 
@@ -260,11 +299,7 @@ func TestTicketDBLongChain(t *testing.T) {
 		}
 
 		// In memory addition test.
-		lotteryIV, err := calcHash256PRNGIVFromHeader(&header)
-		if err != nil {
-			t.Fatalf("failed to calc lottery IV: %v", err)
-		}
-		bestNode, err = bestNode.ConnectNode(lotteryIV,
+		bestNode, err = bestNode.ConnectNode(header,
 			ticketsSpentInBlock(block), revokedTicketsInBlock(block),
 			ticketsToAdd)
 		if err != nil {
@@ -286,11 +321,7 @@ func TestTicketDBLongChain(t *testing.T) {
 		blockUndoData := nodesForward[i-1].UndoData()
 
 		// In memory disconnection test.
-		lotteryIV, err := calcHash256PRNGIVFromHeader(&header)
-		if err != nil {
-			t.Fatalf("failed to calc lottery IV: %v", err)
-		}
-		bestNode, err = bestNode.DisconnectNode(lotteryIV, blockUndoData,
+		bestNode, err = bestNode.DisconnectNode(header, blockUndoData,
 			ticketsToAdd, nil)
 		if err != nil {
 			t.Errorf(err.Error())
@@ -540,9 +571,6 @@ func TestTicketDBGeneral(t *testing.T) {
 	testBCHeight := int64(168)
 	filename := filepath.Join("..", "/../blockchain/testdata", "blocks0to168.bz2")
 	fi, err := os.Open(filename)
-	if err != nil {
-		t.Errorf("Failed to open %s: %v", filename, err)
-	}
 	bcStream := bzip2.NewReader(fi)
 	defer fi.Close()
 
@@ -618,11 +646,7 @@ func TestTicketDBGeneral(t *testing.T) {
 			}
 
 			// In memory addition test.
-			lotteryIV, err := calcHash256PRNGIVFromHeader(&header)
-			if err != nil {
-				return fmt.Errorf("failed to calc lottery IV: %v", err)
-			}
-			bestNode, err = bestNode.ConnectNode(lotteryIV,
+			bestNode, err = bestNode.ConnectNode(header,
 				ticketsSpentInBlock(block), revokedTicketsInBlock(block),
 				ticketsToAdd)
 			if err != nil {
@@ -632,7 +656,7 @@ func TestTicketDBGeneral(t *testing.T) {
 			// Write the new node to db.
 			nodesForward[i] = bestNode
 			blockHash := block.Hash()
-			err = WriteConnectedBestNode(dbTx, bestNode, *blockHash)
+			err := WriteConnectedBestNode(dbTx, bestNode, *blockHash)
 			if err != nil {
 				return fmt.Errorf("failure writing the best node: %v",
 					err.Error())
@@ -674,11 +698,7 @@ func TestTicketDBGeneral(t *testing.T) {
 		formerBestNode := bestNode
 
 		// In memory disconnection test.
-		lotteryIV, err := calcHash256PRNGIVFromHeader(&header)
-		if err != nil {
-			t.Fatalf("failed to calc lottery IV: %v", err)
-		}
-		bestNode, err = bestNode.DisconnectNode(lotteryIV, blockUndoData,
+		bestNode, err = bestNode.DisconnectNode(header, blockUndoData,
 			ticketsToAdd, nil)
 		if err != nil {
 			t.Fatalf(err.Error())
@@ -694,18 +714,14 @@ func TestTicketDBGeneral(t *testing.T) {
 		var bestNodeUsingDB *Node
 		err = testDb.View(func(dbTx database.Tx) error {
 			// Negative test.
-			lotteryIV, err := calcHash256PRNGIVFromHeader(&header)
-			if err != nil {
-				return fmt.Errorf("failed to calc lottery IV: %v", err)
-			}
-			bestNodeUsingDB, err = formerBestNode.DisconnectNode(lotteryIV, nil,
+			bestNodeUsingDB, err = formerBestNode.DisconnectNode(header, nil,
 				nil, nil)
 			if err == nil && formerBestNode.height > 1 {
 				return fmt.Errorf("expected error when no in memory data " +
 					"or dbtx is passed")
 			}
 
-			bestNodeUsingDB, err = formerBestNode.DisconnectNode(lotteryIV, nil,
+			bestNodeUsingDB, err = formerBestNode.DisconnectNode(header, nil,
 				nil, dbTx)
 			return err
 		})
@@ -770,18 +786,10 @@ func TestTicketDBGeneral(t *testing.T) {
 	b162 := testBlockchain[162]
 	n162Test := copyNode(nodesForward[162])
 
-	b161LotteryIV, err := calcHash256PRNGIVFromHeader(&b161.MsgBlock().Header)
-	if err != nil {
-		t.Fatalf("failed to calc lottery IV for b161: %v", err)
-	}
-	b162LotteryIV, err := calcHash256PRNGIVFromHeader(&b162.MsgBlock().Header)
-	if err != nil {
-		t.Fatalf("failed to calc lottery IV for b162: %v", err)
-	}
-
 	// No node.
-	_, err = connectNode(nil, b162LotteryIV, n162Test.SpentByBlock(),
-		revokedTicketsInBlock(b162), n162Test.NewTickets())
+	_, err = connectNode(nil, b162.MsgBlock().Header,
+		n162Test.SpentByBlock(), revokedTicketsInBlock(b162),
+		n162Test.NewTickets())
 	if err == nil {
 		t.Errorf("expect error for no node")
 	}
@@ -789,8 +797,9 @@ func TestTicketDBGeneral(t *testing.T) {
 	// Best node missing ticket in live ticket bucket to spend.
 	n161Copy := copyNode(nodesForward[161])
 	n161Copy.liveTickets.Delete(tickettreap.Key(n162Test.SpentByBlock()[0]))
-	_, err = n161Copy.ConnectNode(b162LotteryIV, n162Test.SpentByBlock(),
-		revokedTicketsInBlock(b162), n162Test.NewTickets())
+	_, err = n161Copy.ConnectNode(b162.MsgBlock().Header,
+		n162Test.SpentByBlock(), revokedTicketsInBlock(b162),
+		n162Test.NewTickets())
 	if err == nil || err.(RuleError).GetCode() != ErrMissingTicket {
 		t.Errorf("unexpected wrong or no error for "+
 			"Best node missing ticket in live ticket bucket to spend: %v", err)
@@ -802,8 +811,9 @@ func TestTicketDBGeneral(t *testing.T) {
 	n161Copy.nextWinners[0] = n161Copy.nextWinners[1]
 	spentInBlock := n162Copy.SpentByBlock()
 	spentInBlock[0] = spentInBlock[1]
-	_, err = n161Copy.ConnectNode(b162LotteryIV, spentInBlock,
-		revokedTicketsInBlock(b162), n162Test.NewTickets())
+	_, err = n161Copy.ConnectNode(b162.MsgBlock().Header,
+		spentInBlock, revokedTicketsInBlock(b162),
+		n162Test.NewTickets())
 	if err == nil || err.(RuleError).GetCode() != ErrMissingTicket {
 		t.Errorf("unexpected wrong or no error for "+
 			"Best node missing ticket in live ticket bucket to spend: %v", err)
@@ -813,8 +823,8 @@ func TestTicketDBGeneral(t *testing.T) {
 	someHash := chainhash.HashH([]byte{0x00})
 	spentInBlock = n162Test.SpentByBlock()
 	spentInBlock[4] = someHash
-	_, err = nodesForward[161].ConnectNode(b162LotteryIV, spentInBlock,
-		revokedTicketsInBlock(b162), n162Test.NewTickets())
+	_, err = nodesForward[161].ConnectNode(b162.MsgBlock().Header,
+		spentInBlock, revokedTicketsInBlock(b162), n162Test.NewTickets())
 	if err == nil || err.(RuleError).GetCode() != ErrUnknownTicketSpent {
 		t.Errorf("unexpected wrong or no error for "+
 			"Test for corrupted spentInBlock: %v", err)
@@ -823,8 +833,8 @@ func TestTicketDBGeneral(t *testing.T) {
 	// Corrupt winners.
 	n161Copy = copyNode(nodesForward[161])
 	n161Copy.nextWinners[4] = someHash
-	_, err = n161Copy.ConnectNode(b162LotteryIV, spentInBlock,
-		revokedTicketsInBlock(b162), n162Test.NewTickets())
+	_, err = n161Copy.ConnectNode(b162.MsgBlock().Header,
+		spentInBlock, revokedTicketsInBlock(b162), n162Test.NewTickets())
 	if err == nil || err.(RuleError).GetCode() != ErrMissingTicket {
 		t.Errorf("unexpected wrong or no error for "+
 			"Corrupt winners: %v", err)
@@ -833,8 +843,9 @@ func TestTicketDBGeneral(t *testing.T) {
 	// Unknown missed ticket.
 	n162Copy = copyNode(nodesForward[162])
 	spentInBlock = n162Copy.SpentByBlock()
-	_, err = nodesForward[161].ConnectNode(b162LotteryIV, spentInBlock,
-		append(revokedTicketsInBlock(b162), someHash), n162Copy.NewTickets())
+	_, err = nodesForward[161].ConnectNode(b162.MsgBlock().Header,
+		spentInBlock, append(revokedTicketsInBlock(b162), someHash),
+		n162Copy.NewTickets())
 	if err == nil || err.(RuleError).GetCode() != ErrMissingTicket {
 		t.Errorf("unexpected wrong or no error for "+
 			"Unknown missed ticket: %v", err)
@@ -843,8 +854,8 @@ func TestTicketDBGeneral(t *testing.T) {
 	// Insert a duplicate new ticket.
 	spentInBlock = n162Test.SpentByBlock()
 	newTicketsDup := []chainhash.Hash{someHash, someHash}
-	_, err = nodesForward[161].ConnectNode(b162LotteryIV, spentInBlock,
-		revokedTicketsInBlock(b162), newTicketsDup)
+	_, err = nodesForward[161].ConnectNode(b162.MsgBlock().Header,
+		spentInBlock, revokedTicketsInBlock(b162), newTicketsDup)
 	if err == nil || err.(RuleError).GetCode() != ErrDuplicateTicket {
 		t.Errorf("unexpected wrong or no error for "+
 			"Insert a duplicate new ticket: %v", err)
@@ -857,9 +868,8 @@ func TestTicketDBGeneral(t *testing.T) {
 	n162Copy.databaseUndoUpdate[0].Missed = false
 	n162Copy.databaseUndoUpdate[0].Spent = false
 	n162Copy.databaseUndoUpdate[0].Revoked = true
-
-	_, err = n162Copy.DisconnectNode(b161LotteryIV, n161Copy.UndoData(),
-		n161Copy.NewTickets(), nil)
+	_, err = n162Copy.DisconnectNode(b161.MsgBlock().Header,
+		n161Copy.UndoData(), n161Copy.NewTickets(), nil)
 	if err == nil {
 		t.Errorf("unexpected wrong or no error for "+
 			"Impossible undo data for disconnecting: %v", err)
@@ -869,8 +879,8 @@ func TestTicketDBGeneral(t *testing.T) {
 	n161Copy = copyNode(nodesForward[161])
 	n162Copy = copyNode(nodesForward[162])
 	n162Copy.databaseUndoUpdate = n162Copy.databaseUndoUpdate[0:3]
-	_, err = n162Copy.DisconnectNode(b161LotteryIV, n161Copy.UndoData(),
-		n161Copy.NewTickets(), nil)
+	_, err = n162Copy.DisconnectNode(b161.MsgBlock().Header,
+		n161Copy.UndoData(), n161Copy.NewTickets(), nil)
 	if err == nil {
 		t.Errorf("unexpected wrong or no error for "+
 			"Missing undo data for disconnecting: %v", err)
@@ -884,8 +894,8 @@ func TestTicketDBGeneral(t *testing.T) {
 	n162Copy.databaseUndoUpdate[0].Missed = true
 	n162Copy.databaseUndoUpdate[0].Spent = false
 	n162Copy.databaseUndoUpdate[0].Revoked = false
-	_, err = n162Copy.DisconnectNode(b161LotteryIV, n161Copy.UndoData(),
-		n161Copy.NewTickets(), nil)
+	_, err = n162Copy.DisconnectNode(b161.MsgBlock().Header,
+		n161Copy.UndoData(), n161Copy.NewTickets(), nil)
 	if err == nil || err.(RuleError).GetCode() != ErrMissingTicket {
 		t.Errorf("unexpected wrong or no error for "+
 			"Unknown undo data for disconnecting (missing): %v", err)
@@ -899,8 +909,8 @@ func TestTicketDBGeneral(t *testing.T) {
 	n162Copy.databaseUndoUpdate[0].Missed = true
 	n162Copy.databaseUndoUpdate[0].Spent = false
 	n162Copy.databaseUndoUpdate[0].Revoked = true
-	_, err = n162Copy.DisconnectNode(b161LotteryIV, n161Copy.UndoData(),
-		n161Copy.NewTickets(), nil)
+	_, err = n162Copy.DisconnectNode(b161.MsgBlock().Header,
+		n161Copy.UndoData(), n161Copy.NewTickets(), nil)
 	if err == nil || err.(RuleError).GetCode() != ErrMissingTicket {
 		t.Errorf("unexpected wrong or no error for "+
 			"Unknown undo data for disconnecting (revoked): %v", err)

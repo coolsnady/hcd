@@ -13,10 +13,10 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/coolsnady/hxd/chaincfg"
-	"github.com/coolsnady/hxd/database"
-	"github.com/coolsnady/hxd/database/ffldb"
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hcd/chaincfg"
+	"github.com/coolsnady/hcd/database"
+	"github.com/coolsnady/hcd/database/ffldb"
+	dcrutil "github.com/coolsnady/hcutil"
 )
 
 // dbType is the database type name for this driver.

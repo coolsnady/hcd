@@ -9,7 +9,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/coolsnady/hxd/dcrjson"
+	"github.com/coolsnady/hcd/dcrjson"
 )
 
 // TestChainSvrCustomResults ensures any results that have custom marshalling

@@ -157,9 +157,9 @@ const (
 	// range or not referencing one at all.
 	ErrBadTxInput
 
-	// ErrMissingTxOut indicates a transaction output referenced by an input
-	// either does not exist or has already been spent.
-	ErrMissingTxOut
+	// ErrMissingTx indicates a transaction referenced by an input is
+	// missing.
+	ErrMissingTx
 
 	// ErrUnfinalizedTx indicates a transaction has not been finalized.
 	// A valid block may only contain finalized transactions.
@@ -178,6 +178,10 @@ const (
 	// ErrImmatureSpend indicates a transaction is attempting to spend a
 	// coinbase that has not yet reached the required maturity.
 	ErrImmatureSpend
+
+	// ErrDoubleSpend indicates a transaction is attempting to spend coins
+	// that have already been spent.
+	ErrDoubleSpend
 
 	// ErrSpendTooHigh indicates a transaction is attempting to spend more
 	// value than the sum of all of its inputs.
@@ -320,6 +324,10 @@ const (
 	// of an SStx did not match those found in the commitment outputs.
 	ErrSStxCommitment
 
+	// ErrUnparseableSSGen indicates that the SSGen block vote or votebits data
+	// was unparseable from the null data outputs.
+	ErrUnparseableSSGen
+
 	// ErrInvalidSSGenInput indicates that the input SStx to the SSGen tx was
 	// invalid because it was not an SStx.
 	ErrInvalidSSGenInput
@@ -364,9 +372,9 @@ const (
 	// an OP_SSTX tagged output from an SStx.
 	ErrTxSStxOutSpend
 
-	// ErrRegTxCreateStakeOut indicates that a regular tx attempted to create
-	// a stake tagged output.
-	ErrRegTxCreateStakeOut
+	// ErrRegTxSpendStakeOut indicates that a regular tx attempted to spend to
+	// outputs tagged with stake tags, e.g. OP_SSTX.
+	ErrRegTxSpendStakeOut
 
 	// ErrInvalidFinalState indicates that the final state of the PRNG included
 	// in the the block differed from the calculated final state.
@@ -444,21 +452,6 @@ const (
 	// ErrInvalidEarlyVoteBits indicates that a block before stake validation
 	// height had an unallowed vote bits value.
 	ErrInvalidEarlyVoteBits
-
-	// ErrInvalidEarlyFinalState indicates that a block before stake validation
-	// height had a non-zero final state.
-	ErrInvalidEarlyFinalState
-
-	// ErrInvalidAncestorBlock indicates that an ancestor of this block has
-	// failed validation.
-	ErrInvalidAncestorBlock
-
-	// ErrInvalidTemplateParent indicates that a block template builds on a
-	// block that is either not the current best chain tip or its parent.
-	ErrInvalidTemplateParent
-
-	// numErrorCodes is the maximum error code number used in tests.
-	numErrorCodes
 )
 
 // Map of ErrorCode values back to their constant names for pretty printing.
@@ -468,7 +461,7 @@ var errorCodeStrings = map[ErrorCode]string{
 	ErrBlockTooBig:            "ErrBlockTooBig",
 	ErrWrongBlockSize:         "ErrWrongBlockSize",
 	ErrBlockVersionTooOld:     "ErrBlockVersionTooOld",
-	ErrBadStakeVersion:        "ErrBadStakeVersion",
+	ErrBadStakeVersion:        "ErrBlockStakeVersion",
 	ErrInvalidTime:            "ErrInvalidTime",
 	ErrTimeTooOld:             "ErrTimeTooOld",
 	ErrTimeTooNew:             "ErrTimeTooNew",
@@ -487,11 +480,12 @@ var errorCodeStrings = map[ErrorCode]string{
 	ErrBadTxOutValue:          "ErrBadTxOutValue",
 	ErrDuplicateTxInputs:      "ErrDuplicateTxInputs",
 	ErrBadTxInput:             "ErrBadTxInput",
-	ErrMissingTxOut:           "ErrMissingTxOut",
+	ErrMissingTx:              "ErrMissingTx",
 	ErrUnfinalizedTx:          "ErrUnfinalizedTx",
 	ErrDuplicateTx:            "ErrDuplicateTx",
 	ErrOverwriteTx:            "ErrOverwriteTx",
 	ErrImmatureSpend:          "ErrImmatureSpend",
+	ErrDoubleSpend:            "ErrDoubleSpend",
 	ErrSpendTooHigh:           "ErrSpendTooHigh",
 	ErrBadFees:                "ErrBadFees",
 	ErrTooManySigOps:          "ErrTooManySigOps",
@@ -526,6 +520,7 @@ var errorCodeStrings = map[ErrorCode]string{
 	ErrRevocationsMismatch:    "ErrRevocationsMismatch",
 	ErrTooManyRevocations:     "ErrTooManyRevocations",
 	ErrSStxCommitment:         "ErrSStxCommitment",
+	ErrUnparseableSSGen:       "ErrUnparseableSSGen",
 	ErrInvalidSSGenInput:      "ErrInvalidSSGenInput",
 	ErrSSGenPayeeNum:          "ErrSSGenPayeeNum",
 	ErrSSGenPayeeOuts:         "ErrSSGenPayeeOuts",
@@ -536,7 +531,7 @@ var errorCodeStrings = map[ErrorCode]string{
 	ErrSSRtxPayeesMismatch:    "ErrSSRtxPayeesMismatch",
 	ErrSSRtxPayees:            "ErrSSRtxPayees",
 	ErrTxSStxOutSpend:         "ErrTxSStxOutSpend",
-	ErrRegTxCreateStakeOut:    "ErrRegTxCreateStakeOut",
+	ErrRegTxSpendStakeOut:     "ErrRegTxSpendStakeOut",
 	ErrInvalidFinalState:      "ErrInvalidFinalState",
 	ErrPoolSize:               "ErrPoolSize",
 	ErrForceReorgWrongChain:   "ErrForceReorgWrongChain",
@@ -557,9 +552,6 @@ var errorCodeStrings = map[ErrorCode]string{
 	ErrFraudBlockIndex:        "ErrFraudBlockIndex",
 	ErrZeroValueOutputSpend:   "ErrZeroValueOutputSpend",
 	ErrInvalidEarlyVoteBits:   "ErrInvalidEarlyVoteBits",
-	ErrInvalidEarlyFinalState: "ErrInvalidEarlyFinalState",
-	ErrInvalidAncestorBlock:   "ErrInvalidAncestorBlock",
-	ErrInvalidTemplateParent:  "ErrInvalidTemplateParent",
 }
 
 // String returns the ErrorCode as a human-readable name.

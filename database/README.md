@@ -1,20 +1,20 @@
 database
 ========
 
-[![Build Status](http://img.shields.io/travis/coolsnady/hxd.svg)](https://travis-ci.org/coolsnady/hxd)
+[![Build Status](http://img.shields.io/travis/decred/hcd.svg)](https://travis-ci.org/decred/hcd)
 [![ISC License](http://img.shields.io/badge/license-ISC-blue.svg)](http://copyfree.org)
-[![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/coolsnady/hxd/database)
+[![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/decred/hcd/database)
 
 Package database provides a block and metadata storage database.
 
-Please note that this package is intended to enable hxd to support different
+Please note that this package is intended to enable hcd to support different
 database backends and is not something that a client can directly access as only
 one entity can have the database open at a time (for most database backends),
-and that entity will be hxd.
+and that entity will be hcd.
 
-When a client wants programmatic access to the data provided by hxd, they'll
-likely want to use the [dcrrpcclient](https://github.com/coolsnady/dcrrpcclient)
-package which makes use of the [JSON-RPC API](https://github.com/coolsnady/hxd/tree/master/docs/json_rpc_api.md).
+When a client wants programmatic access to the data provided by hcd, they'll
+likely want to use the [hcrpcclient](https://github.com/decred/hcrpcclient)
+package which makes use of the [JSON-RPC API](https://github.com/decred/hcd/tree/master/docs/json_rpc_api.md).
 
 However, this package could be extremely useful for any applications requiring
 Decred block storage capabilities.
@@ -37,16 +37,16 @@ storage, and strict checksums in key areas to ensure data integrity.
 ## Installation
 
 ```bash
-$ go get github.com/coolsnady/hxd/database2
+$ go get github.com/decred/hcd/database2
 ```
 
 ## Examples
 
-* [Basic Usage Example](http://godoc.org/github.com/coolsnady/hxd/database2#example-package--BasicUsage)  
+* [Basic Usage Example](http://godoc.org/github.com/decred/hcd/database2#example-package--BasicUsage)  
   Demonstrates creating a new database and using a managed read-write
   transaction to store and retrieve metadata.
 
-* [Block Storage and Retrieval Example](http://godoc.org/github.com/coolsnady/hxd/database2#example-package--BlockStorageAndRetrieval)  
+* [Block Storage and Retrieval Example](http://godoc.org/github.com/decred/hcd/database2#example-package--BlockStorageAndRetrieval)  
   Demonstrates creating a new database, using a managed read-write transaction
   to store a block, and then using a managed read-only transaction to fetch the
   block.

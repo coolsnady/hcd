@@ -9,7 +9,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/coolsnady/hxd/dcrjson"
+	"github.com/coolsnady/hcd/dcrjson"
 )
 
 // TestCmdMethod tests the CmdMethod function to ensure it returns the expected
@@ -184,7 +184,7 @@ func TestMethodUsageText(t *testing.T) {
 			continue
 		}
 
-		// Get the usage again to exercise caching.
+		// Get the usage again to excerise caching.
 		usage, err = dcrjson.MethodUsageText(test.method)
 		if err != nil {
 			t.Errorf("Test #%d (%s) unexpected error: %v", i,

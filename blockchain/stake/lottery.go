@@ -1,4 +1,4 @@
-// Copyright (c) 2015-2017 The Decred developers
+// Copyright (c) 2015-2016 The Decred developers
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
@@ -9,14 +9,16 @@ package stake
 import (
 	"encoding/binary"
 	"fmt"
+	"math"
+	"sort"
 
-	"github.com/coolsnady/hxd/blockchain/stake/internal/tickettreap"
-	"github.com/coolsnady/hxd/chaincfg/chainhash"
+	"github.com/coolsnady/hcd/blockchain/stake/internal/tickettreap"
+	"github.com/coolsnady/hcd/chaincfg/chainhash"
 )
 
 var (
 	// seedConst is a constant derived from the hex representation of pi. It
-	// is used along with a caller-provided seed when initializing
+	// is used alonwith a caller-provided seed when initializing
 	// the deterministic lottery prng.
 	seedConst = [8]byte{0x24, 0x3F, 0x6A, 0x88, 0x85, 0xA3, 0x08, 0xD3}
 )
@@ -31,25 +33,8 @@ type Hash256PRNG struct {
 	lastHash chainhash.Hash // Cached last hash used
 }
 
-// CalcHash256PRNGIV calculates and returns the initialization vector for a
-// given seed.  This can be used in conjunction with the NewHash256PRNGFromIV
-// function to arrive at the same values that are produced when calling
-// NewHash256PRNG with the seed.
-func CalcHash256PRNGIV(seed []byte) chainhash.Hash {
-	buf := make([]byte, len(seed)+len(seedConst))
-	copy(buf, seed)
-	copy(buf[len(seed):], seedConst[:])
-	return chainhash.HashH(buf)
-}
-
-// NewHash256PRNGFromIV returns a deterministic pseudorandom number generator
-// that uses a 256-bit secure hashing function to generate random uint32s given
-// an initialization vector.  The CalcHash256PRNGIV can be used to calculate an
-// initialization vector for a given seed such that the generator will produce
-// the same values as if NewHash256PRNG were called with the same seed.  This
-// allows callers to cache and reuse the initialization vector for a given seed
-// to avoid recomputation.
-func NewHash256PRNGFromIV(iv chainhash.Hash) *Hash256PRNG {
+// NewHash256PRNG creates a pointer to a newly created hash256PRNG.
+func NewHash256PRNG(seed []byte) *Hash256PRNG {
 	// idx and lastHash are automatically initialized
 	// as 0.  We initialize the seed by appending a constant
 	// to it and hashing to give 32 bytes. This ensures
@@ -59,17 +44,10 @@ func NewHash256PRNGFromIV(iv chainhash.Hash) *Hash256PRNG {
 	// derived from the hexadecimal representation of
 	// pi.
 	hp := new(Hash256PRNG)
-	hp.seed = iv
+	hp.seed = chainhash.HashH(append(seed, seedConst[:]...))
 	hp.lastHash = hp.seed
 	hp.idx = 0
 	return hp
-}
-
-// NewHash256PRNG returns a deterministic pseudorandom number generator that
-// uses a 256-bit secure hashing function to generate random uint32s given a
-// seed.
-func NewHash256PRNG(seed []byte) *Hash256PRNG {
-	return NewHash256PRNGFromIV(CalcHash256PRNGIV(seed))
 }
 
 // StateHash returns a hash referencing the current state the deterministic PRNG.
@@ -94,7 +72,7 @@ func (hp *Hash256PRNG) Hash256Rand() uint32 {
 
 	// 'roll over' the hash index to use and store it.
 	if hp.hashIdx > 7 {
-		idxB := make([]byte, 4)
+		idxB := make([]byte, 4, 4)
 		binary.BigEndian.PutUint32(idxB, uint32(hp.idx))
 		hp.lastHash = chainhash.HashH(append(hp.seed[:], idxB...))
 		hp.idx++
@@ -196,17 +174,90 @@ func fetchWinners(idxs []int, t *tickettreap.Immutable) ([]*tickettreap.Key, err
 		return nil, fmt.Errorf("missing or empty treap")
 	}
 
-	winners := make([]*tickettreap.Key, len(idxs))
-	for i, idx := range idxs {
-		if idx < 0 || idx >= t.Len() {
-			return nil, fmt.Errorf("idx %v out of bounds", idx)
+	// maxInt returns the maximum integer from a list of integers.
+	maxInt := func(idxs []int) int {
+		max := math.MinInt32
+		for _, i := range idxs {
+			if i > max {
+				max = i
+			}
 		}
-
-		if idx < t.Len() {
-			k, _ := t.GetByIndex(idx)
-			winners[i] = &k
-		}
+		return max
+	}
+	max := maxInt(idxs)
+	if max >= t.Len() {
+		return nil, fmt.Errorf("idx %v out of bounds", max)
 	}
 
+	minInt := func(idxs []int) int {
+		min := math.MaxInt32
+		for _, i := range idxs {
+			if i < min {
+				min = i
+			}
+		}
+		return min
+	}
+	min := minInt(idxs)
+	if min < 0 {
+		return nil, fmt.Errorf("idx %v out of bounds", min)
+	}
+
+	originalIdxs := make([]int, len(idxs))
+	copy(originalIdxs[:], idxs[:])
+	sortedIdxs := sort.IntSlice(idxs)
+	sort.Sort(sortedIdxs)
+
+	// originalIdx returns the original index of the lucky
+	// number in the idxs slice, so that the order is correct.
+	originalIdx := func(idx int) int {
+		for i := range originalIdxs {
+			if idx == originalIdxs[i] {
+				return i
+			}
+		}
+
+		// This will cause a panic.  It should never, ever
+		// happen because the investigated index will always
+		// be in the original indexes.
+		return -1
+	}
+
+	idx := 0
+	winnerIdx := 0
+	winners := make([]*tickettreap.Key, len(idxs))
+	t.ForEach(func(k tickettreap.Key, v *tickettreap.Value) bool {
+		if idx > max {
+			return false
+		}
+
+		if idx == sortedIdxs[winnerIdx] {
+			winners[originalIdx(idx)] = &k
+			if winnerIdx+1 < len(sortedIdxs) {
+				winnerIdx++
+			}
+		}
+
+		idx++
+		return true
+	})
+
 	return winners, nil
+}
+
+// fetchExpired is a ticket database specific function which iterates over the
+// entire treap and finds tickets that are equal or less than the given height.
+// These are returned as a slice of pointers to keys, which can be recast as
+// []*chainhash.Hash.
+func fetchExpired(height uint32, t *tickettreap.Immutable) []*tickettreap.Key {
+	var expired []*tickettreap.Key
+	t.ForEach(func(k tickettreap.Key, v *tickettreap.Value) bool {
+		if v.Height <= height {
+			expired = append(expired, &k)
+		}
+
+		return true
+	})
+
+	return expired
 }

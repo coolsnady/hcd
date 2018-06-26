@@ -89,6 +89,8 @@ func zeroSlice(s []byte) {
 	for i := 0; i < PrivScalarSize; i++ {
 		s[i] = 0x00
 	}
+
+	return
 }
 
 // BigIntToEncodedBytes converts a big integer into its corresponding

@@ -1,9 +1,9 @@
 chainhash
 =========
 
-[![Build Status](http://img.shields.io/travis/coolsnady/hxd.svg)](https://travis-ci.org/coolsnady/hxd)
+[![Build Status](http://img.shields.io/travis/decred/hcd.svg)](https://travis-ci.org/decred/hcd)
 [![ISC License](http://img.shields.io/badge/license-ISC-blue.svg)](http://copyfree.org)
-[![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/coolsnady/hxd/chaincfg/chainhash)
+[![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/decred/hcd/chaincfg/chainhash)
 
 chainhash provides a generic hash type and associated functions that allows the
 specific hash algorithm to be abstracted.
@@ -11,7 +11,7 @@ specific hash algorithm to be abstracted.
 ## Installation and updating
 
 ```bash
-$ go get -u github.com/coolsnady/hxd/chaincfg/chainhash
+$ go get -u github.com/decred/hcd/chaincfg/chainhash
 ```
 
 ## License

@@ -10,7 +10,7 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/coolsnady/hxd/blockchain/stake"
+	"github.com/coolsnady/hcd/blockchain/stake"
 )
 
 // TestStakeTxFeePrioHeap tests the priority heaps including the stake types for

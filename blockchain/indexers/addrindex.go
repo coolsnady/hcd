@@ -10,15 +10,16 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/coolsnady/hxd/blockchain"
-	"github.com/coolsnady/hxd/blockchain/stake"
-	"github.com/coolsnady/hxd/chaincfg"
-	"github.com/coolsnady/hxd/chaincfg/chainec"
-	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/hxd/database"
-	"github.com/coolsnady/hxd/dcrutil"
-	"github.com/coolsnady/hxd/txscript"
-	"github.com/coolsnady/hxd/wire"
+	"github.com/coolsnady/hcd/blockchain"
+	"github.com/coolsnady/hcd/blockchain/stake"
+	"github.com/coolsnady/hcd/chaincfg"
+	"github.com/coolsnady/hcd/chaincfg/chainec"
+	"github.com/coolsnady/hcd/chaincfg/chainhash"
+	"github.com/coolsnady/hcd/database"
+	"github.com/coolsnady/hcd/txscript"
+	"github.com/coolsnady/hcd/wire"
+	dcrutil "github.com/coolsnady/hcutil"
+	"github.com/coolsnady/hcd/crypto/bliss"
 )
 
 const (
@@ -67,6 +68,13 @@ const (
 	// the hash of a pubkey address might be the same as that of a script
 	// hash.
 	addrKeyTypeScriptHash = 3
+
+
+	// addrKeyTypePubKeyHashBliss is the address type in an address key which
+	// represents both a bliss pay-to-pubkey-hash and a bliss pay-to-pubkey address.
+	// This is done because both are identical for the purposes of the
+	// address index.
+	addrKeyTypePubKeyHashBliss = 4
 
 	// Size of a transaction entry.  It consists of 4 bytes block id + 4
 	// bytes offset + 4 bytes length.
@@ -551,6 +559,11 @@ func addrToKey(addr dcrutil.Address, params *chaincfg.Params) ([addrKeySize]byte
 			result[0] = addrKeyTypePubKeyHashSchnorr
 			copy(result[1:], addr.Hash160()[:])
 			return result, nil
+		case bliss.BSTypeBliss:
+			var result [addrKeySize]byte
+			result[0] = addrKeyTypePubKeyHashBliss
+			copy(result[1:], addr.Hash160()[:])
+			return result, nil
 		}
 
 	case *dcrutil.AddressScriptHash:
@@ -574,6 +587,12 @@ func addrToKey(addr dcrutil.Address, params *chaincfg.Params) ([addrKeySize]byte
 	case *dcrutil.AddressSecSchnorrPubKey:
 		var result [addrKeySize]byte
 		result[0] = addrKeyTypePubKeyHashSchnorr
+		copy(result[1:], addr.AddressPubKeyHash().Hash160()[:])
+		return result, nil
+
+	case *dcrutil.AddressBlissPubKey:
+		var result [addrKeySize]byte
+		result[0] = addrKeyTypePubKeyHashBliss
 		copy(result[1:], addr.AddressPubKeyHash().Hash160()[:])
 		return result, nil
 	}
@@ -663,7 +682,7 @@ func (idx *AddrIndex) Create(dbTx database.Tx) error {
 }
 
 // writeIndexData represents the address index data to be written for one block.
-// It consists of the address mapped to an ordered list of the transactions
+// It consistens of the address mapped to an ordered list of the transactions
 // that involve the address in block.  It is ordered so the transactions can be
 // stored in the order they appear in the block.
 type writeIndexData map[[addrKeySize]byte][]int
@@ -760,7 +779,7 @@ func (idx *AddrIndex) indexBlock(data writeIndexData, block, parent *dcrutil.Blo
 		msgTx := tx.MsgTx()
 		thisTxOffset := txIdx + len(parentRegularTxs)
 
-		isSSGen := stake.IsSSGen(msgTx)
+		isSSGen, _ := stake.IsSSGen(msgTx)
 		for i, txIn := range msgTx.TxIn {
 			// Skip stakebases.
 			if isSSGen && i == 0 {
@@ -786,7 +805,7 @@ func (idx *AddrIndex) indexBlock(data writeIndexData, block, parent *dcrutil.Blo
 				txType == stake.TxTypeSStx)
 		}
 
-		isSStx := stake.IsSStx(msgTx)
+		isSStx, _ := stake.IsSStx(msgTx)
 		for _, txOut := range msgTx.TxOut {
 			idx.indexPkScript(data, txOut.Version, txOut.PkScript,
 				thisTxOffset, isSStx)
@@ -992,7 +1011,7 @@ func (idx *AddrIndex) AddUnconfirmedTx(tx *dcrutil.Tx, utxoView *blockchain.Utxo
 	// transaction has already been validated and thus all inputs are
 	// already known to exist.
 	msgTx := tx.MsgTx()
-	isSSGen := stake.IsSSGen(msgTx)
+	isSSGen, _ := stake.IsSSGen(msgTx)
 	for i, txIn := range msgTx.TxIn {
 		// Skip stakebase.
 		if i == 0 && isSSGen {
@@ -1014,7 +1033,7 @@ func (idx *AddrIndex) AddUnconfirmedTx(tx *dcrutil.Tx, utxoView *blockchain.Utxo
 	}
 
 	// Index addresses of all created outputs.
-	isSStx := stake.IsSStx(msgTx)
+	isSStx, _ := stake.IsSStx(msgTx)
 	for _, txOut := range msgTx.TxOut {
 		idx.indexUnconfirmedAddresses(txOut.Version, txOut.PkScript, tx,
 			isSStx)
@@ -1090,11 +1109,6 @@ func NewAddrIndex(db database.DB, chainParams *chaincfg.Params) *AddrIndex {
 
 // DropAddrIndex drops the address index from the provided database if it
 // exists.
-func DropAddrIndex(db database.DB, interrupt <-chan struct{}) error {
-	return dropFlatIndex(db, addrIndexKey, addrIndexName, interrupt)
-}
-
-// DropIndex drops the address index from the provided database if it exists.
-func (*AddrIndex) DropIndex(db database.DB, interrupt <-chan struct{}) error {
-	return DropAddrIndex(db, interrupt)
+func DropAddrIndex(db database.DB) error {
+	return dropIndex(db, addrIndexKey, addrIndexName)
 }

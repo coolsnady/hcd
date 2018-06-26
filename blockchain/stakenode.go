@@ -1,5 +1,5 @@
 // Copyright (c) 2013-2016 The btcsuite developers
-// Copyright (c) 2015-2018 The Decred developers
+// Copyright (c) 2015-2016 The Decred developers
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
@@ -8,10 +8,34 @@ package blockchain
 import (
 	"fmt"
 
-	"github.com/coolsnady/hxd/blockchain/stake"
-	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/hxd/database"
+	"github.com/coolsnady/hcd/blockchain/stake"
+	"github.com/coolsnady/hcd/chaincfg/chainhash"
+	"github.com/coolsnady/hcd/database"
 )
+
+// nodeAtHeightFromTopNode goes backwards through a node until it a reaches
+// the node with a desired block height; it returns this block.  The benefit is
+// this works for both the main chain and the side chain.
+func (b *BlockChain) nodeAtHeightFromTopNode(node *blockNode,
+	toTraverse int64) (*blockNode, error) {
+	oldNode := node
+	var err error
+
+	for i := 0; i < int(toTraverse); i++ {
+		// Get the previous block node.
+		oldNode, err = b.getPrevNodeFromNode(oldNode)
+		if err != nil {
+			return nil, err
+		}
+
+		if oldNode == nil {
+			return nil, fmt.Errorf("unable to obtain previous node; " +
+				"ancestor is genesis block")
+		}
+	}
+
+	return oldNode, nil
+}
 
 // fetchNewTicketsForNode fetches the list of newly maturing tickets for a
 // given node by traversing backwards through its parents until it finds the
@@ -36,10 +60,10 @@ func (b *BlockChain) fetchNewTicketsForNode(node *blockNode) ([]chainhash.Hash, 
 
 	// Calculate block number for where new tickets matured from and retrieve
 	// this block from DB or in memory if it's a sidechain.
-	matureNode := node.RelativeAncestor(int64(b.chainParams.TicketMaturity))
-	if matureNode == nil {
-		return nil, fmt.Errorf("unable to obtain previous node; " +
-			"ancestor is genesis block")
+	matureNode, err := b.nodeAtHeightFromTopNode(node,
+		int64(b.chainParams.TicketMaturity))
+	if err != nil {
+		return nil, err
 	}
 
 	matureBlock, errBlock := b.fetchBlockByHash(&matureNode.hash)
@@ -49,7 +73,7 @@ func (b *BlockChain) fetchNewTicketsForNode(node *blockNode) ([]chainhash.Hash, 
 
 	tickets := []chainhash.Hash{}
 	for _, stx := range matureBlock.MsgBlock().STransactions {
-		if stake.IsSStx(stx) {
+		if is, _ := stake.IsSStx(stx); is {
 			h := stx.TxHash()
 			tickets = append(tickets, h)
 		}
@@ -90,8 +114,9 @@ func (b *BlockChain) fetchStakeNode(node *blockNode) (*stake.Node, error) {
 				}
 			}
 
-			node.stakeNode, err = node.parent.stakeNode.ConnectNode(
-				node.lotteryIV(), node.ticketsVoted, node.ticketsRevoked,
+			node.stakeNode, err = node.parent.stakeNode.ConnectNode(node.header,
+				node.ticketsSpent,
+				node.ticketsRevoked,
 				node.newTickets)
 			if err != nil {
 				return nil, err
@@ -105,20 +130,23 @@ func (b *BlockChain) fetchStakeNode(node *blockNode) (*stake.Node, error) {
 	// it through the entire path.  The bestNode stake node must
 	// always be filled in, so assume it is safe to begin working
 	// backwards from there.
-	detachNodes, attachNodes := b.getReorganizeNodes(node)
+	detachNodes, attachNodes, err := b.getReorganizeNodes(node)
+	if err != nil {
+		return nil, err
+	}
 	current := b.bestNode
 
 	// Move backwards through the main chain, undoing the ticket
 	// treaps for each block.  The database is passed because the
 	// undo data and new tickets data for each block may not yet
 	// be filled in and may require the database to look up.
-	err := b.db.View(func(dbTx database.Tx) error {
+	err = b.db.View(func(dbTx database.Tx) error {
 		for e := detachNodes.Front(); e != nil; e = e.Next() {
 			n := e.Value.(*blockNode)
 			if n.stakeNode == nil {
 				var errLocal error
 				n.stakeNode, errLocal =
-					current.stakeNode.DisconnectNode(n.lotteryIV(),
+					current.stakeNode.DisconnectNode(n.header,
 						n.stakeUndoData, n.newTickets, dbTx)
 				if errLocal != nil {
 					return errLocal
@@ -139,7 +167,7 @@ func (b *BlockChain) fetchStakeNode(node *blockNode) (*stake.Node, error) {
 		if current.parent.stakeNode == nil {
 			var errLocal error
 			current.parent.stakeNode, errLocal =
-				current.stakeNode.DisconnectNode(current.parent.lotteryIV(),
+				current.stakeNode.DisconnectNode(current.parent.header,
 					current.parent.stakeUndoData, current.parent.newTickets, dbTx)
 			if errLocal != nil {
 				return errLocal
@@ -179,8 +207,8 @@ func (b *BlockChain) fetchStakeNode(node *blockNode) (*stake.Node, error) {
 				}
 			}
 
-			n.stakeNode, err = current.stakeNode.ConnectNode(n.lotteryIV(),
-				n.ticketsVoted, n.ticketsRevoked, n.newTickets)
+			n.stakeNode, err = current.stakeNode.ConnectNode(n.header,
+				n.ticketsSpent, n.ticketsRevoked, n.newTickets)
 			if err != nil {
 				return nil, err
 			}

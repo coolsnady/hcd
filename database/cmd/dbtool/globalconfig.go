@@ -11,14 +11,14 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/coolsnady/hxd/chaincfg"
-	"github.com/coolsnady/hxd/database"
-	_ "github.com/coolsnady/hxd/database/ffldb"
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hcd/chaincfg"
+	"github.com/coolsnady/hcd/database"
+	_ "github.com/coolsnady/hcd/database/ffldb"
+	dcrutil "github.com/coolsnady/hcutil"
 )
 
 var (
-	dcrdHomeDir     = dcrutil.AppDataDir("hxd", false)
+	dcrdHomeDir     = dcrutil.AppDataDir("hcd", false)
 	knownDbTypes    = database.SupportedDrivers()
 	activeNetParams = &chaincfg.MainNetParams
 
@@ -31,7 +31,7 @@ var (
 
 // config defines the global configuration options.
 type config struct {
-	DataDir string `short:"b" long:"datadir" description:"Location of the hxd data directory"`
+	DataDir string `short:"b" long:"datadir" description:"Location of the hcd data directory"`
 	DbType  string `long:"dbtype" description:"Database backend to use for the Block Chain"`
 	TestNet bool   `long:"testnet" description:"Use the test network"`
 	SimNet  bool   `long:"simnet" description:"Use the simulation test network"`

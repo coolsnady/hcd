@@ -17,7 +17,7 @@ var (
 	}
 	ErrInvalidParams = Error{
 		Code:    -32602,
-		Message: "Invalid parameters",
+		Message: "Invalid paramaters",
 	}
 	ErrInternal = Error{
 		Code:    -32603,
@@ -69,11 +69,11 @@ var (
 var (
 	ErrClientNotConnected = Error{
 		Code:    -9,
-		Message: "hxd is not connected",
+		Message: "hcd is not connected",
 	}
 	ErrClientInInitialDownload = Error{
 		Code:    -10,
-		Message: "hxd is downloading blocks...",
+		Message: "hcd is downloading blocks...",
 	}
 )
 
@@ -151,7 +151,7 @@ var (
 	}
 	ErrInvalidTxVout = Error{
 		Code:    -5,
-		Message: "Output index number (vout) does not exist for transaction.",
+		Message: "Ouput index number (vout) does not exist for transaction.",
 	}
 	ErrRawTxString = Error{
 		Code:    -32602,
@@ -163,7 +163,7 @@ var (
 	}
 )
 
-// Errors that are specific to hxd.
+// Errors that are specific to hcd.
 var (
 	ErrNoWallet = Error{
 		Code:    -1,

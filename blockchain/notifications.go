@@ -8,8 +8,8 @@ package blockchain
 import (
 	"fmt"
 
-	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hcd/chaincfg/chainhash"
+	dcrutil "github.com/coolsnady/hcutil"
 )
 
 // NotificationType represents the type of a notification message.
@@ -67,25 +67,10 @@ func (n NotificationType) String() string {
 }
 
 // BlockAcceptedNtfnsData is the structure for data indicating information
-// about an accepted block.  Note that this does not necessarily mean the block
-// that was accepted extended the best chain as it might have created or
-// extended a side chain.
+// about a block being accepted.
 type BlockAcceptedNtfnsData struct {
-	// BestHeight is the height of the current best chain.  Since the accepted
-	// block might be on a side chain, this is not necessarily the same as the
-	// height of the accepted block.
-	BestHeight int64
-
-	// ForkLen is the length of the side chain the block extended or zero in the
-	// case the block extended the main chain.
-	//
-	// This can be used in conjunction with the height of the accepted block to
-	// determine the height at which the side chain the block created or
-	// extended forked from the best chain.
-	ForkLen int64
-
-	// Block is the block that was accepted into the chain.
-	Block *dcrutil.Block
+	OnMainChain bool
+	Block       *dcrutil.Block
 }
 
 // ReorganizationNtfnsData is the structure for data indicating information

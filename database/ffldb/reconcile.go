@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"hash/crc32"
 
-	"github.com/coolsnady/hxd/database"
+	"github.com/coolsnady/hcd/database"
 )
 
 // The serialized write cursor location format is:

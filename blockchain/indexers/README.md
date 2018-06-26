@@ -1,9 +1,9 @@
 indexers
 ========
 
-[![Build Status](https://travis-ci.org/coolsnady/hxd.png?branch=master)](https://travis-ci.org/coolsnady/hxd)
+[![Build Status](https://travis-ci.org/decred/hcd.png?branch=master)](https://travis-ci.org/decred/hcd)
 [![ISC License](http://img.shields.io/badge/license-ISC-blue.svg)](http://copyfree.org)
-[![GoDoc](https://godoc.org/github.com/coolsnady/hxd/blockchain/indexers?status.png)](http://godoc.org/github.com/coolsnady/hxd/blockchain/indexers)
+[![GoDoc](https://godoc.org/github.com/decred/hcd/blockchain/indexers?status.png)](http://godoc.org/github.com/decred/hcd/blockchain/indexers)
 
 Package indexers implements optional block chain indexes.
 
@@ -23,14 +23,11 @@ via an RPC interface.
   - Stores a key with an empty value for every address that has ever existed 
     and was seen by the client
   - Requires the transaction-by-hash index
-- Committed Filter (cfindexparentbucket) Index
-  - Stores all committed filters and committed filter headers for all blocks in
-    the main chain
 
 ## Installation
 
 ```bash
-$ go get -u github.com/coolsnady/hxd/blockchain/indexers
+$ go get -u github.com/decred/hcd/blockchain/indexers
 ```
 
 ## License

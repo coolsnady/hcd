@@ -12,7 +12,7 @@ import (
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/coolsnady/hxd/chaincfg/chainhash"
+	"github.com/coolsnady/hcd/chaincfg/chainhash"
 )
 
 // TestGetData tests the MsgGetData API.
@@ -67,6 +67,8 @@ func TestGetData(t *testing.T) {
 		t.Errorf("NewMsgGetDataSizeHint: wrong cap for size hint - "+
 			"got %v, want %v", cap(msg.InvList), wantCap)
 	}
+
+	return
 }
 
 // TestGetDataWire tests the MsgGetData wire encode and decode for various
@@ -79,7 +81,7 @@ func TestGetDataWire(t *testing.T) {
 		t.Errorf("NewHashFromStr: %v", err)
 	}
 
-	// Transaction 1 of Block 203707 hash.
+	// Transation 1 of Block 203707 hash.
 	hashStr = "d28a3dc7392bf00a9855ee93dd9a81eff82a2c4fe57fbd42cfe71b487accfaf0"
 	txHash, err := chainhash.NewHashFromStr(hashStr)
 	if err != nil {

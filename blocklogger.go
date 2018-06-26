@@ -1,15 +1,11 @@
-// Copyright (c) 2015-2018 The Decred developers
-// Use of this source code is governed by an ISC
-// license that can be found in the LICENSE file.
-
 package main
 
 import (
 	"sync"
 	"time"
 
-	"github.com/coolsnady/hxd/dcrutil"
-	"github.com/decred/slog"
+	"github.com/btcsuite/btclog"
+	dcrutil "github.com/coolsnady/hcutil"
 )
 
 // blockProgressLogger provides periodic logging for other services in order
@@ -23,7 +19,7 @@ type blockProgressLogger struct {
 	receivedLogTickets     int64
 	lastBlockLogTime       time.Time
 
-	subsystemLogger slog.Logger
+	subsystemLogger btclog.Logger
 	progressAction  string
 	sync.Mutex
 }
@@ -32,7 +28,7 @@ type blockProgressLogger struct {
 // The progress message is templated as follows:
 //  {progressAction} {numProcessed} {blocks|block} in the last {timePeriod}
 //  ({numTxs}, height {lastBlockHeight}, {lastBlockTimeStamp})
-func newBlockProgressLogger(progressMessage string, logger slog.Logger) *blockProgressLogger {
+func newBlockProgressLogger(progressMessage string, logger btclog.Logger) *blockProgressLogger {
 	return &blockProgressLogger{
 		lastBlockLogTime: time.Now(),
 		progressAction:   progressMessage,

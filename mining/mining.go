@@ -8,9 +8,9 @@ package mining
 import (
 	"time"
 
-	"github.com/coolsnady/hxd/blockchain/stake"
-	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hcd/blockchain/stake"
+	"github.com/coolsnady/hcd/chaincfg/chainhash"
+	dcrutil "github.com/coolsnady/hcutil"
 )
 
 // TxDesc is a descriptor about a transaction in a transaction source along with
@@ -33,14 +33,6 @@ type TxDesc struct {
 	Fee int64
 }
 
-// VoteDesc is a descriptor about a vote transaction in a transaction source
-// along with additional metadata.
-type VoteDesc struct {
-	VoteHash       chainhash.Hash
-	TicketHash     chainhash.Hash
-	ApprovesParent bool
-}
-
 // TxSource represents a source of transactions to consider for inclusion in
 // new blocks.
 //
@@ -58,22 +50,4 @@ type TxSource interface {
 	// HaveTransaction returns whether or not the passed transaction hash
 	// exists in the source pool.
 	HaveTransaction(hash *chainhash.Hash) bool
-
-	// HaveAllTransactions returns whether or not all of the passed
-	// transaction hashes exist in the source pool.
-	HaveAllTransactions(hashes []chainhash.Hash) bool
-
-	// VoteHashesForBlock returns the hashes for all votes on the provided
-	// block hash that are currently available in the source pool.
-	VoteHashesForBlock(hash *chainhash.Hash) []chainhash.Hash
-
-	// VotesForBlocks returns a slice of vote descriptors for all votes on
-	// the provided block hashes that are currently available in the source
-	// pool.
-	VotesForBlocks(hashes []chainhash.Hash) [][]VoteDesc
-
-	// IsTxTreeKnownInvalid returns whether or not the transaction tree of
-	// the provided hash is known to be invalid according to the votes
-	// currently in the memory pool.
-	IsTxTreeKnownInvalid(hash *chainhash.Hash) bool
 }

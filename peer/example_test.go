@@ -10,9 +10,9 @@ import (
 	"net"
 	"time"
 
-	"github.com/coolsnady/hxd/chaincfg"
-	"github.com/coolsnady/hxd/peer"
-	"github.com/coolsnady/hxd/wire"
+	"github.com/coolsnady/hcd/chaincfg"
+	"github.com/coolsnady/hcd/peer"
+	"github.com/coolsnady/hcd/wire"
 )
 
 // mockRemotePeer creates a basic inbound peer listening on the simnet port for
@@ -71,9 +71,8 @@ func Example_newOutboundPeer() {
 		ChainParams:      &chaincfg.SimNetParams,
 		Services:         0,
 		Listeners: peer.MessageListeners{
-			OnVersion: func(p *peer.Peer, msg *wire.MsgVersion) *wire.MsgReject {
+			OnVersion: func(p *peer.Peer, msg *wire.MsgVersion) {
 				fmt.Println("outbound: received version")
-				return nil
 			},
 			OnVerAck: func(p *peer.Peer, msg *wire.MsgVerAck) {
 				verack <- struct{}{}

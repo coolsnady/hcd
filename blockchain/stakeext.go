@@ -1,17 +1,15 @@
 // Copyright (c) 2013-2014 The btcsuite developers
-// Copyright (c) 2015-2018 The Decred developers
+// Copyright (c) 2015-2016 The Decred developers
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
 package blockchain
 
 import (
-	"fmt"
-
-	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/hxd/database"
-	"github.com/coolsnady/hxd/dcrutil"
-	"github.com/coolsnady/hxd/txscript"
+	"github.com/coolsnady/hcd/chaincfg/chainhash"
+	"github.com/coolsnady/hcd/database"
+	"github.com/coolsnady/hcd/txscript"
+	dcrutil "github.com/coolsnady/hcutil"
 )
 
 // NextLotteryData returns the next tickets eligible for spending as SSGen
@@ -52,9 +50,15 @@ func (b *BlockChain) lotteryDataForNode(node *blockNode) ([]chainhash.Hash, int,
 // This function is NOT safe for concurrent access and must have the chainLock
 // held for write access.
 func (b *BlockChain) lotteryDataForBlock(hash *chainhash.Hash) ([]chainhash.Hash, int, [6]byte, error) {
-	node := b.index.LookupNode(hash)
-	if node == nil {
-		return nil, 0, [6]byte{}, fmt.Errorf("block %s is not known", hash)
+	var node *blockNode
+	if n, exists := b.index[*hash]; exists {
+		node = n
+	} else {
+		var err error
+		node, err = b.findNode(hash, maxSearchDepth)
+		if err != nil {
+			return nil, 0, [6]byte{}, err
+		}
 	}
 
 	winningTickets, poolSize, finalState, err := b.lotteryDataForNode(node)
@@ -69,15 +73,15 @@ func (b *BlockChain) lotteryDataForBlock(hash *chainhash.Hash) ([]chainhash.Hash
 // chain, including side chain blocks.
 //
 // It is safe for concurrent access.
+// TODO An optimization can be added that only calls the read lock if the
+//   block is not minMemoryStakeNodes blocks before the current best node.
+//   This is because all the data for these nodes can be assumed to be
+//   in memory.
 func (b *BlockChain) LotteryDataForBlock(hash *chainhash.Hash) ([]chainhash.Hash, int, [6]byte, error) {
-	// TODO: An optimization can be added that only calls the read lock if the
-	// block is not minMemoryStakeNodes blocks before the current best node.
-	// This is because all the data for these nodes can be assumed to be
-	// in memory.
 	b.chainLock.Lock()
-	winningTickets, poolSize, finalState, err := b.lotteryDataForBlock(hash)
-	b.chainLock.Unlock()
-	return winningTickets, poolSize, finalState, err
+	defer b.chainLock.Unlock()
+
+	return b.lotteryDataForBlock(hash)
 }
 
 // LiveTickets returns all currently live tickets from the stake database.

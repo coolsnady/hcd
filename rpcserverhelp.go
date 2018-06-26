@@ -11,7 +11,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/coolsnady/hxd/dcrjson"
+	"github.com/coolsnady/hcd/dcrjson"
 )
 
 // helpDescsEnUS defines the English descriptions used for the help strings.
@@ -21,7 +21,7 @@ var helpDescsEnUS = map[string]string{
 		"The levelspec can either a debug level or of the form:\n" +
 		"<subsystem>=<level>,<subsystem2>=<level2>,...\n" +
 		"The valid debug levels are trace, debug, info, warn, error, and critical.\n" +
-		"The valid subsystems are AMGR, ADXR, BCDB, BMGR, Hxd, CHAN, DISC, PEER, RPCS, SCRP, SRVR, and TXMP.\n" +
+		"The valid subsystems are AMGR, ADXR, BCDB, BMGR, DCRD, CHAN, DISC, PEER, RPCS, SCRP, SRVR, and TXMP.\n" +
 		"Finally the keyword 'show' will return a list of the available subsystems.",
 	"debuglevel-levelspec":   "The debug level(s) to use or the keyword 'show'",
 	"debuglevel--condition0": "levelspec!=show",
@@ -91,7 +91,6 @@ var helpDescsEnUS = map[string]string{
 	"createrawtransaction-amounts--value": "n.nnn",
 	"createrawtransaction-amounts--desc":  "The destination address as the key and the amount in DCR as the value",
 	"createrawtransaction-locktime":       "Locktime value; a non-zero value will also locktime-activate the inputs",
-	"createrawtransaction-expiry":         "Expiry value; a non-zero value when the transaction expiry",
 	"createrawtransaction--result0":       "Hex-encoded bytes of the serialized transaction",
 
 	// ScriptSig help.
@@ -104,7 +103,6 @@ var helpDescsEnUS = map[string]string{
 
 	// VinPrevOut help.
 	"vinprevout-coinbase":    "The hex-encoded bytes of the signature script (coinbase txns only)",
-	"vinprevout-stakebase":   "The hash of the stake transaction",
 	"vinprevout-txid":        "The hash of the origin transaction (non-coinbase txns only)",
 	"vinprevout-vout":        "The index of the output being redeemed from the origin transaction (non-coinbase txns only)",
 	"vinprevout-tree":        "The transaction tree of the origin transaction (non-coinbase txns only)",
@@ -117,7 +115,6 @@ var helpDescsEnUS = map[string]string{
 
 	// Vin help.
 	"vin-coinbase":    "The hex-encoded bytes of the signature script (coinbase txns only)",
-	"vin-stakebase":   "The hash of the stake transaction",
 	"vin-txid":        "The hash of the origin transaction (non-coinbase txns only)",
 	"vin-vout":        "The index of the output being redeemed from the origin transaction (non-coinbase txns only)",
 	"vin-scriptSig":   "The signature script used to redeem the origin transaction as a JSON object (non-coinbase txns only)",
@@ -132,7 +129,7 @@ var helpDescsEnUS = map[string]string{
 	"scriptpubkeyresult-hex":       "Hex-encoded bytes of the script",
 	"scriptpubkeyresult-reqSigs":   "The number of required signatures",
 	"scriptpubkeyresult-type":      "The type of the script (e.g. 'pubkeyhash')",
-	"scriptpubkeyresult-addresses": "The Decred addresses associated with this script",
+	"scriptpubkeyresult-addresses": "The decred addresses associated with this script",
 	"scriptpubkeyresult-commitamt": "The ticket commitment value if the script is for a staking commitment",
 
 	// Vout help.
@@ -157,45 +154,45 @@ var helpDescsEnUS = map[string]string{
 	"decodescriptresult-asm":       "Disassembly of the script",
 	"decodescriptresult-reqSigs":   "The number of required signatures",
 	"decodescriptresult-type":      "The type of the script (e.g. 'pubkeyhash')",
-	"decodescriptresult-addresses": "The Decred addresses associated with this script",
-	"decodescriptresult-p2sh":      "The script hash for use in pay-to-script-hash transactions (only present if the provided redeem script is not already a pay-to-script-hash script)",
+	"decodescriptresult-addresses": "The decred addresses associated with this script",
+	"decodescriptresult-p2sh":      "The script hash for use in pay-to-script-hash transactions",
 
 	// DecodeScriptCmd help.
 	"decodescript--synopsis": "Returns a JSON object with information about the provided hex-encoded script.",
 	"decodescript-hexscript": "Hex-encoded script",
 
 	// ExistsAddressCmd help.
-	"existsaddress--synopsis": "Test for the existence of the provided address",
+	"existsaddress--synopsis": "Test for the existance of the provided address",
 	"existsaddress-address":   "The address to check",
 	"existsaddress--result0":  "Bool showing if address exists or not",
 
 	// ExistsAddressesCmd help.
-	"existsaddresses--synopsis": "Test for the existence of the provided addresses in the blockchain or memory pool",
+	"existsaddresses--synopsis": "Test for the existance of the provided addresses in the blockchain or memory pool",
 	"existsaddresses-addresses": "The addresses to check",
 	"existsaddresses--result0":  "Bitset of bools showing if addresses exist or not",
 
 	// ExitsMissedTicketsCmd help.
-	"existsmissedtickets--synopsis":  "Test for the existence of the provided tickets in the missed ticket map",
+	"existsmissedtickets--synopsis":  "Test for the existance of the provided tickets in the missed ticket map",
 	"existsmissedtickets-txhashblob": "Blob containing the hashes to check",
 	"existsmissedtickets--result0":   "Bool blob showing if the ticket exists in the missed ticket database or not",
 
 	// ExistsExpiredTicketsCmd help.
-	"existsexpiredtickets--synopsis":  "Test for the existence of the provided tickets in the expired ticket map",
+	"existsexpiredtickets--synopsis":  "Test for the existance of the provided tickets in the expired ticket map",
 	"existsexpiredtickets-txhashblob": "Blob containing the hashes to check",
 	"existsexpiredtickets--result0":   "Bool blob showing if ticket exists in the expired ticket database or not",
 
 	// ExistsLiveTicketCmd help.
-	"existsliveticket--synopsis": "Test for the existence of the provided ticket",
+	"existsliveticket--synopsis": "Test for the existance of the provided ticket",
 	"existsliveticket-txhash":    "The ticket hash to check",
 	"existsliveticket--result0":  "Bool showing if address exists in the live ticket database or not",
 
 	// ExistsLiveTicketsCmd help.
-	"existslivetickets--synopsis":  "Test for the existence of the provided tickets in the live ticket map",
+	"existslivetickets--synopsis":  "Test for the existance of the provided tickets in the live ticket map",
 	"existslivetickets-txhashblob": "Blob containing the hashes to check",
 	"existslivetickets--result0":   "Bool blob showing if ticket exists in the live ticket database or not",
 
 	// ExistsMempoolTxsCmd help.
-	"existsmempooltxs--synopsis":  "Test for the existence of the provided txs in the mempool",
+	"existsmempooltxs--synopsis":  "Test for the existance of the provided txs in the mempool",
 	"existsmempooltxs-txhashblob": "Blob containing the hashes to check",
 	"existsmempooltxs--result0":   "Bool blob showing if txs exist in the mempool or not",
 
@@ -238,7 +235,7 @@ var helpDescsEnUS = map[string]string{
 	"getblock--synopsis":   "Returns information about a block given its hash.",
 	"getblock-hash":        "The hash of the block",
 	"getblock-verbose":     "Specifies the block is returned as a JSON object instead of hex-encoded string",
-	"getblock-verbosetx":   "Specifies that each transaction is returned as a JSON object and only applies if the verbose flag is true (hxd extension)",
+	"getblock-verbosetx":   "Specifies that each transaction is returned as a JSON object and only applies if the verbose flag is true (hcd extension)",
 	"getblock--condition0": "verbose=false",
 	"getblock--condition1": "verbose=true",
 	"getblock--result0":    "Hex-encoded bytes of the serialized block",
@@ -316,7 +313,7 @@ var helpDescsEnUS = map[string]string{
 	"getblockheader-verbose":     "Specifies the block header is returned as a JSON object instead of hex-encoded string",
 	"getblockheader--condition0": "verbose=false",
 	"getblockheader--condition1": "verbose=true",
-	"getblockheader--result0":    "The serialized block header.",
+	"getblockheader--result0":    "The block header hash",
 
 	// GetBlockHeaderVerboseResult help.
 	"getblockheaderverboseresult-hash":              "The hash of the block (same as provided)",
@@ -410,40 +407,12 @@ var helpDescsEnUS = map[string]string{
 	"getblocktemplate--condition2": "mode=proposal, accepted",
 	"getblocktemplate--result1":    "An error string which represents why the proposal was rejected or nothing if accepted",
 
-	// GetCFilterCmd help.
-	"getcfilter--synopsis":  "Returns the committed filter for a block",
-	"getcfilter--result0":   "The committed filter serialized with the N value and encoded as a hex string",
-	"getcfilter-hash":       "The block hash of the filter being queried",
-	"getcfilter-filtertype": "The type of committed filter to return",
-
-	// GetCFilterHeaderCmd help.
-	"getcfilterheader--synopsis":  "Returns the filter header hash committing to all filters in the chain up through a block",
-	"getcfilterheader--result0":   "The filter header commitment hash",
-	"getcfilterheader-hash":       "The block hash of the filter header being queried",
-	"getcfilterheader-filtertype": "The type of committed filter to return the header commitment for",
-
-	// GetChainTips help.
-	"getchaintips--synopsis": "Returns information about all known chain tips the in the block tree.\n\n" +
-		"The statuses in the result have the following meanings:\n" +
-		"active: The current best chain tip.\n" +
-		"invalid: The block or one of its ancestors is invalid.\n" +
-		"headers-only: The block or one of its ancestors does not have the full block data available which also means the block can't be validated or connected.\n" +
-		"valid-fork: The block is fully validated which implies it was probably part of the main chain at one point and was reorganized.\n" +
-		"valid-headers: The full block data is available and the header is valid, but the block was never validated which implies it was probably never part of the main chain.",
-
-	// GetChainTipsResult help.
-	"getchaintipsresult-height":    "The height of the chain tip",
-	"getchaintipsresult-hash":      "The block hash of the chain tip",
-	"getchaintipsresult-branchlen": "The length of the branch that connects the tip to the main chain (0 for the main chain tip)",
-	"getchaintipsresult-status":    "The status of the chain (active, invalid, headers-only, valid-fork, valid-headers)",
-	"getchaintipsresults--result0": "test",
-
 	// GetConnectionCountCmd help.
 	"getconnectioncount--synopsis": "Returns the number of active connections to other peers.",
 	"getconnectioncount--result0":  "The number of connections",
 
 	// GetCurrentNetCmd help.
-	"getcurrentnet--synopsis": "Get Decred network the server is running on.",
+	"getcurrentnet--synopsis": "Get decred network the server is running on.",
 	"getcurrentnet--result0":  "The network identifer",
 
 	// GetDifficultyCmd help.
@@ -532,7 +501,7 @@ var helpDescsEnUS = map[string]string{
 	"infowalletresult-version":         "The version of the server",
 	"infowalletresult-protocolversion": "The latest supported protocol version",
 	"infowalletresult-walletversion":   "The version of the wallet server",
-	"infowalletresult-balance":         "The total Decred balance of the wallet",
+	"infowalletresult-balance":         "The total decred balance of the wallet",
 	"infowalletresult-blocks":          "The number of blocks processed",
 	"infowalletresult-timeoffset":      "The time offset",
 	"infowalletresult-connections":     "The number of connected peers",
@@ -598,7 +567,6 @@ var helpDescsEnUS = map[string]string{
 	"getpeerinforesult-addr":           "The ip address and port of the peer",
 	"getpeerinforesult-addrlocal":      "Local address",
 	"getpeerinforesult-services":       "Services bitmask which represents the services supported by the peer",
-	"getpeerinforesult-relaytxes":      "Peer has requested transactions be relayed to it",
 	"getpeerinforesult-lastsend":       "Time the last message was received in seconds since 1 Jan 1970 GMT",
 	"getpeerinforesult-lastrecv":       "Time the last message was sent in seconds since 1 Jan 1970 GMT",
 	"getpeerinforesult-bytessent":      "Total bytes sent",
@@ -620,7 +588,7 @@ var helpDescsEnUS = map[string]string{
 
 	// GetRawMempoolVerboseResult help.
 	"getrawmempoolverboseresult-size":             "Transaction size in bytes",
-	"getrawmempoolverboseresult-fee":              "Transaction fee in coolsnady",
+	"getrawmempoolverboseresult-fee":              "Transaction fee in decred",
 	"getrawmempoolverboseresult-time":             "Local time transaction entered pool in seconds since 1 Jan 1970 GMT",
 	"getrawmempoolverboseresult-height":           "Block height when transaction entered the pool",
 	"getrawmempoolverboseresult-startingpriority": "Priority when transaction entered the pool",
@@ -712,7 +680,7 @@ var helpDescsEnUS = map[string]string{
 	// SendRawTransactionCmd help.
 	"sendrawtransaction--synopsis":     "Submits the serialized, hex-encoded transaction to the local peer and relays it to the network.",
 	"sendrawtransaction-hextx":         "Serialized, hex-encoded signed transaction",
-	"sendrawtransaction-allowhighfees": "Whether or not to allow insanely high fees (hxd does not yet implement this parameter, so it has no effect)",
+	"sendrawtransaction-allowhighfees": "Whether or not to allow insanely high fees (hcd does not yet implement this parameter, so it has no effect)",
 	"sendrawtransaction--result0":      "The hash of the transaction",
 
 	// SetGenerateCmd help.
@@ -721,8 +689,8 @@ var helpDescsEnUS = map[string]string{
 	"setgenerate-genproclimit": "The number of processors (cores) to limit generation to or -1 for default",
 
 	// StopCmd help.
-	"stop--synopsis": "Shutdown hxd.",
-	"stop--result0":  "The string 'hxd stopping.'",
+	"stop--synopsis": "Shutdown hcd.",
+	"stop--result0":  "The string 'hcd stopping.'",
 
 	// SubmitBlockOptions help.
 	"submitblockoptions-workid": "This parameter is currently ignored",
@@ -737,7 +705,7 @@ var helpDescsEnUS = map[string]string{
 
 	// ValidateAddressResult help.
 	"validateaddresschainresult-isvalid": "Whether or not the address is valid",
-	"validateaddresschainresult-address": "The Decred address (only when isvalid is true)",
+	"validateaddresschainresult-address": "The decred address (only when isvalid is true)",
 
 	// ValidateAddressCmd help.
 	"validateaddress--synopsis": "Verify an address is valid.",
@@ -746,7 +714,7 @@ var helpDescsEnUS = map[string]string{
 	// VerifyChainCmd help.
 	"verifychain--synopsis": "Verifies the block chain database.\n" +
 		"The actual checks performed by the checklevel parameter are implementation specific.\n" +
-		"For hxd this is:\n" +
+		"For hcd this is:\n" +
 		"checklevel=0 - Look up each block and ensure it can be loaded from the database.\n" +
 		"checklevel=1 - Perform basic context-free sanity checks on each block.",
 	"verifychain-checklevel": "How thorough the block verification is",
@@ -755,10 +723,17 @@ var helpDescsEnUS = map[string]string{
 
 	// VerifyMessageCmd help.
 	"verifymessage--synopsis": "Verify a signed message.",
-	"verifymessage-address":   "The Decred address to use for the signature",
+	"verifymessage-address":   "The decred address to use for the signature",
 	"verifymessage-signature": "The base-64 encoded signature provided by the signer",
 	"verifymessage-message":   "The signed message",
 	"verifymessage--result0":  "Whether or not the signature verified",
+
+	// VerifyBlissMessageCmd help.
+	"verifyblissmessage--synopsis": "Verify a signed message.",
+	"verifyblissmessage-pubKey":    "The hypercash bliss public key to use for the signature",
+	"verifyblissmessage-signature": "The base-64 encoded signature provided by the signer",
+	"verifyblissmessage-message":   "The signed message",
+	"verifyblissmessage--result0":  "Whether or not the signature verified",
 
 	// -------- Websocket-specific help --------
 
@@ -809,7 +784,7 @@ var helpDescsEnUS = map[string]string{
 	// -------- Decred-specific help --------
 
 	// EstimateFee help.
-	"estimatefee--synopsis": "Returns the estimated fee in dcr/kb.",
+	"estimatefee--synopsis": "Returns the estimated fee in hc/kb.",
 	"estimatefee-numblocks": "(unused)",
 	"estimatefee--result0":  "Estimated fee.",
 
@@ -942,9 +917,6 @@ var rpcResultTypes = map[string][]interface{}{
 	"getblockheader":        {(*string)(nil), (*dcrjson.GetBlockHeaderVerboseResult)(nil)},
 	"getblocksubsidy":       {(*dcrjson.GetBlockSubsidyResult)(nil)},
 	"getblocktemplate":      {(*dcrjson.GetBlockTemplateResult)(nil), (*string)(nil), nil},
-	"getcfilter":            {(*string)(nil)},
-	"getcfilterheader":      {(*string)(nil)},
-	"getchaintips":          {(*[]dcrjson.GetChainTipsResult)(nil)},
 	"getconnectioncount":    {(*int32)(nil)},
 	"getcurrentnet":         {(*uint32)(nil)},
 	"getdifficulty":         {(*float64)(nil)},
@@ -986,6 +958,7 @@ var rpcResultTypes = map[string][]interface{}{
 	"validateaddress":       {(*dcrjson.ValidateAddressChainResult)(nil)},
 	"verifychain":           {(*bool)(nil)},
 	"verifymessage":         {(*bool)(nil)},
+	"verifyblissmessage":    {(*bool)(nil)},
 	"version":               {(*map[string]dcrjson.VersionResult)(nil)},
 
 	// Websocket commands.

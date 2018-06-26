@@ -9,7 +9,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/coolsnady/hxd/dcrjson"
+	"github.com/coolsnady/hcd/dcrjson"
 )
 
 // TestHelpers tests the various helper functions which create pointers to

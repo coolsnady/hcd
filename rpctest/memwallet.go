@@ -11,15 +11,15 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/coolsnady/hxd/blockchain"
-	"github.com/coolsnady/hxd/chaincfg"
-	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/hxd/dcrec/secp256k1"
-	"github.com/coolsnady/hxd/dcrutil"
-	"github.com/coolsnady/hxd/hdkeychain"
-	"github.com/coolsnady/hxd/rpcclient"
-	"github.com/coolsnady/hxd/txscript"
-	"github.com/coolsnady/hxd/wire"
+	"github.com/coolsnady/hcd/blockchain"
+	"github.com/coolsnady/hcd/chaincfg"
+	"github.com/coolsnady/hcd/chaincfg/chainec"
+	"github.com/coolsnady/hcd/chaincfg/chainhash"
+	"github.com/coolsnady/hcd/txscript"
+	"github.com/coolsnady/hcd/wire"
+	hcrpcclient "github.com/coolsnady/hcrpcclient"
+	dcrutil "github.com/coolsnady/hcutil"
+	"github.com/coolsnady/hcutil/hdkeychain"
 )
 
 var (
@@ -40,8 +40,8 @@ var (
 type utxo struct {
 	pkScript       []byte
 	value          dcrutil.Amount
-	maturityHeight int64
 	keyIndex       uint32
+	maturityHeight int64
 	isLocked       bool
 }
 
@@ -71,7 +71,7 @@ type undoEntry struct {
 // wallet functionality to the harness. The wallet uses a hard-coded HD key
 // hierarchy which promotes reproducibility between harness test runs.
 type memWallet struct {
-	coinbaseKey  *secp256k1.PrivateKey
+	coinbaseKey  chainec.PrivateKey
 	coinbaseAddr dcrutil.Address
 
 	// hdRoot is the root master private key for the wallet.
@@ -103,7 +103,7 @@ type memWallet struct {
 
 	net *chaincfg.Params
 
-	rpc *rpcclient.Client
+	rpc *hcrpcclient.Client
 
 	sync.RWMutex
 }
@@ -170,9 +170,9 @@ func (m *memWallet) SyncedHeight() int64 {
 	return m.currentHeight
 }
 
-// SetRPCClient saves the passed rpc connection to hxd as the wallet's
+// SetRPCClient saves the passed rpc connection to hcd as the wallet's
 // personal rpc connection.
-func (m *memWallet) SetRPCClient(rpcClient *rpcclient.Client) {
+func (m *memWallet) SetRPCClient(rpcClient *hcrpcclient.Client) {
 	m.rpc = rpcClient
 }
 
@@ -467,7 +467,7 @@ func (m *memWallet) CreateTransaction(outputs []*wire.TxOut, feeRate dcrutil.Amo
 	}
 
 	// Attempt to fund the transaction with spendable utxos.
-	if err := m.fundTx(tx, outputAmt, feeRate); err != nil {
+	if err := m.fundTx(tx, outputAmt, dcrutil.Amount(feeRate)); err != nil {
 		return nil, err
 	}
 
@@ -551,8 +551,8 @@ func (m *memWallet) ConfirmedBalance() dcrutil.Amount {
 }
 
 // keyToAddr maps the passed private to corresponding p2pkh address.
-func keyToAddr(key *secp256k1.PrivateKey, net *chaincfg.Params) (dcrutil.Address, error) {
-	pubKey := (*secp256k1.PublicKey)(&key.PublicKey)
+func keyToAddr(key chainec.PrivateKey, net *chaincfg.Params) (dcrutil.Address, error) {
+	pubKey := chainec.Secp256k1.NewPublicKey(key.Public())
 	serializedKey := pubKey.SerializeCompressed()
 	pubKeyAddr, err := dcrutil.NewAddressSecpPubKey(serializedKey, net)
 	if err != nil {

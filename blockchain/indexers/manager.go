@@ -9,14 +9,14 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/coolsnady/hxd/blockchain"
-	"github.com/coolsnady/hxd/blockchain/internal/progresslog"
-	"github.com/coolsnady/hxd/blockchain/stake"
-	"github.com/coolsnady/hxd/chaincfg"
-	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/hxd/database"
-	"github.com/coolsnady/hxd/dcrutil"
-	"github.com/coolsnady/hxd/wire"
+	"github.com/coolsnady/hcd/blockchain"
+	"github.com/coolsnady/hcd/blockchain/internal/progresslog"
+	"github.com/coolsnady/hcd/blockchain/stake"
+	"github.com/coolsnady/hcd/chaincfg"
+	"github.com/coolsnady/hcd/chaincfg/chainhash"
+	"github.com/coolsnady/hcd/database"
+	"github.com/coolsnady/hcd/wire"
+	dcrutil "github.com/coolsnady/hcutil"
 )
 
 var (
@@ -151,7 +151,7 @@ func indexDropKey(idxKey []byte) []byte {
 // of being dropped and finishes dropping them when the are.  This is necessary
 // because dropping and index has to be done in several atomic steps rather than
 // one big atomic step due to the massive number of entries.
-func (m *Manager) maybeFinishDrops(interrupt <-chan struct{}) error {
+func (m *Manager) maybeFinishDrops() error {
 	indexNeedsDrop := make([]bool, len(m.enabledIndexes))
 	err := m.db.View(func(dbTx database.Tx) error {
 		// None of the indexes needs to be dropped if the index tips
@@ -161,7 +161,7 @@ func (m *Manager) maybeFinishDrops(interrupt <-chan struct{}) error {
 			return nil
 		}
 
-		// Mark the indexer as requiring a drop if one is already in
+		// Make the indexer as requiring a drop if one is already in
 		// progress.
 		for i, indexer := range m.enabledIndexes {
 			dropKey := indexDropKey(indexer.Key())
@@ -176,10 +176,6 @@ func (m *Manager) maybeFinishDrops(interrupt <-chan struct{}) error {
 		return err
 	}
 
-	if interruptRequested(interrupt) {
-		return errInterruptRequested
-	}
-
 	// Finish dropping any of the enabled indexes that are already in the
 	// middle of being dropped.
 	for i, indexer := range m.enabledIndexes {
@@ -188,18 +184,9 @@ func (m *Manager) maybeFinishDrops(interrupt <-chan struct{}) error {
 		}
 
 		log.Infof("Resuming %s drop", indexer.Name())
-
-		switch d := indexer.(type) {
-		case IndexDropper:
-			err := d.DropIndex(m.db, interrupt)
-			if err != nil {
-				return err
-			}
-		default:
-			err := dropIndex(m.db, indexer.Key(), indexer.Name())
-			if err != nil {
-				return err
-			}
+		err := dropIndex(m.db, indexer.Key(), indexer.Name())
+		if err != nil {
+			return err
 		}
 	}
 
@@ -244,18 +231,14 @@ func (m *Manager) maybeCreateIndexes(dbTx database.Tx) error {
 // catch up due to the I/O contention.
 //
 // This is part of the blockchain.IndexManager interface.
-func (m *Manager) Init(chain *blockchain.BlockChain, interrupt <-chan struct{}) error {
+func (m *Manager) Init(chain *blockchain.BlockChain) error {
 	// Nothing to do when no indexes are enabled.
 	if len(m.enabledIndexes) == 0 {
 		return nil
 	}
 
-	if interruptRequested(interrupt) {
-		return errInterruptRequested
-	}
-
 	// Finish any drops that were previously interrupted.
-	if err := m.maybeFinishDrops(interrupt); err != nil {
+	if err := m.maybeFinishDrops(); err != nil {
 		return err
 	}
 
@@ -307,10 +290,13 @@ func (m *Manager) Init(chain *blockchain.BlockChain, interrupt <-chan struct{}) 
 		}
 
 		// Loop until the tip is a block that exists in the main chain.
-		var interrupted bool
 		initialHeight := height
 		err = m.db.Update(func(dbTx database.Tx) error {
-			for !blockchain.DBMainChainHasBlock(dbTx, hash) {
+			for {
+				if blockchain.DBMainChainHasBlock(dbTx, hash) {
+					break
+				}
+
 				// Get the block, unless it's already cached.
 				var block *dcrutil.Block
 				if cachedBlock == nil && height > 0 {
@@ -338,8 +324,7 @@ func (m *Manager) Init(chain *blockchain.BlockChain, interrupt <-chan struct{}) 
 				var view *blockchain.UtxoViewpoint
 				if indexNeedsInputs(indexer) {
 					var err error
-					view, err = makeUtxoView(dbTx, block, parent,
-						interrupt)
+					view, err = makeUtxoView(dbTx, block, parent)
 					if err != nil {
 						return err
 					}
@@ -356,24 +341,12 @@ func (m *Manager) Init(chain *blockchain.BlockChain, interrupt <-chan struct{}) 
 				// Update the tip to the previous block.
 				hash = &block.MsgBlock().Header.PrevBlock
 				height--
-
-				// NOTE: This does not return as it does
-				// elsewhere since it would cause the
-				// database transaction to rollback and
-				// undo all work that has been done.
-				if interruptRequested(interrupt) {
-					interrupted = true
-					break
-				}
 			}
 
 			return nil
 		})
 		if err != nil {
 			return err
-		}
-		if interrupted {
-			return errInterruptRequested
 		}
 
 		if initialHeight != height {
@@ -427,10 +400,6 @@ func (m *Manager) Init(chain *blockchain.BlockChain, interrupt <-chan struct{}) 
 
 	var cachedParent *dcrutil.Block
 	for height := lowestHeight + 1; height <= bestHeight; height++ {
-		if interruptRequested(interrupt) {
-			return errInterruptRequested
-		}
-
 		var block, parent *dcrutil.Block
 		err = m.db.Update(func(dbTx database.Tx) error {
 			// Get the parent of the block, unless it's already cached.
@@ -453,10 +422,6 @@ func (m *Manager) Init(chain *blockchain.BlockChain, interrupt <-chan struct{}) 
 			}
 			cachedParent = block
 
-			if interruptRequested(interrupt) {
-				return errInterruptRequested
-			}
-
 			// Connect the block for all indexes that need it.
 			var view *blockchain.UtxoViewpoint
 			for i, indexer := range m.enabledIndexes {
@@ -472,8 +437,7 @@ func (m *Manager) Init(chain *blockchain.BlockChain, interrupt <-chan struct{}) 
 				// index.
 				if view == nil && indexNeedsInputs(indexer) {
 					var errMakeView error
-					view, errMakeView = makeUtxoView(dbTx, block, parent,
-						interrupt)
+					view, errMakeView = makeUtxoView(dbTx, block, parent)
 					if errMakeView != nil {
 						return errMakeView
 					}
@@ -542,7 +506,7 @@ func dbFetchTx(dbTx database.Tx, hash *chainhash.Hash) (*wire.MsgTx, error) {
 // transactions in the block.  This is sometimes needed when catching indexes up
 // because many of the txouts could actually already be spent however the
 // associated scripts are still required to index them.
-func makeUtxoView(dbTx database.Tx, block, parent *dcrutil.Block, interrupt <-chan struct{}) (*blockchain.UtxoViewpoint, error) {
+func makeUtxoView(dbTx database.Tx, block, parent *dcrutil.Block) (*blockchain.UtxoViewpoint, error) {
 	view := blockchain.NewUtxoViewpoint()
 	var parentRegularTxs []*dcrutil.Tx
 	if approvesParent(block) {
@@ -575,15 +539,11 @@ func makeUtxoView(dbTx database.Tx, block, parent *dcrutil.Block, interrupt <-ch
 				int64(wire.NullBlockHeight),
 				wire.NullBlockIndex)
 		}
-
-		if interruptRequested(interrupt) {
-			return nil, errInterruptRequested
-		}
 	}
 
 	for _, tx := range block.STransactions() {
 		msgTx := tx.MsgTx()
-		isSSGen := stake.IsSSGen(msgTx)
+		isSSGen, _ := stake.IsSSGen(msgTx)
 
 		// Use the transaction index to load all of the referenced
 		// inputs and add their outputs to the view.
@@ -605,10 +565,6 @@ func makeUtxoView(dbTx database.Tx, block, parent *dcrutil.Block, interrupt <-ch
 
 			view.AddTxOuts(dcrutil.NewTx(originTx), int64(wire.NullBlockHeight),
 				wire.NullBlockIndex)
-		}
-
-		if interruptRequested(interrupt) {
-			return nil, errInterruptRequested
 		}
 	}
 
@@ -662,32 +618,47 @@ func NewManager(db database.DB, enabledIndexes []Indexer, params *chaincfg.Param
 	}
 }
 
-// existsIndex returns whether the index keyed by idxKey exists in the database.
-func existsIndex(db database.DB, idxKey []byte, idxName string) (bool, error) {
-	var exists bool
+// dropIndex drops the passed index from the database.  Since indexes can be
+// massive, it deletes the index in multiple database transactions in order to
+// keep memory usage to reasonable levels.  It also marks the drop in progress
+// so the drop can be resumed if it is stopped before it is done before the
+// index can be used again.
+func dropIndex(db database.DB, idxKey []byte, idxName string) error {
+	// Nothing to do if the index doesn't already exist.
+	var needsDelete bool
 	err := db.View(func(dbTx database.Tx) error {
 		indexesBucket := dbTx.Metadata().Bucket(indexTipsBucketName)
 		if indexesBucket != nil && indexesBucket.Get(idxKey) != nil {
-			exists = true
+			needsDelete = true
 		}
 		return nil
 	})
-	return exists, err
-}
+	if err != nil {
+		return err
+	}
+	if !needsDelete {
+		log.Infof("Not dropping %s because it does not exist", idxName)
+		return nil
+	}
 
-// markIndexDeletion marks the index identified by idxKey for deletion.  Marking
-// an index for deletion allows deletion to resume next startup if an
-// incremental deletion was interrupted.
-func markIndexDeletion(db database.DB, idxKey []byte) error {
-	return db.Update(func(dbTx database.Tx) error {
+	// Mark that the index is in the process of being dropped so that it
+	// can be resumed on the next start if interrupted before the process is
+	// complete.
+	log.Infof("Dropping all %s entries.  This might take a while...",
+		idxName)
+	err = db.Update(func(dbTx database.Tx) error {
 		indexesBucket := dbTx.Metadata().Bucket(indexTipsBucketName)
 		return indexesBucket.Put(indexDropKey(idxKey), idxKey)
 	})
-}
+	if err != nil {
+		return err
+	}
 
-// incrementalFlatDrop uses multiple database updates to remove key/value pairs
-// saved to a flat index.
-func incrementalFlatDrop(db database.DB, idxKey []byte, idxName string, interrupt <-chan struct{}) error {
+	// Since the indexes can be so large, attempting to simply delete
+	// the bucket in a single database transaction would result in massive
+	// memory usage and likely crash many systems due to ulimits.  In order
+	// to avoid this, use a cursor to delete a maximum number of entries out
+	// of the bucket at a time.
 	const maxDeletions = 2000000
 	var totalDeleted uint64
 	for numDeleted := maxDeletions; numDeleted == maxDeletions; {
@@ -714,111 +685,30 @@ func incrementalFlatDrop(db database.DB, idxKey []byte, idxName string, interrup
 			log.Infof("Deleted %d keys (%d total) from %s",
 				numDeleted, totalDeleted, idxName)
 		}
+	}
 
-		if interruptRequested(interrupt) {
-			return errInterruptRequested
+	// Call extra index specific deinitialization for the transaction index.
+	if idxName == txIndexName {
+		if err := dropBlockIDIndex(db); err != nil {
+			return err
 		}
 	}
-	return nil
-}
 
-// dropIndexMetadata drops the passed index from the database by removing the
-// top level bucket for the index, the index tip, and any in-progress drop flag.
-func dropIndexMetadata(db database.DB, idxKey []byte, idxName string) error {
-	return db.Update(func(dbTx database.Tx) error {
+	// Remove the index tip, index bucket, and in-progress drop flag now
+	// that all index entries have been removed.
+	err = db.Update(func(dbTx database.Tx) error {
 		meta := dbTx.Metadata()
 		indexesBucket := meta.Bucket(indexTipsBucketName)
-		err := indexesBucket.Delete(idxKey)
-		if err != nil {
+		if err := indexesBucket.Delete(idxKey); err != nil {
 			return err
 		}
 
-		err = meta.DeleteBucket(idxKey)
-		if err != nil && !database.IsError(err, database.ErrBucketNotFound) {
+		if err := meta.DeleteBucket(idxKey); err != nil {
 			return err
 		}
 
 		return indexesBucket.Delete(indexDropKey(idxKey))
 	})
-}
-
-// dropFlatIndex incrementally drops the passed index from the database.  Since
-// indexes can be massive, it deletes the index in multiple database
-// transactions in order to keep memory usage to reasonable levels.  For this
-// algorithm to work, the index must be "flat" (have no nested buckets).  It
-// also marks the drop in progress so the drop can be resumed if it is stopped
-// before it is done before the index can be used again.
-func dropFlatIndex(db database.DB, idxKey []byte, idxName string, interrupt <-chan struct{}) error {
-	// Nothing to do if the index doesn't already exist.
-	exists, err := existsIndex(db, idxKey, idxName)
-	if err != nil {
-		return err
-	}
-	if !exists {
-		log.Infof("Not dropping %s because it does not exist", idxName)
-		return nil
-	}
-
-	log.Infof("Dropping all %s entries.  This might take a while...",
-		idxName)
-
-	// Mark that the index is in the process of being dropped so that it
-	// can be resumed on the next start if interrupted before the process is
-	// complete.
-	err = markIndexDeletion(db, idxKey)
-	if err != nil {
-		return err
-	}
-
-	// Since the indexes can be so large, attempting to simply delete
-	// the bucket in a single database transaction would result in massive
-	// memory usage and likely crash many systems due to ulimits.  In order
-	// to avoid this, use a cursor to delete a maximum number of entries out
-	// of the bucket at a time.
-	err = incrementalFlatDrop(db, idxKey, idxName, interrupt)
-	if err != nil {
-		return err
-	}
-
-	// Remove the index tip, index bucket, and in-progress drop flag now
-	// that all index entries have been removed.
-	err = dropIndexMetadata(db, idxKey, idxName)
-	if err != nil {
-		return err
-	}
-
-	log.Infof("Dropped %s", idxName)
-	return nil
-}
-
-// dropIndex drops the passed index from the database without using incremental
-// deletion.  This should be used to drop indexes containing nested buckets,
-// which can not be deleted with dropFlatIndex.
-func dropIndex(db database.DB, idxKey []byte, idxName string) error {
-	// Nothing to do if the index doesn't already exist.
-	exists, err := existsIndex(db, idxKey, idxName)
-	if err != nil {
-		return err
-	}
-	if !exists {
-		log.Infof("Not dropping %s because it does not exist", idxName)
-		return nil
-	}
-
-	log.Infof("Dropping all %s entries.  This might take a while...",
-		idxName)
-
-	// Mark that the index is in the process of being dropped so that it
-	// can be resumed on the next start if interrupted before the process is
-	// complete.
-	err = markIndexDeletion(db, idxKey)
-	if err != nil {
-		return err
-	}
-
-	// Remove the index tip, index bucket, and in-progress drop flag.  Removing
-	// the index bucket also recursively removes all values saved to the index.
-	err = dropIndexMetadata(db, idxKey, idxName)
 	if err != nil {
 		return err
 	}

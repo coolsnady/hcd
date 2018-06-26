@@ -4,29 +4,28 @@
 // license that can be found in the LICENSE file.
 
 /*
-hxd is a full-node Decred implementation written in Go.
+hcd is a full-node decred implementation written in Go.
 
-The default options are sane for most users.  This means hxd will work 'out of
+The default options are sane for most users.  This means hcd will work 'out of
 the box' for most users.  However, there are also a wide variety of flags that
 can be used to control it.
 
 The following section provides a usage overview which enumerates the flags.  An
 interesting point to note is that the long form of all of these options
 (except -C) can be specified in a configuration file that is automatically
-parsed when hxd starts up.  By default, the configuration file is located at
-~/.hxd/hxd.conf on POSIX-style operating systems and %LOCALAPPDATA%\hxd\hxd.conf
+parsed when hcd starts up.  By default, the configuration file is located at
+~/.hcd/hcd.conf on POSIX-style operating systems and %LOCALAPPDATA%\hcd\hcd.conf
 on Windows.  The -C (--configfile) flag, as shown below, can be used to override
 this location.
 
 Usage:
-  hxd [OPTIONS]
+  hcd [OPTIONS]
 
 Application Options:
   -V, --version             Display version information and exit
   -C, --configfile=         Path to configuration file
   -b, --datadir=            Directory to store data
       --logdir=             Directory to log output.
-      --nofilelogging=      Disable file logging.
   -a, --addpeer=            Add a peer to connect with at startup
       --connect=            Connect only to the specified peers at startup
       --nolisten            Disable listening for incoming connections -- NOTE:
@@ -117,12 +116,12 @@ Application Options:
       --nominingstatesync   Disable synchronizing the mining state with other nodes
       --allowoldvotes       Enable the addition of very old votes to the mempool
 
+      --nopeerbloomfilters  Disable bloom filtering support.
       --sigcachemaxsize=    The maximum number of entries in the signature
                             verification cache.
       --blocksonly          Do not accept transactions from remote peers.
-      --acceptnonstd        Accept and relay non-standard transactions to
-                            the network regardless of the default settings
-                            for the active network.
+      --relaynonstd         Relay non-standard transactions regardless of the
+                            default settings for the active network.
       --rejectnonstd        Reject non-standard transactions regardless of the
                             default settings for the active network.
 

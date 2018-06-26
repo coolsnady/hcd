@@ -1,9 +1,9 @@
 connmgr
 =======
 
-[![Build Status](http://img.shields.io/travis/coolsnady/hxd.svg)](https://travis-ci.org/coolsnady/hxd)
+[![Build Status](http://img.shields.io/travis/decred/hcd.svg)](https://travis-ci.org/decred/hcd)
 [![ISC License](http://img.shields.io/badge/license-ISC-blue.svg)](http://copyfree.org)
-[![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/coolsnady/hxd/connmgr)
+[![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/decred/hcd/connmgr)
 
 Package connmgr implements a generic Decred network connection manager.
 
@@ -29,7 +29,7 @@ In addition the connection manager provides the following utilities:
 ## Installation and Updating
 
 ```bash
-$ go get -u github.com/coolsnady/hxd/connmgr
+$ go get -u github.com/decred/hcd/connmgr
 ```
 
 ## License

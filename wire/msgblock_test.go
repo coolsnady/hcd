@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/coolsnady/hxd/chaincfg/chainhash"
+	"github.com/coolsnady/hcd/chaincfg/chainhash"
 )
 
 // TestBlock tests the MsgBlock API.
@@ -105,6 +105,8 @@ func TestBlock(t *testing.T) {
 		t.Errorf("ClearTransactions: wrong transactions - got %v, want %v",
 			len(msg.STransactions), 0)
 	}
+
+	return
 }
 
 // TestBlockTxHashes tests the ability to generate a slice of all transaction

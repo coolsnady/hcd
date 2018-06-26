@@ -9,7 +9,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/coolsnady/hxd/dcrjson"
+	"github.com/coolsnady/hcd/dcrjson"
 )
 
 // TestHelpReflectInternals ensures the various help functions which deal with

@@ -1,5 +1,5 @@
 // Copyright (c) 2013-2015 The btcsuite developers
-// Copyright (c) 2015-2018 The Decred developers
+// Copyright (c) 2015-2016 The Decred developers
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
@@ -10,11 +10,11 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/coolsnady/hxd/blockchain/stake"
-	"github.com/coolsnady/hxd/chaincfg"
-	"github.com/coolsnady/hxd/dcrutil"
-	"github.com/coolsnady/hxd/txscript"
-	"github.com/coolsnady/hxd/wire"
+	"github.com/coolsnady/hcd/blockchain/stake"
+	"github.com/coolsnady/hcd/chaincfg"
+	"github.com/coolsnady/hcd/txscript"
+	"github.com/coolsnady/hcd/wire"
+	dcrutil "github.com/coolsnady/hcutil"
 )
 
 // The number of values to precalculate on initialization of the subsidy
@@ -120,18 +120,19 @@ func (s *SubsidyCache) CalcBlockSubsidy(height int64) int64 {
 
 // CalcBlockWorkSubsidy calculates the proof of work subsidy for a block as a
 // proportion of the total subsidy.
-func CalcBlockWorkSubsidy(subsidyCache *SubsidyCache, height int64, voters uint16, params *chaincfg.Params) int64 {
+func CalcBlockWorkSubsidy(subsidyCache *SubsidyCache, height int64,
+	voters uint16, params *chaincfg.Params) int64 {
 	subsidy := subsidyCache.CalcBlockSubsidy(height)
 
-	proportionWork := int64(params.WorkRewardProportion)	//6
-	proportions := int64(params.TotalSubsidyProportions())  //10
+	proportionWork := int64(params.WorkRewardProportion)
+	proportions := int64(params.TotalSubsidyProportions())
 	subsidy *= proportionWork
-	subsidy /= proportions   //*0.6
+	subsidy /= proportions
 
 	// Ignore the voters field of the header before we're at a point
 	// where there are any voters.
 	if height < params.StakeValidationHeight {
-		return subsidy  //只有pow
+		return subsidy
 	}
 
 	// If there are no voters, subsidy is 0. The block will fail later anyway.
@@ -141,8 +142,9 @@ func CalcBlockWorkSubsidy(subsidyCache *SubsidyCache, height int64, voters uint1
 
 	// Adjust for the number of voters. This shouldn't ever overflow if you start
 	// with 50 * 10^8 Atoms and voters and potentialVoters are uint16.
-	potentialVoters := params.TicketsPerBlock   					//5
-	actual := (int64(voters) * subsidy) / int64(potentialVoters)	//
+	potentialVoters := params.TicketsPerBlock
+	actual := (int64(voters) * subsidy) / int64(potentialVoters)
+
 	return actual
 }
 
@@ -150,7 +152,8 @@ func CalcBlockWorkSubsidy(subsidyCache *SubsidyCache, height int64, voters uint1
 // of its input SStx.
 //
 // Safe for concurrent access.
-func CalcStakeVoteSubsidy(subsidyCache *SubsidyCache, height int64, params *chaincfg.Params) int64 {
+func CalcStakeVoteSubsidy(subsidyCache *SubsidyCache, height int64,
+	params *chaincfg.Params) int64 {
 	// Calculate the actual reward for this block, then further reduce reward
 	// proportional to StakeRewardProportion.
 	// Note that voters/potential voters is 1, so that vote reward is calculated
@@ -160,7 +163,7 @@ func CalcStakeVoteSubsidy(subsidyCache *SubsidyCache, height int64, params *chai
 	proportionStake := int64(params.StakeRewardProportion)
 	proportions := int64(params.TotalSubsidyProportions())
 	subsidy *= proportionStake
-	subsidy /= (proportions * int64(params.TicketsPerBlock))  //*0.3
+	subsidy /= (proportions * int64(params.TicketsPerBlock))
 
 	return subsidy
 }
@@ -169,7 +172,8 @@ func CalcStakeVoteSubsidy(subsidyCache *SubsidyCache, height int64, params *chai
 // coinbase.
 //
 // Safe for concurrent access.
-func CalcBlockTaxSubsidy(subsidyCache *SubsidyCache, height int64, voters uint16, params *chaincfg.Params) int64 {
+func CalcBlockTaxSubsidy(subsidyCache *SubsidyCache, height int64, voters uint16,
+	params *chaincfg.Params) int64 {
 	if params.BlockTaxProportion == 0 {
 		return 0
 	}
@@ -179,7 +183,7 @@ func CalcBlockTaxSubsidy(subsidyCache *SubsidyCache, height int64, voters uint16
 	proportionTax := int64(params.BlockTaxProportion)
 	proportions := int64(params.TotalSubsidyProportions())
 	subsidy *= proportionTax
-	subsidy /= proportions     //*0.1
+	subsidy /= proportions
 
 	// Assume all voters 'present' before stake voting is turned on.
 	if height < params.StakeValidationHeight {
@@ -201,7 +205,8 @@ func CalcBlockTaxSubsidy(subsidyCache *SubsidyCache, height int64, voters uint16
 
 // BlockOneCoinbasePaysTokens checks to see if the first block coinbase pays
 // out to the network initial token ledger.
-func BlockOneCoinbasePaysTokens(tx *dcrutil.Tx, params *chaincfg.Params) error {
+func BlockOneCoinbasePaysTokens(tx *dcrutil.Tx,
+	params *chaincfg.Params) error {
 	// If no ledger is specified, just return true.
 	if len(params.BlockOneLedger) == 0 {
 		return nil
@@ -281,7 +286,8 @@ func BlockOneCoinbasePaysTokens(tx *dcrutil.Tx, params *chaincfg.Params) error {
 
 // CoinbasePaysTax checks to see if a given block's coinbase correctly pays
 // tax to the developer organization.
-func CoinbasePaysTax(subsidyCache *SubsidyCache, tx *dcrutil.Tx, height int64, voters uint16, params *chaincfg.Params) error {
+func CoinbasePaysTax(subsidyCache *SubsidyCache, tx *dcrutil.Tx, height uint32,
+	voters uint16, params *chaincfg.Params) error {
 	// Taxes only apply from block 2 onwards.
 	if height <= 1 {
 		return nil
@@ -310,7 +316,7 @@ func CoinbasePaysTax(subsidyCache *SubsidyCache, tx *dcrutil.Tx, height int64, v
 
 	// Get the amount of subsidy that should have been paid out to
 	// the organization, then check it.
-	orgSubsidy := CalcBlockTaxSubsidy(subsidyCache, height, voters, params)
+	orgSubsidy := CalcBlockTaxSubsidy(subsidyCache, int64(height), voters, params)
 	if orgSubsidy != taxOutput.Value {
 		errStr := fmt.Sprintf("amount in output 0 has non matching org "+
 			"calculated amount; got %v, want %v", taxOutput.Value,
@@ -327,12 +333,15 @@ func CoinbasePaysTax(subsidyCache *SubsidyCache, tx *dcrutil.Tx, height int64, v
 // network, or the function might panic.
 func CalculateAddedSubsidy(block, parent *dcrutil.Block) int64 {
 	var subsidy int64
-	if headerApprovesParent(&block.MsgBlock().Header) {
+
+	regularTxTreeValid := dcrutil.IsFlagSet16(block.MsgBlock().Header.VoteBits,
+		dcrutil.BlockValid)
+	if regularTxTreeValid {
 		subsidy += parent.MsgBlock().Transactions[0].TxIn[0].ValueIn
 	}
 
 	for _, stx := range block.MsgBlock().STransactions {
-		if stake.IsSSGen(stx) {
+		if isSSGen, _ := stake.IsSSGen(stx); isSSGen {
 			subsidy += stx.TxIn[0].ValueIn
 		}
 	}

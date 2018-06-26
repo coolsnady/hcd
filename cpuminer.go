@@ -1,24 +1,23 @@
 // Copyright (c) 2014-2016 The btcsuite developers
-// Copyright (c) 2015-2018 The Decred developers
+// Copyright (c) 2015-2016 The Decred developers
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
 package main
 
 import (
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"math/rand"
 	"sync"
 	"time"
 
-	"github.com/coolsnady/hxd/blockchain"
-	"github.com/coolsnady/hxd/chaincfg"
-	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/hxd/dcrutil"
-	"github.com/coolsnady/hxd/mining"
-	"github.com/coolsnady/hxd/wire"
+	"github.com/coolsnady/hcd/blockchain"
+	"github.com/coolsnady/hcd/chaincfg"
+	"github.com/coolsnady/hcd/chaincfg/chainhash"
+	"github.com/coolsnady/hcd/mining"
+	"github.com/coolsnady/hcd/wire"
+	dcrutil "github.com/coolsnady/hcutil"
 )
 
 const (
@@ -51,10 +50,6 @@ var (
 	// and is based on the number of processor cores.  This helps ensure the
 	// system stays reasonably responsive under heavy load.
 	defaultNumWorkers = uint32(chaincfg.CPUMinerThreads)
-
-	// littleEndian is a convenience variable since binary.LittleEndian is
-	// quite long.
-	littleEndian = binary.LittleEndian
 )
 
 // CPUMiner provides facilities for solving blocks (mining) using the CPU in
@@ -192,7 +187,11 @@ func (m *CPUMiner) submitBlock(block *dcrutil.Block) bool {
 // This function will return early with false when conditions that trigger a
 // stale block such as a new block showing up or periodically when there are
 // new transactions and enough time has elapsed without finding a solution.
-func (m *CPUMiner) solveBlock(msgBlock *wire.MsgBlock, ticker *time.Ticker, quit chan struct{}) bool {
+func (m *CPUMiner) solveBlock(msgBlock *wire.MsgBlock, ticker *time.Ticker,
+	quit chan struct{}) bool {
+
+	blockHeight := int64(msgBlock.Header.Height)
+
 	// Choose a random extra nonce offset for this block template and
 	// worker.
 	enOffset, err := wire.RandomUint64()
@@ -215,9 +214,19 @@ func (m *CPUMiner) solveBlock(msgBlock *wire.MsgBlock, ticker *time.Ticker, quit
 	// added relying on the fact that overflow will wrap around 0 as
 	// provided by the Go spec.
 	for extraNonce := uint64(0); extraNonce < maxExtraNonce; extraNonce++ {
-		// Update the extra nonce in the block template header with the
-		// new value.
-		littleEndian.PutUint64(header.ExtraData[:], extraNonce+enOffset)
+		// Get the old nonce values.
+		ens := getCoinbaseExtranonces(msgBlock)
+		ens[2] = extraNonce + enOffset
+
+		// Update the extra nonce in the block template with the
+		// new value by regenerating the coinbase script and
+		// setting the merkle root to the new value.  The
+		err := UpdateExtraNonce(msgBlock, blockHeight, ens)
+		if err != nil {
+			minrLog.Warnf("Unable to update CPU miner extranonce: %v",
+				err)
+			break
+		}
 
 		// Search through the entire nonce range for a solution while
 		// periodically checking for early quit and stale block
@@ -303,7 +312,7 @@ out:
 		m.submitBlockLock.Lock()
 		time.Sleep(100 * time.Millisecond)
 
-		// Hacks to make dcr work with Decred PoC (simnet only)
+		// Hacks to make hc work with Decred PoC (simnet only)
 		// TODO Remove before production.
 		if cfg.SimNet {
 			_, curHeight := m.server.blockManager.chainState.Best()

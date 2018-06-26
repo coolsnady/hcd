@@ -7,13 +7,13 @@ package indexers
 import (
 	"sync"
 
-	"github.com/coolsnady/hxd/blockchain"
-	"github.com/coolsnady/hxd/blockchain/stake"
-	"github.com/coolsnady/hxd/chaincfg"
-	"github.com/coolsnady/hxd/database"
-	"github.com/coolsnady/hxd/dcrutil"
-	"github.com/coolsnady/hxd/txscript"
-	"github.com/coolsnady/hxd/wire"
+	"github.com/coolsnady/hcd/blockchain"
+	"github.com/coolsnady/hcd/blockchain/stake"
+	"github.com/coolsnady/hcd/chaincfg"
+	"github.com/coolsnady/hcd/database"
+	"github.com/coolsnady/hcd/txscript"
+	"github.com/coolsnady/hcd/wire"
+	dcrutil "github.com/coolsnady/hcutil"
 )
 
 var (
@@ -225,7 +225,7 @@ func (idx *ExistsAddrIndex) ConnectBlock(dbTx database.Tx, block, parent *dcruti
 
 	for _, tx := range allTxns {
 		msgTx := tx.MsgTx()
-		isSStx := stake.IsSStx(msgTx)
+		isSStx, _ := stake.IsSStx(msgTx)
 		for _, txIn := range msgTx.TxIn {
 			if txscript.IsMultisigSigScript(txIn.SignatureScript) {
 				rs, err :=
@@ -331,7 +331,7 @@ func (idx *ExistsAddrIndex) DisconnectBlock(dbTx database.Tx, block, parent *dcr
 // addUnconfirmedTx adds all addresses related to the transaction to the
 // unconfirmed (memory-only) exists address index.
 func (idx *ExistsAddrIndex) addUnconfirmedTx(tx *wire.MsgTx) {
-	isSStx := stake.IsSStx(tx)
+	isSStx, _ := stake.IsSStx(tx)
 	for _, txIn := range tx.TxIn {
 		if txscript.IsMultisigSigScript(txIn.SignatureScript) {
 			rs, err :=
@@ -410,13 +410,6 @@ func (idx *ExistsAddrIndex) AddUnconfirmedTx(tx *wire.MsgTx) {
 
 // DropExistsAddrIndex drops the exists address index from the provided
 // database if it exists.
-func DropExistsAddrIndex(db database.DB, interrupt <-chan struct{}) error {
-	return dropFlatIndex(db, existsAddrIndexKey, existsAddressIndexName,
-		interrupt)
-}
-
-// DropIndex drops the exists address index from the provided database if it
-// exists.
-func (*ExistsAddrIndex) DropIndex(db database.DB, interrupt <-chan struct{}) error {
-	return DropExistsAddrIndex(db, interrupt)
+func DropExistsAddrIndex(db database.DB) error {
+	return dropIndex(db, existsAddrIndexKey, existsAddressIndexName)
 }

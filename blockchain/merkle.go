@@ -8,8 +8,8 @@ package blockchain
 import (
 	"math"
 
-	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hcd/chaincfg/chainhash"
+	dcrutil "github.com/coolsnady/hcutil"
 )
 
 // nextPowerOfTwo returns the next highest power of two from a given number if
@@ -46,7 +46,7 @@ func HashMerkleBranches(left *chainhash.Hash, right *chainhash.Hash) *chainhash.
 // is stored in a linear array.
 //
 // A merkle tree is a tree in which every non-leaf node is the hash of its
-// children nodes.  A diagram depicting how this works for Decred transactions
+// children nodes.  A diagram depicting how this works for decred transactions
 // where h(x) is a blake256 hash follows:
 //
 //	         root = h1234 = h(h12 + h34)

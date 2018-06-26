@@ -9,8 +9,8 @@
 package database
 
 import (
-	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hcd/chaincfg/chainhash"
+	dcrutil "github.com/coolsnady/hcutil"
 )
 
 // Cursor represents a cursor over key/value pairs and nested buckets of a

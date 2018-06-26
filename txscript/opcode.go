@@ -16,10 +16,11 @@ import (
 
 	"golang.org/x/crypto/ripemd160"
 
-	"github.com/coolsnady/hxd/chaincfg"
-	"github.com/coolsnady/hxd/chaincfg/chainec"
-	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/hxd/wire"
+	"github.com/coolsnady/hcd/chaincfg"
+	"github.com/coolsnady/hcd/chaincfg/chainec"
+	"github.com/coolsnady/hcd/chaincfg/chainhash"
+	bs "github.com/coolsnady/hcd/crypto/bliss"
+	"github.com/coolsnady/hcd/wire"
 )
 
 var optimizeSigVerification = chaincfg.SigHashOptimization
@@ -292,7 +293,7 @@ const (
 	OP_UNKNOWN246          = 0xf6 // 246
 	OP_UNKNOWN247          = 0xf7 // 247
 	OP_UNKNOWN248          = 0xf8 // 248
-	OP_INVALID249          = 0xf9 // 249 - bitcoin core internal
+	OP_SMALLDATA           = 0xf9 // 249 - bitcoin core internal
 	OP_SMALLINTEGER        = 0xfa // 250 - bitcoin core internal
 	OP_PUBKEYS             = 0xfb // 251 - bitcoin core internal
 	OP_UNKNOWN252          = 0xfc // 252
@@ -588,7 +589,7 @@ var opcodeArray = [256]opcode{
 	OP_UNKNOWN248: {OP_UNKNOWN248, "OP_UNKNOWN248", 1, opcodeNop},
 
 	// Bitcoin Core internal use opcode.  Defined here for completeness.
-	OP_INVALID249:   {OP_INVALID249, "OP_INVALID249", 1, opcodeInvalid},
+	OP_SMALLDATA:    {OP_SMALLDATA, "OP_SMALLDATA", 1, opcodeInvalid},
 	OP_SMALLINTEGER: {OP_SMALLINTEGER, "OP_SMALLINTEGER", 1, opcodeInvalid},
 	OP_PUBKEYS:      {OP_PUBKEYS, "OP_PUBKEYS", 1, opcodeInvalid},
 	OP_UNKNOWN252:   {OP_UNKNOWN252, "OP_UNKNOWN252", 1, opcodeInvalid},
@@ -1172,9 +1173,14 @@ func opcodeCheckSequenceVerify(op *parsedOpcode, vm *Engine) error {
 	// Mask off non-consensus bits before doing comparisons.
 	lockTimeMask := int64(wire.SequenceLockTimeIsSeconds |
 		wire.SequenceLockTimeMask)
-	return verifyLockTime(txSequence&lockTimeMask,
+	err = verifyLockTime(txSequence&lockTimeMask,
 		wire.SequenceLockTimeIsSeconds,
 		sequence&lockTimeMask)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // opcodeToAltStack removes the top item from the main data stack and pushes it
@@ -1418,45 +1424,39 @@ func opcodeSubstr(op *parsedOpcode, vm *Engine) error {
 	if err != nil {
 		return err
 	}
+	aLen := len(a)
 
-	// All data pushes and pops are effectivley limited to 32-bits, as are
-	// all math-related numeric pushes, so it is safe to cast the length to
-	// int32.  The numeric values are also clamped to int32 accordingly.
-	aLen := int32(len(a))
-	startIdx := v0.Int32()
-	endIdx := v1.Int32()
+	// Golang uses ints for the indices of slices. Assume that we can get
+	// whatever we need from a slice within the boundaries of an int32
+	// register.
+	v0Recast := int(v0.Int32())
+	v1Recast := int(v1.Int32())
 
-	// WARNING: This check really should be after the bounds checking since
-	// performing it here allows arbitrary indices to be used which is a
-	// source of malleability.  Unfortunately, this is now part of
-	// consensus, so changing it requires a hard fork vote.
 	if aLen == 0 {
 		vm.dstack.PushByteArray(nil)
 		return nil
 	}
-
-	// Ensure the provided indices are in bounds.
-	//
-	// Take special note that the start index check is > as opposed to >=,
-	// which means it is possible to provide a start index just after the
-	// final character in the string, so long as the end index is the same
-	// value, and an empty byte push will be produced.
-	if startIdx < 0 || endIdx < 0 {
+	if v0Recast < 0 || v1Recast < 0 {
 		return ErrSubstrIdxNegative
 	}
-	if startIdx > aLen {
+	if v0Recast > aLen {
 		return ErrSubstrIdxOutOfBounds
 	}
-	if endIdx > aLen {
+	if v1Recast > aLen {
 		return ErrSubstrIdxOutOfBounds
 	}
-	if startIdx > endIdx {
+	if v0Recast > v1Recast {
 		return ErrSubstrIdxOutOfBounds
 	}
 
-	// Push the requested substring back to the stack.  Note that identical
-	// start and end indices produces an empty byte push.
-	vm.dstack.PushByteArray(a[startIdx:endIdx])
+	// A substr of the same indices return an empty stack item, similar to
+	// Golang.
+	if v0Recast == v1Recast {
+		vm.dstack.PushByteArray(nil)
+		return nil
+	}
+
+	vm.dstack.PushByteArray(a[v0Recast:v1Recast])
 	return nil
 }
 
@@ -2753,6 +2753,7 @@ type sigTypes uint8
 
 var edwards = sigTypes(chainec.ECTypeEdwards)
 var secSchnorr = sigTypes(chainec.ECTypeSecSchnorr)
+var bliss = sigTypes(bs.BSTypeBliss)
 
 // opcodeCheckSigAlt accepts a three item stack and pops off the first three
 // items. The first item is a signature type (1-255, can not be zero or the
@@ -2779,6 +2780,8 @@ func opcodeCheckSigAlt(op *parsedOpcode, vm *Engine) error {
 		break
 	case secSchnorr:
 		break
+	case bliss:
+		break
 	default:
 		// Caveat: All unknown signature types return true, allowing for future
 		// softforks with other new signature types.
@@ -2793,7 +2796,7 @@ func opcodeCheckSigAlt(op *parsedOpcode, vm *Engine) error {
 
 	// Check the public key lengths. Only 33-byte compressed secp256k1 keys
 	// are allowed for secp256k1 Schnorr signatures, which 32 byte keys
-	// are used for Curve25519.
+	// are used for Curve25519, and 897 byte keys are used for Bliss.
 	switch sigTypes(sigType) {
 	case edwards:
 		if len(pkBytes) != 32 {
@@ -2802,6 +2805,12 @@ func opcodeCheckSigAlt(op *parsedOpcode, vm *Engine) error {
 		}
 	case secSchnorr:
 		if len(pkBytes) != 33 {
+			vm.dstack.PushBool(false)
+			return nil
+		}
+	case bliss:
+		if len(pkBytes) != 897 {
+			fmt.Printf("pub key length is not 897, length:%v\n", len(pkBytes))
 			vm.dstack.PushBool(false)
 			return nil
 		}
@@ -2822,6 +2831,11 @@ func opcodeCheckSigAlt(op *parsedOpcode, vm *Engine) error {
 		}
 	case secSchnorr:
 		if len(fullSigBytes) != 65 {
+			vm.dstack.PushBool(false)
+			return nil
+		}
+	case bliss:
+		if len(fullSigBytes) < 397 || len(fullSigBytes) > 860 {
 			vm.dstack.PushBool(false)
 			return nil
 		}
@@ -2884,6 +2898,13 @@ func opcodeCheckSigAlt(op *parsedOpcode, vm *Engine) error {
 			return nil
 		}
 		pubKey = pubKeySec
+	case bliss:
+		pubKeySec, err := bs.Bliss.ParsePubKey(pkBytes)
+		if err != nil {
+			vm.dstack.PushBool(false)
+			return nil
+		}
+		pubKey = pubKeySec
 	}
 
 	// Get the signature from bytes.
@@ -2898,6 +2919,13 @@ func opcodeCheckSigAlt(op *parsedOpcode, vm *Engine) error {
 		signature = sigEd
 	case secSchnorr:
 		sigSec, err := chainec.SecSchnorr.ParseSignature(sigBytes)
+		if err != nil {
+			vm.dstack.PushBool(false)
+			return nil
+		}
+		signature = sigSec
+	case bliss:
+		sigSec, err := bs.Bliss.ParseSignature(sigBytes)
 		if err != nil {
 			vm.dstack.PushBool(false)
 			return nil
@@ -2918,6 +2946,10 @@ func opcodeCheckSigAlt(op *parsedOpcode, vm *Engine) error {
 	case secSchnorr:
 		ok := chainec.SecSchnorr.Verify(pubKey, hash, signature.GetR(),
 			signature.GetS())
+		vm.dstack.PushBool(ok)
+		return nil
+	case bliss:
+		ok := bs.Bliss.Verify(pubKey, hash, signature)
 		vm.dstack.PushBool(ok)
 		return nil
 	}

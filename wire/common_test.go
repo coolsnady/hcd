@@ -14,7 +14,7 @@ import (
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/coolsnady/hxd/chaincfg/chainhash"
+	"github.com/coolsnady/hcd/chaincfg/chainhash"
 )
 
 // mainNetGenesisHash is the hash of the first block in the block chain for the
@@ -128,7 +128,7 @@ func TestElementWire(t *testing.T) {
 		},
 		{
 			CurrencyNet(MainNet),
-			[]byte{0xf9, 0x00, 0xb4, 0xd9},
+			[]byte{0x1b, 0xf5, 0x25, 0x11},
 		},
 		// Type not supported by the "fast" path and requires reflection.
 		{

@@ -16,8 +16,7 @@ func TestServiceFlagStringer(t *testing.T) {
 		{0, "0x0"},
 		{SFNodeNetwork, "SFNodeNetwork"},
 		{SFNodeBloom, "SFNodeBloom"},
-		{SFNodeCF, "SFNodeCF"},
-		{0xffffffff, "SFNodeNetwork|SFNodeBloom|SFNodeCF|0xfffffff8"},
+		{0xffffffff, "SFNodeNetwork|SFNodeBloom|0xfffffffc"},
 	}
 
 	t.Logf("Running %d tests", len(tests))
@@ -31,7 +30,7 @@ func TestServiceFlagStringer(t *testing.T) {
 	}
 }
 
-// TestCurrencyNetStringer tests the stringized output for Decred net types.
+// TestCurrencyNetStringer tests the stringized output for decred net types.
 func TestCurrencyNetStringer(t *testing.T) {
 	tests := []struct {
 		in   CurrencyNet

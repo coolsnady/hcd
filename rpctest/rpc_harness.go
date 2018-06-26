@@ -16,11 +16,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/coolsnady/hxd/chaincfg"
-	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/hxd/dcrutil"
-	"github.com/coolsnady/hxd/rpcclient"
-	"github.com/coolsnady/hxd/wire"
+	"github.com/coolsnady/hcd/chaincfg"
+	"github.com/coolsnady/hcd/chaincfg/chainhash"
+	"github.com/coolsnady/hcd/wire"
+	hcrpcclient "github.com/coolsnady/hcrpcclient"
+	dcrutil "github.com/coolsnady/hcutil"
 )
 
 const (
@@ -67,10 +67,10 @@ const (
 // Harness to exercise functionality.
 type HarnessTestCase func(r *Harness, t *testing.T)
 
-// Harness fully encapsulates an active hxd process to provide a unified
-// platform for creating rpc driven integration tests involving hxd. The
-// active hxd node will typically be run in simnet mode in order to allow for
-// easy generation of test blockchains.  The active hxd process is fully
+// Harness fully encapsulates an active hcd process to provide a unified
+// platform for creating rpc driven integration tests involving hcd. The
+// active hcd node will typically be run in simnet mode in order to allow for
+// easy generation of test blockchains.  The active hcd process is fully
 // managed by Harness, which handles the necessary initialization, and teardown
 // of the process along with any temporary directories created as a result.
 // Multiple Harness instances may be run concurrently, in order to allow for
@@ -81,9 +81,9 @@ type Harness struct {
 	// to.
 	ActiveNet *chaincfg.Params
 
-	Node     *rpcclient.Client
+	Node     *hcrpcclient.Client
 	node     *node
-	handlers *rpcclient.NotificationHandlers
+	handlers *hcrpcclient.NotificationHandlers
 
 	wallet *memWallet
 
@@ -100,25 +100,11 @@ type Harness struct {
 // used.
 //
 // NOTE: This function is safe for concurrent access.
-func New(activeNet *chaincfg.Params, handlers *rpcclient.NotificationHandlers, extraArgs []string) (*Harness, error) {
+func New(activeNet *chaincfg.Params, handlers *hcrpcclient.NotificationHandlers, extraArgs []string) (*Harness, error) {
 	harnessStateMtx.Lock()
 	defer harnessStateMtx.Unlock()
 
-	// Add a flag for the appropriate network type based on the provided
-	// chain params.
-	switch activeNet.Net {
-	case wire.MainNet:
-		// No extra flags since mainnet is the default
-	case wire.TestNet2:
-		extraArgs = append(extraArgs, "--testnet")
-	case wire.SimNet:
-		extraArgs = append(extraArgs, "--simnet")
-	default:
-		return nil, fmt.Errorf("rpctest.New must be called with one " +
-			"of the supported chain networks")
-	}
-
-	harnessID := strconv.Itoa(numTestInstances)
+	harnessID := strconv.Itoa(int(numTestInstances))
 	nodeTestData, err := ioutil.TempDir("", "rpctest-"+harnessID)
 	if err != nil {
 		return nil, err
@@ -156,7 +142,7 @@ func New(activeNet *chaincfg.Params, handlers *rpcclient.NotificationHandlers, e
 	numTestInstances++
 
 	if handlers == nil {
-		handlers = &rpcclient.NotificationHandlers{}
+		handlers = &hcrpcclient.NotificationHandlers{}
 	}
 
 	// If a handler for the OnBlockConnected/OnBlockDisconnected callback
@@ -208,7 +194,7 @@ func New(activeNet *chaincfg.Params, handlers *rpcclient.NotificationHandlers, e
 // NOTE: This method and TearDown should always be called from the same
 // goroutine as they are not concurrent safe.
 func (h *Harness) SetUp(createTestChain bool, numMatureOutputs uint32) error {
-	// Start the hxd node itself. This spawns a new process which will be
+	// Start the hcd node itself. This spawns a new process which will be
 	// managed
 	if err := h.node.start(); err != nil {
 		return err
@@ -226,7 +212,7 @@ func (h *Harness) SetUp(createTestChain bool, numMatureOutputs uint32) error {
 		return err
 	}
 
-	// Ensure hxd properly dispatches our registered call-back for each new
+	// Ensure hcd properly dispatches our registered call-back for each new
 	// block. Otherwise, the memWallet won't function properly.
 	if err := h.Node.NotifyBlocks(); err != nil {
 		return err
@@ -251,10 +237,14 @@ func (h *Harness) SetUp(createTestChain bool, numMatureOutputs uint32) error {
 		return err
 	}
 	ticker := time.NewTicker(time.Millisecond * 100)
-	for range ticker.C {
-		walletHeight := h.wallet.SyncedHeight()
-		if walletHeight == height {
-			break
+out:
+	for {
+		select {
+		case <-ticker.C:
+			walletHeight := h.wallet.SyncedHeight()
+			if walletHeight == height {
+				break out
+			}
 		}
 	}
 
@@ -284,19 +274,19 @@ func (h *Harness) TearDown() error {
 	return nil
 }
 
-// connectRPCClient attempts to establish an RPC connection to the created hxd
+// connectRPCClient attempts to establish an RPC connection to the created hcd
 // process belonging to this Harness instance. If the initial connection
 // attempt fails, this function will retry h.maxConnRetries times, backing off
 // the time between subsequent attempts. If after h.maxConnRetries attempts,
 // we're not able to establish a connection, this function returns with an
 // error.
 func (h *Harness) connectRPCClient() error {
-	var client *rpcclient.Client
+	var client *hcrpcclient.Client
 	var err error
 
 	rpcConf := h.node.config.rpcConnConfig()
 	for i := 0; i < h.maxConnRetries; i++ {
-		if client, err = rpcclient.New(&rpcConf, h.handlers); err != nil {
+		if client, err = hcrpcclient.New(&rpcConf, h.handlers); err != nil {
 			time.Sleep(time.Duration(i) * 50 * time.Millisecond)
 			continue
 		}
@@ -363,7 +353,7 @@ func (h *Harness) UnlockOutputs(inputs []*wire.TxIn) {
 // RPCConfig returns the harnesses current rpc configuration. This allows other
 // potential RPC clients created within tests to connect to a given test
 // harness instance.
-func (h *Harness) RPCConfig() rpcclient.ConnConfig {
+func (h *Harness) RPCConfig() hcrpcclient.ConnConfig {
 	return h.node.config.rpcConnConfig()
 }
 

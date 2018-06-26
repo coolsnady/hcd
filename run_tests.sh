@@ -5,10 +5,8 @@ set -ex
 # including:
 # 1. gofmt         (http://golang.org/cmd/gofmt/)
 # 2. go vet        (http://golang.org/cmd/vet)
-# 3. gosimple      (https://github.com/dominikh/go-simple)
-# 4. unconvert     (https://github.com/mdempsky/unconvert)
-# 5. ineffassign   (https://github.com/gordonklaus/ineffassign)
-# 6. race detector (http://blog.golang.org/race-detector)
+# 3. unconvert     (https://github.com/mdempsky/unconvert)
+# 4. race detector (http://blog.golang.org/race-detector)
 
 # gometalinter (github.com/alecthomas/gometalinter) is used to run each each
 # static checker.
@@ -19,89 +17,37 @@ set -ex
 # for more details.
 
 #Default GOVERSION
-GOVERSION=${1:-1.10}
-REPO=hxd
-DOCKER_IMAGE_TAG=coolsnady-golang-builder-$GOVERSION
+GOVERSION=${1:-1.9}
+REPO=hcd
 
-testrepo () {
-  TMPFILE=$(mktemp)
-
-  # Check lockfile
-  cp Gopkg.lock $TMPFILE && dep ensure && diff Gopkg.lock $TMPFILE >/dev/null
-  if [ $? != 0 ]; then
-    echo 'lockfile must be updated with dep ensure'
-    exit 1
-  fi
-
-  # Check linters
-  gometalinter --vendor --disable-all --deadline=10m \
-    --enable=gofmt \
-    --enable=vet \
-    --enable=gosimple \
-    --enable=unconvert \
-    --enable=ineffassign \
-    ./...
-  if [ $? != 0 ]; then
-    echo 'gometalinter has some complaints'
-    exit 1
-  fi
-
-  # Test application install
-  if [ $GOVERSION == "1.10" ]; then
-    go install -i
-  else
-    go install . ./cmd/...
-  fi
-  if [ $? != 0 ]; then
-    echo 'go install failed'
-    exit 1
-  fi
-
-  # Check tests
-  env GORACE='halt_on_error=1' go test -short -race -tags rpctest ./...
-  if [ $? != 0 ]; then
-    echo 'go tests failed'
-    exit 1
-  fi
-
-  echo "------------------------------------------"
-  echo "Tests completed successfully!"
-}
+TESTCMD="test -z \"\$(gometalinter --disable-all \
+  --enable=gofmt \
+  --enable=vet \
+  --enable=unconvert \
+  --vendor \
+  --deadline=10m . 2>&1 | tee /dev/stderr)\"&& \
+  env GORACE='halt_on_error=1' go test -short -race \
+  -tags rpctest \
+  \$(glide novendor)"
 
 if [ $GOVERSION == "local" ]; then
-    testrepo
+    go get -v github.com/alecthomas/gometalinter; gometalinter --install
+    eval $TESTCMD
     exit
 fi
 
-mkdir -p ~/.cache
+DOCKER_IMAGE_TAG=decred-golang-builder-$GOVERSION
 
-if [ -f ~/.cache/$DOCKER_IMAGE_TAG.tar ]; then
-	# load via cache
-	docker load -i ~/.cache/$DOCKER_IMAGE_TAG.tar
-	if [ $? != 0 ]; then
-		echo 'docker load failed'
-		exit 1
-	fi
-else
-	# pull and save image to cache 
-	docker pull coolsnady/$DOCKER_IMAGE_TAG
-	if [ $? != 0 ]; then
-		echo 'docker pull failed'
-		exit 1
-	fi
-	docker save coolsnady/$DOCKER_IMAGE_TAG > ~/.cache/$DOCKER_IMAGE_TAG.tar
-	if [ $? != 0 ]; then
-		echo 'docker save failed'
-		exit 1
-	fi
-fi
+docker pull decred/$DOCKER_IMAGE_TAG
 
-docker run --rm -it -v $(pwd):/src coolsnady/$DOCKER_IMAGE_TAG /bin/bash -c "\
+docker run --rm -it -v $(pwd):/src decred/$DOCKER_IMAGE_TAG /bin/bash -c "\
   rsync -ra --filter=':- .gitignore'  \
-  /src/ /go/src/github.com/coolsnady/$REPO/ && \
-  cd github.com/coolsnady/$REPO/ && \
-  bash run_tests.sh local"
-if [ $? != 0 ]; then
-	echo 'docker run failed'
-	exit 1
-fi
+  /src/ /go/src/github.com/decred/$REPO/ && \
+  cd github.com/decred/$REPO/ && \
+  glide install && \
+  go install \$(glide novendor) && \
+  $TESTCMD
+"
+
+echo "------------------------------------------"
+echo "Tests complete."

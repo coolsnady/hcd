@@ -20,7 +20,7 @@ import (
 const maxFailedAttempts = 25
 
 var (
-	// ErrDialNil is used to indicate that Dial cannot be nil in the configuration.
+	//ErrDialNil is used to indicate that Dial cannot be nil in the configuration.
 	ErrDialNil = errors.New("config: dial cannot be nil")
 
 	// maxRetryDuration is the max duration of time retrying of a persistent
@@ -39,7 +39,7 @@ var (
 )
 
 // ConnState represents the state of the requested connection.
-type ConnState uint32
+type ConnState uint8
 
 // ConnState can be either pending, established, disconnected or failed.  When
 // a new connection is requested, it is attempted and categorized as
@@ -56,18 +56,22 @@ const (
 // connection will be retried on disconnection.
 type ConnReq struct {
 	// The following variables must only be used atomically.
-	id    uint64
-	state uint32
+	id uint64
 
-	retryCount uint32
+	Addr      net.Addr
+	Permanent bool
+
 	conn       net.Conn
-	Addr       net.Addr
-	Permanent  bool
+	state      ConnState
+	stateMtx   sync.RWMutex
+	retryCount uint32
 }
 
 // updateState updates the state of the connection request.
 func (c *ConnReq) updateState(state ConnState) {
-	atomic.StoreUint32(&c.state, uint32(state))
+	c.stateMtx.Lock()
+	c.state = state
+	c.stateMtx.Unlock()
 }
 
 // ID returns a unique identifier for the connection request.
@@ -77,7 +81,10 @@ func (c *ConnReq) ID() uint64 {
 
 // State is the connection state of the requested connection.
 func (c *ConnReq) State() ConnState {
-	return ConnState(atomic.LoadUint32(&c.state))
+	c.stateMtx.RLock()
+	state := c.state
+	c.stateMtx.RUnlock()
+	return state
 }
 
 // String returns a human-readable string for the connection request.
@@ -134,7 +141,7 @@ type Config struct {
 	GetNewAddress func() (net.Addr, error)
 
 	// Dial connects to the address on the named network. It cannot be nil.
-	Dial func(network, addr string) (net.Conn, error)
+	Dial func(net.Addr) (net.Conn, error)
 }
 
 // handleConnected is used to queue a successful connection.
@@ -300,7 +307,7 @@ func (cm *ConnManager) Connect(c *ConnReq) {
 		atomic.StoreUint64(&c.id, atomic.AddUint64(&cm.connReqCount, 1))
 	}
 	log.Debugf("Attempting to connect to %v", c)
-	conn, err := cm.cfg.Dial(c.Addr.Network(), c.Addr.String())
+	conn, err := cm.cfg.Dial(c.Addr)
 	if err != nil {
 		cm.requests <- handleFailed{c, err}
 	} else {

@@ -1,5 +1,5 @@
 // Copyright (c) 2015-2016 The btcsuite developers
-// Copyright (c) 2016-2018 The Decred developers
+// Copyright (c) 2016-2017 The Decred developers
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
@@ -16,10 +16,10 @@ import (
 	"time"
 
 	"github.com/btcsuite/go-socks/socks"
-	"github.com/coolsnady/hxd/chaincfg"
-	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/hxd/peer"
-	"github.com/coolsnady/hxd/wire"
+	"github.com/coolsnady/hcd/chaincfg"
+	"github.com/coolsnady/hcd/chaincfg/chainhash"
+	"github.com/coolsnady/hcd/peer"
+	"github.com/coolsnady/hcd/wire"
 )
 
 // conn mocks a network connection by implementing the net.Conn interface.  It
@@ -338,6 +338,9 @@ func TestPeerListeners(t *testing.T) {
 			OnPong: func(p *peer.Peer, msg *wire.MsgPong) {
 				ok <- msg
 			},
+			OnAlert: func(p *peer.Peer, msg *wire.MsgAlert) {
+				ok <- msg
+			},
 			OnMemPool: func(p *peer.Peer, msg *wire.MsgMemPool) {
 				ok <- msg
 			},
@@ -365,30 +368,23 @@ func TestPeerListeners(t *testing.T) {
 			OnGetHeaders: func(p *peer.Peer, msg *wire.MsgGetHeaders) {
 				ok <- msg
 			},
-			OnGetCFilter: func(p *peer.Peer, msg *wire.MsgGetCFilter) {
-				ok <- msg
-			},
-			OnGetCFHeaders: func(p *peer.Peer, msg *wire.MsgGetCFHeaders) {
-				ok <- msg
-			},
-			OnGetCFTypes: func(p *peer.Peer, msg *wire.MsgGetCFTypes) {
-				ok <- msg
-			},
-			OnCFilter: func(p *peer.Peer, msg *wire.MsgCFilter) {
-				ok <- msg
-			},
-			OnCFHeaders: func(p *peer.Peer, msg *wire.MsgCFHeaders) {
-				ok <- msg
-			},
-			OnCFTypes: func(p *peer.Peer, msg *wire.MsgCFTypes) {
-				ok <- msg
-			},
 			OnFeeFilter: func(p *peer.Peer, msg *wire.MsgFeeFilter) {
 				ok <- msg
 			},
-			OnVersion: func(p *peer.Peer, msg *wire.MsgVersion) *wire.MsgReject {
+			OnFilterAdd: func(p *peer.Peer, msg *wire.MsgFilterAdd) {
 				ok <- msg
-				return nil
+			},
+			OnFilterClear: func(p *peer.Peer, msg *wire.MsgFilterClear) {
+				ok <- msg
+			},
+			OnFilterLoad: func(p *peer.Peer, msg *wire.MsgFilterLoad) {
+				ok <- msg
+			},
+			OnMerkleBlock: func(p *peer.Peer, msg *wire.MsgMerkleBlock) {
+				ok <- msg
+			},
+			OnVersion: func(p *peer.Peer, msg *wire.MsgVersion) {
+				ok <- msg
 			},
 			OnVerAck: func(p *peer.Peer, msg *wire.MsgVerAck) {
 				verack <- struct{}{}
@@ -454,6 +450,10 @@ func TestPeerListeners(t *testing.T) {
 			wire.NewMsgPong(42),
 		},
 		{
+			"OnAlert",
+			wire.NewMsgAlert([]byte("payload"), []byte("signature")),
+		},
+		{
 			"OnMemPool",
 			wire.NewMsgMemPool(),
 		},
@@ -493,35 +493,28 @@ func TestPeerListeners(t *testing.T) {
 			wire.NewMsgGetHeaders(),
 		},
 		{
-			"OnGetCFilter",
-			wire.NewMsgGetCFilter(&chainhash.Hash{},
-				wire.GCSFilterRegular),
-		},
-		{
-			"OnGetCFHeaders",
-			wire.NewMsgGetCFHeaders(),
-		},
-		{
-			"OnGetCFTypes",
-			wire.NewMsgGetCFTypes(),
-		},
-		{
-			"OnCFilter",
-			wire.NewMsgCFilter(&chainhash.Hash{},
-				wire.GCSFilterRegular, []byte("payload")),
-		},
-		{
-			"OnCFHeaders",
-			wire.NewMsgCFHeaders(),
-		},
-		{
-			"OnCFTypes",
-			wire.NewMsgCFTypes([]wire.FilterType{
-				wire.GCSFilterRegular, wire.GCSFilterExtended}),
-		},
-		{
 			"OnFeeFilter",
 			wire.NewMsgFeeFilter(15000),
+		},
+		{
+			"OnFilterAdd",
+			wire.NewMsgFilterAdd([]byte{0x01}),
+		},
+		{
+			"OnFilterClear",
+			wire.NewMsgFilterClear(),
+		},
+		{
+			"OnFilterLoad",
+			wire.NewMsgFilterLoad([]byte{0x01}, 10, 0, wire.BloomUpdateNone),
+		},
+		{
+			"OnMerkleBlock",
+			wire.NewMsgMerkleBlock(wire.NewBlockHeader(0,
+				&chainhash.Hash{}, &chainhash.Hash{},
+				&chainhash.Hash{}, 1, [6]byte{},
+				1, 1, 1, 1, 1, 1, 1, 1, 1, [32]byte{},
+				binary.LittleEndian.Uint32([]byte{0xb0, 0x1d, 0xfa, 0xce}))),
 		},
 		// only one version message is allowed
 		// only one verack message is allowed
@@ -688,68 +681,6 @@ func TestOutboundPeer(t *testing.T) {
 	p2.QueueMessage(wire.NewMsgFeeFilter(20000), nil)
 
 	p2.Disconnect()
-}
-
-// TestDuplicateVersionMsg ensures that receiving a version message after one
-// has already been received results in the peer being disconnected.
-func TestDuplicateVersionMsg(t *testing.T) {
-	// Create a pair of peers that are connected to each other using a fake
-	// connection.
-	verack := make(chan struct{})
-	peerCfg := &peer.Config{
-		Listeners: peer.MessageListeners{
-			OnVerAck: func(p *peer.Peer, msg *wire.MsgVerAck) {
-				verack <- struct{}{}
-			},
-		},
-		UserAgentName:    "peer",
-		UserAgentVersion: "1.0",
-		ChainParams:      &chaincfg.MainNetParams,
-		Services:         0,
-	}
-	inConn, outConn := pipe(
-		&conn{laddr: "10.0.0.1:9108", raddr: "10.0.0.2:9108"},
-		&conn{laddr: "10.0.0.2:9108", raddr: "10.0.0.1:9108"},
-	)
-	outPeer, err := peer.NewOutboundPeer(peerCfg, inConn.laddr)
-	if err != nil {
-		t.Fatalf("NewOutboundPeer: unexpected err: %v\n", err)
-	}
-	outPeer.AssociateConnection(outConn)
-	inPeer := peer.NewInboundPeer(peerCfg)
-	inPeer.AssociateConnection(inConn)
-
-	// Wait for the veracks from the initial protocol version negotiation.
-	for i := 0; i < 2; i++ {
-		select {
-		case <-verack:
-		case <-time.After(time.Second):
-			t.Fatal("verack timeout")
-		}
-	}
-
-	// Queue a duplicate version message from the outbound peer and wait until
-	// it is sent.
-	done := make(chan struct{})
-	outPeer.QueueMessage(&wire.MsgVersion{}, done)
-	select {
-	case <-done:
-	case <-time.After(time.Second):
-		t.Fatal("send duplicate version timeout")
-	}
-
-	// Ensure the peer that is the recipient of the duplicate version closes the
-	// connection.
-	disconnected := make(chan struct{}, 1)
-	go func() {
-		inPeer.WaitForDisconnect()
-		disconnected <- struct{}{}
-	}()
-	select {
-	case <-disconnected:
-	case <-time.After(time.Second):
-		t.Fatal("peer did not disconnect")
-	}
 }
 
 func init() {

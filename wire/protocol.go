@@ -17,11 +17,11 @@ const (
 	InitialProcotolVersion uint32 = 1
 
 	// ProtocolVersion is the latest protocol version this package supports.
-	ProtocolVersion uint32 = 6
+	ProtocolVersion uint32 = 5
 
-	// NodeBloomVersion is the protocol version which added the SFNodeBloom
-	// service flag (unused).
-	NodeBloomVersion uint32 = 2
+	// BIP0111Version is the protocol version which added the SFNodeBloom
+	// service flag.
+	BIP0111Version uint32 = 2
 
 	// SendHeadersVersion is the protocol version which added a new
 	// sendheaders message.
@@ -34,14 +34,9 @@ const (
 	// FeeFilterVersion is the protocol version which added a new
 	// feefilter message.
 	FeeFilterVersion uint32 = 5
-
-	// NodeCFVersion is the protocol version which adds the SFNodeCF service
-	// flag and the cfheaders, cfilter, cftypes, getcfheaders, getcfilter and
-	// getcftypes messages.
-	NodeCFVersion uint32 = 6
 )
 
-// ServiceFlag identifies services supported by a Decred peer.
+// ServiceFlag identifies services supported by a decred peer.
 type ServiceFlag uint64
 
 const (
@@ -51,17 +46,12 @@ const (
 	// SFNodeBloom is a flag used to indiciate a peer supports bloom
 	// filtering.
 	SFNodeBloom
-
-	// SFNodeCF is a flag used to indicate a peer supports committed
-	// filters (CFs).
-	SFNodeCF
 )
 
 // Map of service flags back to their constant names for pretty printing.
 var sfStrings = map[ServiceFlag]string{
 	SFNodeNetwork: "SFNodeNetwork",
 	SFNodeBloom:   "SFNodeBloom",
-	SFNodeCF:      "SFNodeCF",
 }
 
 // orderedSFStrings is an ordered list of service flags from highest to
@@ -69,7 +59,6 @@ var sfStrings = map[ServiceFlag]string{
 var orderedSFStrings = []ServiceFlag{
 	SFNodeNetwork,
 	SFNodeBloom,
-	SFNodeCF,
 }
 
 // String returns the ServiceFlag in human-readable form.
@@ -97,28 +86,28 @@ func (f ServiceFlag) String() string {
 	return s
 }
 
-// CurrencyNet represents which Decred network a message belongs to.
+// CurrencyNet represents which decred network a message belongs to.
 type CurrencyNet uint32
 
-// Constants used to indicate the message Decred network.  They can also be
+// Constants used to indicate the message decred network.  They can also be
 // used to seek to the next message when a stream's state is unknown, but
 // this package does not provide that functionality since it's generally a
 // better idea to simply disconnect clients that are misbehaving over TCP.
 const (
-	// MainNet represents the main Decred network.
-	MainNet CurrencyNet = 0xd9b400f9
+	// MainNet represents the main hx network.
+	MainNet CurrencyNet = 0x1125f51b
 
 	// RegTest represents the regression test network.
-	RegTest CurrencyNet = 0xdab500fa
+	RegTest CurrencyNet = 0xc07cb5dd
 
 	// TestNet2 represents the 2nd test network.
-	TestNet2 CurrencyNet = 0x48e7a065
+	TestNet2 CurrencyNet = 0x9ab5693a
 
 	// SimNet represents the simulation test network.
-	SimNet CurrencyNet = 0x12141c16
+	SimNet CurrencyNet = 0x8a136344
 )
 
-// bnStrings is a map of Decred networks back to their constant names for
+// bnStrings is a map of decred networks back to their constant names for
 // pretty printing.
 var bnStrings = map[CurrencyNet]string{
 	MainNet:  "MainNet",

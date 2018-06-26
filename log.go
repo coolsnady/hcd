@@ -1,5 +1,5 @@
 // Copyright (c) 2013-2017 The btcsuite developers
-// Copyright (c) 2015-2018 The Decred developers
+// Copyright (c) 2015-2017 The Decred developers
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
@@ -10,17 +10,23 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/coolsnady/hxd/addrmgr"
-	"github.com/coolsnady/hxd/blockchain"
-	"github.com/coolsnady/hxd/blockchain/indexers"
-	"github.com/coolsnady/hxd/blockchain/stake"
-	"github.com/coolsnady/hxd/connmgr"
-	"github.com/coolsnady/hxd/database"
-	"github.com/coolsnady/hxd/mempool"
-	"github.com/coolsnady/hxd/peer"
-	"github.com/coolsnady/hxd/txscript"
-	"github.com/decred/slog"
+	"github.com/btcsuite/btclog"
+	"github.com/coolsnady/hcd/addrmgr"
+	"github.com/coolsnady/hcd/blockchain"
+	"github.com/coolsnady/hcd/blockchain/indexers"
+	"github.com/coolsnady/hcd/blockchain/stake"
+	"github.com/coolsnady/hcd/connmgr"
+	"github.com/coolsnady/hcd/database"
+	"github.com/coolsnady/hcd/mempool"
+	"github.com/coolsnady/hcd/peer"
+	"github.com/coolsnady/hcd/txscript"
 	"github.com/jrick/logrotate/rotator"
+)
+
+const (
+	// maxRejectReasonLen is the maximum length of a sanitized reject reason
+	// that will be logged.
+	maxRejectReasonLen = 250
 )
 
 // logWriter implements an io.Writer that outputs to both standard output and
@@ -29,9 +35,7 @@ type logWriter struct{}
 
 func (logWriter) Write(p []byte) (n int, err error) {
 	os.Stdout.Write(p)
-	if logRotator != nil {
-		logRotator.Write(p)
-	}
+	logRotator.Write(p)
 	return len(p), nil
 }
 
@@ -47,7 +51,7 @@ var (
 	// backendLog is the logging backend used to create all subsystem loggers.
 	// The backend must not be used before the log rotator has been initialized,
 	// or data races and/or nil pointer dereferences will occur.
-	backendLog = slog.NewBackend(logWriter{})
+	backendLog = btclog.NewBackend(logWriter{})
 
 	// logRotator is one of the logging outputs.  It should be closed on
 	// application shutdown.
@@ -58,7 +62,7 @@ var (
 	cmgrLog = backendLog.Logger("CMGR")
 	bcdbLog = backendLog.Logger("BCDB")
 	bmgrLog = backendLog.Logger("BMGR")
-	dcrdLog = backendLog.Logger("Hxd")
+	dcrdLog = backendLog.Logger("HC")
 	chanLog = backendLog.Logger("CHAN")
 	discLog = backendLog.Logger("DISC")
 	indxLog = backendLog.Logger("INDX")
@@ -85,13 +89,13 @@ func init() {
 }
 
 // subsystemLoggers maps each subsystem identifier to its associated logger.
-var subsystemLoggers = map[string]slog.Logger{
+var subsystemLoggers = map[string]btclog.Logger{
 	"ADXR": adxrLog,
 	"AMGR": amgrLog,
 	"CMGR": cmgrLog,
 	"BCDB": bcdbLog,
 	"BMGR": bmgrLog,
-	"Hxd": dcrdLog,
+	"HC":  dcrdLog,
 	"CHAN": chanLog,
 	"DISC": discLog,
 	"INDX": indxLog,
@@ -134,7 +138,7 @@ func setLogLevel(subsystemID string, logLevel string) {
 	}
 
 	// Defaults to info if the log level is invalid.
-	level, _ := slog.LevelFromString(logLevel)
+	level, _ := btclog.LevelFromString(logLevel)
 	logger.SetLevel(level)
 }
 
@@ -162,8 +166,6 @@ func directionString(inbound bool) string {
 func fatalf(str string) {
 	dcrdLog.Errorf("Unable to create profiler: %v", str)
 	os.Stdout.Sync()
-	if logRotator != nil {
-		logRotator.Close()
-	}
+	logRotator.Close()
 	os.Exit(1)
 }

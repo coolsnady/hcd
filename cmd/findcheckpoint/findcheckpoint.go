@@ -10,10 +10,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/coolsnady/hxd/blockchain"
-	"github.com/coolsnady/hxd/chaincfg"
-	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/hxd/database"
+	"github.com/coolsnady/hcd/blockchain"
+	"github.com/coolsnady/hcd/chaincfg"
+	"github.com/coolsnady/hcd/chaincfg/chainhash"
+	"github.com/coolsnady/hcd/database"
 )
 
 const blockDbNamePrefix = "blocks"
@@ -166,7 +166,7 @@ func main() {
 	fmt.Printf("Block database loaded with block height %d\n", best.Height)
 
 	// Find checkpoint candidates.
-	candidates, err := findCandidates(chain, &best.Hash)
+	candidates, err := findCandidates(chain, best.Hash)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Unable to identify candidates:", err)
 		return

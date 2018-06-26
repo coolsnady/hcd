@@ -15,8 +15,8 @@ import (
 	"runtime/debug"
 	"testing"
 
-	"github.com/coolsnady/hxd/chaincfg"
-	"github.com/coolsnady/hxd/rpctest"
+	"github.com/coolsnady/hcd/chaincfg"
+	"github.com/coolsnady/hcd/rpctest"
 )
 
 func testGetBestBlock(r *rpctest.Harness, t *testing.T) {
@@ -149,7 +149,7 @@ func TestRpcServer(t *testing.T) {
 	defer func() {
 		// If one of the integration tests caused a panic within the main
 		// goroutine, then tear down all the harnesses in order to avoid
-		// any leaked hxd processes.
+		// any leaked hcd processes.
 		if r := recover(); r != nil {
 			fmt.Println("recovering from test panic: ", r)
 			if err := rpctest.TearDownAll(); err != nil {

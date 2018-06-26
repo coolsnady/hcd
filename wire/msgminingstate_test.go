@@ -8,7 +8,7 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 
-	"github.com/coolsnady/hxd/chaincfg/chainhash"
+	"github.com/coolsnady/hcd/chaincfg/chainhash"
 )
 
 // TestMiningStateWire tests the MsgMiningState wire encode and decode for a sample

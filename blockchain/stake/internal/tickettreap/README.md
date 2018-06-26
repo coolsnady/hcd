@@ -1,11 +1,11 @@
 tickettreap
 ===========
 
-[![Build Status](https://img.shields.io/travis/coolsnady/hxd.svg)]
-(https://travis-ci.org/coolsnady/hxd) [![ISC License]
+[![Build Status](https://img.shields.io/travis/decred/hcd.svg)]
+(https://travis-ci.org/decred/hcd) [![ISC License]
 (http://img.shields.io/badge/license-ISC-blue.svg)](http://copyfree.org)
 [![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)]
-(http://godoc.org/github.com/coolsnady/hxd/blockchain/stake/internal/tickettreap)
+(http://godoc.org/github.com/decred/hcd/blockchain/stake/internal/tickettreap)
 
 Package tickettreap implements a treap data structure that is used to hold
 live tickets ordered by their key along with some associated data using a

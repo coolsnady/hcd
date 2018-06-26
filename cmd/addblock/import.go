@@ -12,12 +12,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/coolsnady/hxd/blockchain"
-	"github.com/coolsnady/hxd/blockchain/indexers"
-	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/hxd/database"
-	"github.com/coolsnady/hxd/dcrutil"
-	"github.com/coolsnady/hxd/wire"
+	"github.com/coolsnady/hcd/blockchain"
+	"github.com/coolsnady/hcd/blockchain/indexers"
+	"github.com/coolsnady/hcd/chaincfg/chainhash"
+	"github.com/coolsnady/hcd/database"
+	"github.com/coolsnady/hcd/wire"
+	dcrutil "github.com/coolsnady/hcutil"
 )
 
 var zeroHash = chainhash.Hash{}
@@ -132,12 +132,11 @@ func (bi *blockImporter) processBlock(serializedBlock []byte) (bool, error) {
 
 	// Ensure the blocks follows all of the chain rules and match up to the
 	// known checkpoints.
-	forkLen, isOrphan, err := bi.chain.ProcessBlock(block,
+	isMainChain, isOrphan, err := bi.chain.ProcessBlock(block,
 		blockchain.BFFastAdd)
 	if err != nil {
 		return false, err
 	}
-	isMainChain := !isOrphan && forkLen == 0
 	if !isMainChain {
 		return false, fmt.Errorf("import file contains an block that "+
 			"does not extend the main chain: %v", blockHash)

@@ -1,9 +1,9 @@
 peer
 ====
 
-[![Build Status](http://img.shields.io/travis/coolsnady/hxd.svg)](https://travis-ci.org/coolsnady/hxd)
+[![Build Status](http://img.shields.io/travis/decred/hcd.svg)](https://travis-ci.org/decred/hcd)
 [![ISC License](http://img.shields.io/badge/license-ISC-blue.svg)](http://copyfree.org)
-[![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/coolsnady/hxd/peer)
+[![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/decred/hcd/peer)
 
 Package peer provides a common base for creating and managing bitcoin network
 peers.
@@ -34,13 +34,17 @@ A quick overview of the major features peer provides are as follows:
      they see fit (proxies, etc)
    - User agent name and version
    - Bitcoin network
-   - Service support signalling (full nodes, etc)
+   - Service support signalling (full nodes, bloom filters, etc)
    - Maximum supported protocol version
    - Ability to register callbacks for handling bitcoin protocol messages
  - Inventory message batching and send trickling with known inventory detection
    and avoidance
  - Automatic periodic keep-alive pinging and pong responses
  - Random nonce generation and self connection detection
+ - Proper handling of bloom filter related commands when the caller does not
+   specify the related flag to signal support
+   - Disconnects the peer when the protocol version is high enough
+   - Does not invoke the related callbacks for older protocol versions
  - Snapshottable peer statistics such as the total number of bytes read and
    written, the remote address, user agent, and negotiated protocol version
  - Helper functions pushing addresses, getblocks, getheaders, and reject
@@ -54,12 +58,12 @@ A quick overview of the major features peer provides are as follows:
 ## Installation and Updating
 
 ```bash
-$ go get -u github.com/coolsnady/hxd/peer
+$ go get -u github.com/decred/hcd/peer
 ```
 
 ## Examples
 
-* [New Outbound Peer Example](https://godoc.org/github.com/coolsnady/hxd/peer#example-package--NewOutboundPeer)  
+* [New Outbound Peer Example](https://godoc.org/github.com/decred/hcd/peer#example-package--NewOutboundPeer)  
   Demonstrates the basic process for initializing and creating an outbound peer.
   Peers negotiate by exchanging version and verack messages.  For demonstration,
   a simple handler for the version message is attached to the peer.

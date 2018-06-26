@@ -11,37 +11,25 @@ import (
 	"strings"
 )
 
-const (
-	// semanticAlphabet defines the allowed characters for the pre-release
-	// portion of a semantic version string.
-	semanticAlphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-"
-
-	// semanticBuildAlphabet defines the allowed characters for the build
-	// portion of a semantic version string.
-	semanticBuildAlphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-."
-)
+// semanticAlphabet
+const semanticAlphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-"
 
 // These constants define the application version and follow the semantic
 // versioning 2.0.0 spec (http://semver.org/).
 const (
 	appMajor uint = 1
-	appMinor uint = 2
+	appMinor uint = 1
 	appPatch uint = 0
-)
 
-var (
-	// appPreRelease is defined as a variable so it can be overridden during
-	// the build process with '-ldflags "-X main.appPreRelease=foo"' if
-	// needed.  It MUST only contain characters from semanticAlphabet per
-	// the semantic versioning spec.
+	// appPreRelease MUST only contain characters from semanticAlphabet
+	// per the semantic versioning spec.
 	appPreRelease = ""
-
-	// appBuild is defined as a variable so it can be overridden during the
-	// build process with '-ldflags "-X main.appBuild=foo"' if needed.  It
-	// MUST only contain characters from semanticBuildAlphabet per the
-	// semantic versioning spec.
-	appBuild = "dev"
 )
+
+// appBuild is defined as a variable so it can be overridden during the build
+// process with '-ldflags "-X main.appBuild=foo' if needed.  It MUST only
+// contain characters from semanticAlphabet per the semantic versioning spec.
+var appBuild = "dev"
 
 // version returns the application version as a properly formed string per the
 // semantic versioning 2.0.0 spec (http://semver.org/).
@@ -53,7 +41,7 @@ func version() string {
 	// by the semantic versioning spec is automatically appended and should
 	// not be contained in the pre-release string.  The pre-release version
 	// is not appended if it contains invalid characters.
-	preRelease := normalizePreRelString(appPreRelease)
+	preRelease := normalizeVerString(appPreRelease)
 	if preRelease != "" {
 		version = fmt.Sprintf("%s-%s", version, preRelease)
 	}
@@ -62,7 +50,7 @@ func version() string {
 	// by the semantic versioning spec is automatically appended and should
 	// not be contained in the build metadata string.  The build metadata
 	// string is not appended if it contains invalid characters.
-	build := normalizeBuildString(appBuild)
+	build := normalizeVerString(appBuild)
 	if build != "" {
 		version = fmt.Sprintf("%s+%s", version, build)
 	}
@@ -70,30 +58,16 @@ func version() string {
 	return version
 }
 
-// normalizeSemString returns the passed string stripped of all characters
-// which are not valid according to the provided semantic versioning alphabet.
-func normalizeSemString(str, alphabet string) string {
+// normalizeVerString returns the passed string stripped of all characters which
+// are not valid according to the semantic versioning guidelines for pre-release
+// version and build metadata strings.  In particular they MUST only contain
+// characters in semanticAlphabet.
+func normalizeVerString(str string) string {
 	var result bytes.Buffer
 	for _, r := range str {
-		if strings.ContainsRune(alphabet, r) {
+		if strings.ContainsRune(semanticAlphabet, r) {
 			result.WriteRune(r)
 		}
 	}
 	return result.String()
-}
-
-// normalizePreRelString returns the passed string stripped of all characters
-// which are not valid according to the semantic versioning guidelines for
-// pre-release strings.  In particular they MUST only contain characters in
-// semanticAlphabet.
-func normalizePreRelString(str string) string {
-	return normalizeSemString(str, semanticAlphabet)
-}
-
-// normalizeBuildString returns the passed string stripped of all characters
-// which are not valid according to the semantic versioning guidelines for build
-// metadata strings.  In particular they MUST only contain characters in
-// semanticBuildAlphabet.
-func normalizeBuildString(str string) string {
-	return normalizeSemString(str, semanticBuildAlphabet)
 }

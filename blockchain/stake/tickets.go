@@ -1,4 +1,4 @@
-// Copyright (c) 2015-2017 The Decred developers
+// Copyright (c) 2015-2016 The Decred developers
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
@@ -7,13 +7,13 @@ package stake
 import (
 	"fmt"
 
-	"github.com/coolsnady/hxd/blockchain/stake/internal/dbnamespace"
-	"github.com/coolsnady/hxd/blockchain/stake/internal/ticketdb"
-	"github.com/coolsnady/hxd/blockchain/stake/internal/tickettreap"
-	"github.com/coolsnady/hxd/chaincfg"
-	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/hxd/database"
-	"github.com/coolsnady/hxd/wire"
+	"github.com/coolsnady/hcd/blockchain/stake/internal/dbnamespace"
+	"github.com/coolsnady/hcd/blockchain/stake/internal/ticketdb"
+	"github.com/coolsnady/hcd/blockchain/stake/internal/tickettreap"
+	"github.com/coolsnady/hcd/chaincfg"
+	"github.com/coolsnady/hcd/chaincfg/chainhash"
+	"github.com/coolsnady/hcd/database"
+	"github.com/coolsnady/hcd/wire"
 )
 
 // UndoTicketDataSlice is a pass through for ticketdb's UndoTicketData, which is
@@ -417,7 +417,7 @@ func safeDelete(t *tickettreap.Immutable, k tickettreap.Key) (*tickettreap.Immut
 // the argument node is the parent node, and that the child stake node is
 // returned after subsequent modification of the parent node's immutable
 // data.
-func connectNode(node *Node, lotteryIV chainhash.Hash, ticketsVoted, revokedTickets, newTickets []chainhash.Hash) (*Node, error) {
+func connectNode(node *Node, header wire.BlockHeader, ticketsSpentInBlock, revokedTickets, newTickets []chainhash.Hash) (*Node, error) {
 	if node == nil {
 		return nil, fmt.Errorf("missing stake node pointer input when connecting")
 	}
@@ -438,11 +438,11 @@ func connectNode(node *Node, lotteryIV chainhash.Hash, ticketsVoted, revokedTick
 	var err error
 	if connectedNode.height >= uint32(connectedNode.params.StakeEnabledHeight) {
 		// Basic sanity check.
-		for i := range ticketsVoted {
-			if !hashInSlice(ticketsVoted[i], node.nextWinners) {
+		for i := range ticketsSpentInBlock {
+			if !hashInSlice(ticketsSpentInBlock[i], node.nextWinners) {
 				return nil, stakeRuleError(ErrUnknownTicketSpent,
 					fmt.Sprintf("unknown ticket %v spent in block",
-						ticketsVoted[i]))
+						ticketsSpentInBlock[i]))
 			}
 		}
 
@@ -463,7 +463,7 @@ func connectNode(node *Node, lotteryIV chainhash.Hash, ticketsVoted, revokedTick
 			// ticket should still be in the live tickets treap, we probably
 			// do not have to use the safe delete functions, but do so anyway
 			// just to be safe.
-			if hashInSlice(ticket, ticketsVoted) {
+			if hashInSlice(ticket, ticketsSpentInBlock) {
 				v.Spent = true
 				v.Missed = false
 				connectedNode.liveTickets, err =
@@ -505,24 +505,26 @@ func connectNode(node *Node, lotteryIV chainhash.Hash, ticketsVoted, revokedTick
 			toExpireHeight = connectedNode.height -
 				connectedNode.params.TicketExpiry
 		}
-
-		connectedNode.liveTickets.ForEachByHeight(toExpireHeight+1, func(treapKey tickettreap.Key, value *tickettreap.Value) bool {
-			// Make a copy of the value.
-			v := *value
+		expired := fetchExpired(toExpireHeight, connectedNode.liveTickets)
+		for _, treapKey := range expired {
+			v, err := safeGet(connectedNode.liveTickets, *treapKey)
+			if err != nil {
+				return nil, err
+			}
 			v.Missed = true
 			v.Expired = true
 			connectedNode.liveTickets, err =
-				safeDelete(connectedNode.liveTickets, treapKey)
+				safeDelete(connectedNode.liveTickets, *treapKey)
 			if err != nil {
-				return false
+				return nil, err
 			}
 			connectedNode.missedTickets, err =
-				safePut(connectedNode.missedTickets, treapKey, &v)
+				safePut(connectedNode.missedTickets, *treapKey, v)
 			if err != nil {
-				return false
+				return nil, err
 			}
 
-			ticketHash := chainhash.Hash(treapKey)
+			ticketHash := chainhash.Hash(*treapKey)
 			connectedNode.databaseUndoUpdate =
 				append(connectedNode.databaseUndoUpdate, ticketdb.UndoTicketData{
 					TicketHash:   ticketHash,
@@ -532,12 +534,6 @@ func connectNode(node *Node, lotteryIV chainhash.Hash, ticketsVoted, revokedTick
 					Spent:        v.Spent,
 					Expired:      v.Expired,
 				})
-
-			return true
-		})
-
-		if err != nil {
-			return nil, err
 		}
 
 		// Process all the revocations, moving them from the missed to the
@@ -606,7 +602,11 @@ func connectNode(node *Node, lotteryIV chainhash.Hash, ticketsVoted, revokedTick
 	if connectedNode.height >=
 		uint32(connectedNode.params.StakeValidationHeight-1) {
 		// Find the next set of winners.
-		prng := NewHash256PRNGFromIV(lotteryIV)
+		hB, err := header.Bytes()
+		if err != nil {
+			return nil, err
+		}
+		prng := NewHash256PRNG(hB)
 		idxs, err := findTicketIdxs(connectedNode.liveTickets.Len(),
 			connectedNode.params.TicketsPerBlock, prng)
 		if err != nil {
@@ -636,16 +636,16 @@ func connectNode(node *Node, lotteryIV chainhash.Hash, ticketsVoted, revokedTick
 
 // ConnectNode connects a stake node to the node and returns a pointer
 // to the stake node of the child.
-func (sn *Node) ConnectNode(lotteryIV chainhash.Hash, ticketsVoted, revokedTickets, newTickets []chainhash.Hash) (*Node, error) {
-	return connectNode(sn, lotteryIV, ticketsVoted, revokedTickets,
-		newTickets)
+func (sn *Node) ConnectNode(header wire.BlockHeader, ticketsSpentInBlock, revokedTickets, newTickets []chainhash.Hash) (*Node, error) {
+	return connectNode(sn, header, ticketsSpentInBlock,
+		revokedTickets, newTickets)
 }
 
 // disconnectNode disconnects a stake node from itself and returns the state of
 // the parent node.  The database transaction should be included if the
 // UndoTicketDataSlice or tickets are nil in order to look up the undo data or
 // tickets from the database.
-func disconnectNode(node *Node, parentLotteryIV chainhash.Hash, parentUtds UndoTicketDataSlice, parentTickets []chainhash.Hash, dbTx database.Tx) (*Node, error) {
+func disconnectNode(node *Node, parentHeader wire.BlockHeader, parentUtds UndoTicketDataSlice, parentTickets []chainhash.Hash, dbTx database.Tx) (*Node, error) {
 	// Edge case for the parent being the genesis block.
 	if node.height == 1 {
 		return genesisNode(node.params), nil
@@ -779,8 +779,12 @@ func disconnectNode(node *Node, parentLotteryIV chainhash.Hash, parentUtds UndoT
 	}
 
 	if node.height >= uint32(node.params.StakeValidationHeight) {
-		prng := NewHash256PRNGFromIV(parentLotteryIV)
-		_, err := findTicketIdxs(restoredNode.liveTickets.Len(),
+		phB, err := parentHeader.Bytes()
+		if err != nil {
+			return nil, err
+		}
+		prng := NewHash256PRNG(phB)
+		_, err = findTicketIdxs(restoredNode.liveTickets.Len(),
 			node.params.TicketsPerBlock, prng)
 		if err != nil {
 			return nil, err
@@ -795,8 +799,8 @@ func disconnectNode(node *Node, parentLotteryIV chainhash.Hash, parentUtds UndoT
 
 // DisconnectNode disconnects a stake node from the node and returns a pointer
 // to the stake node of the parent.
-func (sn *Node) DisconnectNode(parentLotteryIV chainhash.Hash, parentUtds UndoTicketDataSlice, parentTickets []chainhash.Hash, dbTx database.Tx) (*Node, error) {
-	return disconnectNode(sn, parentLotteryIV, parentUtds, parentTickets, dbTx)
+func (sn *Node) DisconnectNode(parentHeader wire.BlockHeader, parentUtds UndoTicketDataSlice, parentTickets []chainhash.Hash, dbTx database.Tx) (*Node, error) {
+	return disconnectNode(sn, parentHeader, parentUtds, parentTickets, dbTx)
 }
 
 // WriteConnectedBestNode writes the newly connected best node to the database

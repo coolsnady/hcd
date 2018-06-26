@@ -8,10 +8,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/coolsnady/hxd/blockchain/stake/internal/dbnamespace"
-	"github.com/coolsnady/hxd/blockchain/stake/internal/tickettreap"
-	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/hxd/database"
+	"github.com/coolsnady/hcd/blockchain/stake/internal/dbnamespace"
+	"github.com/coolsnady/hcd/blockchain/stake/internal/tickettreap"
+	"github.com/coolsnady/hcd/chaincfg/chainhash"
+	"github.com/coolsnady/hcd/database"
 )
 
 const (
@@ -136,8 +136,8 @@ const databaseInfoSize = 8
 
 // DatabaseInfo is the structure for a database.
 type DatabaseInfo struct {
-	Date           time.Time
 	Version        uint32
+	Date           time.Time
 	UpgradeStarted bool
 }
 

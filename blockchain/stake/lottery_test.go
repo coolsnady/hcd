@@ -12,8 +12,8 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/coolsnady/hxd/blockchain/stake/internal/tickettreap"
-	"github.com/coolsnady/hxd/chaincfg/chainhash"
+	"github.com/coolsnady/hcd/blockchain/stake/internal/tickettreap"
+	"github.com/coolsnady/hcd/chaincfg/chainhash"
 )
 
 func TestBasicPRNG(t *testing.T) {
@@ -44,8 +44,20 @@ type TicketData struct {
 // SStxMemMap is a memory map of SStx keyed to the txHash.
 type SStxMemMap map[chainhash.Hash]*TicketData
 
+func swap(s []byte) []byte {
+	for i, j := 0, len(s)-1; i < j; i, j = i+1, j-1 {
+		s[i], s[j] = s[j], s[i]
+	}
+	return s
+}
+
 // TicketDataSlice is a sortable data structure of pointers to TicketData.
 type TicketDataSlice []*TicketData
+
+func NewTicketDataSliceEmpty() TicketDataSlice {
+	var slice []*TicketData
+	return TicketDataSlice(slice)
+}
 
 func NewTicketDataSlice(size int) TicketDataSlice {
 	slice := make([]*TicketData, size)
@@ -167,7 +179,7 @@ func TestTicketSorting(t *testing.T) {
 	bucketsSize := 256
 
 	randomGen := rand.New(rand.NewSource(12345))
-	ticketMap := make([]SStxMemMap, int(bucketsSize))
+	ticketMap := make([]SStxMemMap, int(bucketsSize), int(bucketsSize))
 
 	for i := 0; i < bucketsSize; i++ {
 		ticketMap[i] = make(SStxMemMap)
@@ -178,7 +190,7 @@ func TestTicketSorting(t *testing.T) {
 		td := new(TicketData)
 
 		rint64 := randomGen.Int63n(1 << 62)
-		randBytes := make([]byte, 8)
+		randBytes := make([]byte, 8, 8)
 		binary.LittleEndian.PutUint64(randBytes, uint64(rint64))
 		h := chainhash.HashH(randBytes)
 		td.SStxHash = h
@@ -205,7 +217,8 @@ func TestTicketSorting(t *testing.T) {
 	// However, it should be the same as a sort without the buckets.
 	toSortSlice := make([]*TicketData, 0, totalTickets)
 	for i := 0; i < bucketsSize; i++ {
-		tempTdSlice := make([]*TicketData, len(ticketMap[i]))
+		tempTdSlice := make([]*TicketData, len(ticketMap[i]),
+			len(ticketMap[i]))
 		itr := 0 // Iterator
 		for _, td := range ticketMap[i] {
 			tempTdSlice[itr] = td

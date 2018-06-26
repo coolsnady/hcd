@@ -12,7 +12,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/coolsnady/hxd/dcrjson"
+	"github.com/coolsnady/hcd/dcrjson"
 )
 
 // TestChainSvrWsNtfns tests all of the chain server websocket-specific
@@ -119,7 +119,7 @@ func TestChainSvrWsNtfns(t *testing.T) {
 	for i, test := range tests {
 		// Marshal the notification as created by the new static
 		// creation function.  The ID is nil for notifications.
-		marshalled, err := dcrjson.MarshalCmd("1.0", nil, test.staticNtfn())
+		marshalled, err := dcrjson.MarshalCmd(nil, test.staticNtfn())
 		if err != nil {
 			t.Errorf("MarshalCmd #%d (%s) unexpected error: %v", i,
 				test.name, err)
@@ -144,7 +144,7 @@ func TestChainSvrWsNtfns(t *testing.T) {
 		// Marshal the notification as created by the generic new
 		// notification creation function.    The ID is nil for
 		// notifications.
-		marshalled, err = dcrjson.MarshalCmd("1.0", nil, cmd)
+		marshalled, err = dcrjson.MarshalCmd(nil, cmd)
 		if err != nil {
 			t.Errorf("MarshalCmd #%d (%s) unexpected error: %v", i,
 				test.name, err)

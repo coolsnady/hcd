@@ -10,9 +10,9 @@ import (
 	"math"
 	"runtime"
 
-	"github.com/coolsnady/hxd/dcrutil"
-	"github.com/coolsnady/hxd/txscript"
-	"github.com/coolsnady/hxd/wire"
+	"github.com/coolsnady/hcd/txscript"
+	"github.com/coolsnady/hcd/wire"
+	dcrutil "github.com/coolsnady/hcutil"
 )
 
 // txValidateItem holds a transaction along with which input to validate.
@@ -63,7 +63,7 @@ out:
 					"transaction %v referenced from "+
 					"transaction %v", originTxHash,
 					txVI.tx.Hash())
-				err := ruleError(ErrMissingTxOut, str)
+				err := ruleError(ErrMissingTx, str)
 				v.sendResult(err)
 				break out
 			}

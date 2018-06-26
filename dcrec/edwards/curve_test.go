@@ -19,7 +19,7 @@ func testPointXRecoveryVectors() []XRecoveryVector {
 	r := rand.New(rand.NewSource(54321))
 
 	numCvs := 1000
-	cvs := make([]XRecoveryVector, numCvs)
+	cvs := make([]XRecoveryVector, numCvs, numCvs)
 	for i := 0; i < numCvs; i++ {
 		bIn := new([32]byte)
 		for j := 0; j < fieldIntSize; j++ {
@@ -65,8 +65,9 @@ func TestXRecovery(t *testing.T) {
 				t.Fatalf("expected %v, got %v", false, notOnCurve)
 			}
 			b2 := BigIntPointToEncodedBytes(x2, y)
-			if !bytes.Equal(vector.bIn[:], b2[:]) {
-				t.Fatalf("expected %x, got %x", vector.bIn[:], b2)
+			cmp := bytes.Compare(vector.bIn[:], b2[:]) == 0
+			if !cmp {
+				t.Fatalf("expected %v, got %v", true, cmp)
 			}
 		}
 
@@ -83,9 +84,9 @@ func TestXRecovery(t *testing.T) {
 			}
 
 			b3 := BigIntPointToEncodedBytes(x3BI, y)
-			if !bytes.Equal(vector.bIn[:], b3[:]) {
-				t.Fatalf("expected %x, got %x", vector.bIn[:],
-					b3)
+			cmp := bytes.Compare(vector.bIn[:], b3[:]) == 0
+			if !cmp {
+				t.Fatalf("expected %v, got %v", true, cmp)
 			}
 		}
 	}

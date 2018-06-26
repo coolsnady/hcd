@@ -6,12 +6,12 @@
 package main
 
 import (
-	"github.com/coolsnady/hxd/chaincfg"
-	"github.com/coolsnady/hxd/wire"
+	"github.com/coolsnady/hcd/chaincfg"
+	"github.com/coolsnady/hcd/wire"
 )
 
 // activeNetParams is a pointer to the parameters specific to the
-// currently active Decred network.
+// currently active decred network.
 var activeNetParams = &mainNetParams
 
 // params is used to group parameters for various networks such as the main
@@ -23,31 +23,31 @@ type params struct {
 
 // mainNetParams contains parameters specific to the main network
 // (wire.MainNet).  NOTE: The RPC port is intentionally different than the
-// reference implementation because hxd does not handle wallet requests.  The
+// reference implementation because hcd does not handle wallet requests.  The
 // separate wallet process listens on the well-known port and forwards requests
-// it does not handle on to hxd.  This approach allows the wallet process
+// it does not handle on to hcd.  This approach allows the wallet process
 // to emulate the full reference implementation RPC API.
 var mainNetParams = params{
 	Params:  &chaincfg.MainNetParams,
-	rpcPort: "9109",
+	rpcPort: "14009",
 }
 
 // testNet2Params contains parameters specific to the test network (version 2)
 // (wire.TestNet2).
 var testNet2Params = params{
 	Params:  &chaincfg.TestNet2Params,
-	rpcPort: "19109",
+	rpcPort: "12009",
 }
 
 // simNetParams contains parameters specific to the simulation test network
 // (wire.SimNet).
 var simNetParams = params{
 	Params:  &chaincfg.SimNetParams,
-	rpcPort: "19556",
+	rpcPort: "13009",
 }
 
-// netName returns the name used when referring to a Decred network.  At the
-// time of writing, hxd currently places blocks for testnet version 0 in the
+// netName returns the name used when referring to a decred network.  At the
+// time of writing, hcd currently places blocks for testnet version 0 in the
 // data and log directory "testnet", which does not match the Name field of the
 // chaincfg parameters.  This function can be used to override this directory name
 // as "testnet2" when the passed active network matches wire.TestNet2.

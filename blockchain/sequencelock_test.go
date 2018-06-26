@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2018 The Decred developers
+// Copyright (c) 2017 The Decred developers
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/coolsnady/hxd/chaincfg"
-	"github.com/coolsnady/hxd/dcrutil"
-	"github.com/coolsnady/hxd/wire"
+	"github.com/coolsnady/hcd/chaincfg"
+	"github.com/coolsnady/hcd/wire"
+	dcrutil "github.com/coolsnady/hcutil"
 )
 
 // mustLockTimeToSeq converts the passed relative lock time to a sequence number
@@ -37,11 +37,11 @@ func TestCalcSequenceLock(t *testing.T) {
 	params := &chaincfg.SimNetParams
 	bc := newFakeChain(params)
 	node := bc.bestNode
-	blockTime := time.Unix(node.timestamp, 0)
+	blockTime := node.header.Timestamp
 	for i := uint32(0); i < numBlocks; i++ {
 		blockTime = blockTime.Add(time.Second)
 		node = newFakeNode(node, 1, 1, 0, blockTime)
-		bc.index.AddNode(node)
+		bc.index[node.hash] = node
 		bc.bestNode = node
 	}
 
@@ -74,13 +74,25 @@ func TestCalcSequenceLock(t *testing.T) {
 	// Obtain the median time past from the PoV of the input created above.
 	// The median time for the input is the median time from the PoV of the
 	// block *prior* to the one that included it.
-	medianTime := node.RelativeAncestor(5).CalcPastMedianTime().Unix()
+	medianNode, err := bc.ancestorNode(node, node.height-5)
+	if err != nil {
+		t.Fatalf("Unable to obtain median node: %v", err)
+	}
+	medianT, err := bc.calcPastMedianTime(medianNode)
+	if err != nil {
+		t.Fatalf("Unable to obtain median node time: %v", err)
+	}
+	medianTime := medianT.Unix()
 
 	// The median time calculated from the PoV of the best block in the
 	// test chain.  For unconfirmed inputs, this value will be used since
 	// the median time will be calculated from the PoV of the
 	// yet-to-be-mined block.
-	nextMedianTime := node.CalcPastMedianTime().Unix()
+	nextMedianT, err := bc.calcPastMedianTime(node)
+	if err != nil {
+		t.Fatalf("Unable to obtain next median node time: %v", err)
+	}
+	nextMedianTime := nextMedianT.Unix()
 	nextBlockHeight := int64(numBlocks) + 1
 
 	// Add an additional transaction which will serve as our unconfirmed
@@ -482,12 +494,12 @@ func TestLockTimeToSequence(t *testing.T) {
 		gotSequence, err := LockTimeToSequence(test.isSeconds,
 			test.locktime)
 		if err != nil && !test.invalid {
-			t.Errorf("%s: unexpected error: %v", test.name, err)
+			t.Error("%s: unexpected error: %v", test.name, err)
 			continue
 
 		}
 		if err == nil && test.invalid {
-			t.Errorf("%s: did not receive expected error", test.name)
+			t.Error("%s: did not receive expected error", test.name)
 			continue
 		}
 

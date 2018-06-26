@@ -9,8 +9,8 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/coolsnady/hxd/chaincfg/chainec"
-	"github.com/coolsnady/hxd/wire"
+	"github.com/coolsnady/hcd/chaincfg/chainec"
+	"github.com/coolsnady/hcd/wire"
 )
 
 // ScriptFlags is a bitmask defining additional operations or tests that will be
@@ -21,6 +21,10 @@ const (
 	// ScriptBip16 defines whether the bip16 threshold has passed and thus
 	// pay-to-script hash transactions will be fully validated.
 	ScriptBip16 ScriptFlags = 1 << iota
+
+	// ScriptStrictMultiSig defines whether to verify the stack item
+	// used by CHECKMULTISIG is zero length.
+	ScriptStrictMultiSig
 
 	// ScriptDiscourageUpgradableNops defines whether to verify that
 	// currently unused opcodes in the NOP and UNKNOWN families are reserved
@@ -91,22 +95,21 @@ var halfOrder = new(big.Int).Rsh(chainec.Secp256k1.GetN(), 1)
 
 // Engine is the virtual machine that executes scripts.
 type Engine struct {
+	version         uint16
 	scripts         [][]parsedOpcode
-	savedFirstStack [][]byte // stack from first script for bip16 scripts
+	scriptIdx       int
+	scriptOff       int
+	lastCodeSep     int
+	dstack          stack // data stack
+	astack          stack // alt stack
+	tx              wire.MsgTx
+	txIdx           int
+	condStack       []int
+	numOps          int
+	flags           ScriptFlags
 	sigCache        *SigCache
-
-	scriptIdx   int
-	scriptOff   int
-	lastCodeSep int
-	dstack      stack // data stack
-	astack      stack // alt stack
-	tx          wire.MsgTx
-	txIdx       int
-	condStack   []int
-	numOps      int
-	flags       ScriptFlags
-	version     uint16
-	bip16       bool // treat execution as pay-to-script-hash
+	bip16           bool     // treat execution as pay-to-script-hash
+	savedFirstStack [][]byte // stack from first script for bip16 scripts
 }
 
 // hasFlag returns whether the script engine instance has the passed flag set.

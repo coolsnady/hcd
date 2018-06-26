@@ -12,7 +12,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/coolsnady/hxd/dcrjson"
+	"github.com/coolsnady/hcd/dcrjson"
 )
 
 // TestWalletSvrWsCmds tests all of the wallet server websocket-specific
@@ -196,7 +196,7 @@ func TestWalletSvrWsCmds(t *testing.T) {
 	for i, test := range tests {
 		// Marshal the command as created by the new static command
 		// creation function.
-		marshalled, err := dcrjson.MarshalCmd("1.0", testID, test.staticCmd())
+		marshalled, err := dcrjson.MarshalCmd(testID, test.staticCmd())
 		if err != nil {
 			t.Errorf("MarshalCmd #%d (%s) unexpected error: %v", i,
 				test.name, err)
@@ -220,7 +220,7 @@ func TestWalletSvrWsCmds(t *testing.T) {
 
 		// Marshal the command as created by the generic new command
 		// creation function.
-		marshalled, err = dcrjson.MarshalCmd("1.0", testID, cmd)
+		marshalled, err = dcrjson.MarshalCmd(testID, cmd)
 		if err != nil {
 			t.Errorf("MarshalCmd #%d (%s) unexpected error: %v", i,
 				test.name, err)

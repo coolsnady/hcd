@@ -27,9 +27,9 @@ func TestPrivKeys(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		priv, pub := PrivKeyFromBytes(test.key)
+		priv, pub := PrivKeyFromBytes(S256(), test.key)
 
-		_, err := ParsePubKey(pub.SerializeUncompressed())
+		_, err := ParsePubKey(pub.SerializeUncompressed(), S256())
 		if err != nil {
 			t.Errorf("%s privkey: %v", test.name, err)
 			continue

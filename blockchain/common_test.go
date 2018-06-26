@@ -3,22 +3,24 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package blockchain
+package blockchain_test
 
 import (
+	"compress/bzip2"
+	"encoding/binary"
 	"fmt"
-	mrand "math/rand"
+	"io"
 	"os"
 	"path/filepath"
-	"time"
+	"strings"
 
-	"github.com/coolsnady/hxd/blockchain/stake"
-	"github.com/coolsnady/hxd/chaincfg"
-	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/hxd/database"
-	_ "github.com/coolsnady/hxd/database/ffldb"
-	"github.com/coolsnady/hxd/txscript"
-	"github.com/coolsnady/hxd/wire"
+	"github.com/coolsnady/hcd/blockchain"
+	"github.com/coolsnady/hcd/chaincfg"
+	"github.com/coolsnady/hcd/chaincfg/chainhash"
+	"github.com/coolsnady/hcd/database"
+	_ "github.com/coolsnady/hcd/database/ffldb"
+	"github.com/coolsnady/hcd/txscript"
+	"github.com/coolsnady/hcd/wire"
 )
 
 const (
@@ -58,7 +60,7 @@ func isSupportedDbType(dbType string) bool {
 // chainSetup is used to create a new db and chain instance with the genesis
 // block already inserted.  In addition to the new chain instance, it returns
 // a teardown function the caller should invoke when done testing to clean up.
-func chainSetup(dbName string, params *chaincfg.Params) (*BlockChain, func(), error) {
+func chainSetup(dbName string, params *chaincfg.Params) (*blockchain.BlockChain, func(), error) {
 	if !isSupportedDbType(testDbType) {
 		return nil, nil, fmt.Errorf("unsupported db type %v", testDbType)
 	}
@@ -112,10 +114,10 @@ func chainSetup(dbName string, params *chaincfg.Params) (*BlockChain, func(), er
 	paramsCopy := *params
 
 	// Create the main chain instance.
-	chain, err := New(&Config{
+	chain, err := blockchain.New(&blockchain.Config{
 		DB:          db,
 		ChainParams: &paramsCopy,
-		TimeSource:  NewMedianTime(),
+		TimeSource:  blockchain.NewMedianTime(),
 		SigCache:    txscript.NewSigCache(1000),
 	})
 
@@ -128,88 +130,63 @@ func chainSetup(dbName string, params *chaincfg.Params) (*BlockChain, func(), er
 	return chain, teardown, nil
 }
 
-// newFakeChain returns a chain that is usable for syntetic tests.  It is
-// important to note that this chain has no database associated with it, so
-// it is not usable with all functions and the tests must take care when making
-// use of it.
-func newFakeChain(params *chaincfg.Params) *BlockChain {
-	// Create a genesis block node and block index populated with it for use
-	// when creating the fake chain below.
-	node := newBlockNode(&params.GenesisBlock.Header, nil)
-	node.inMainChain = true
-	index := newBlockIndex(nil, params)
-	index.AddNode(node)
-	mainNodesByHeight := make(map[int64]*blockNode)
-	mainNodesByHeight[node.height] = node
+// loadUtxoView returns a utxo view loaded from a file.
+func loadUtxoView(filename string) (*blockchain.UtxoViewpoint, error) {
+	// The utxostore file format is:
+	// <tx hash><serialized utxo len><serialized utxo>
+	//
+	// The serialized utxo len is a little endian uint32 and the serialized
+	// utxo uses the format described in chainio.go.
 
-	return &BlockChain{
-		chainParams:                   params,
-		deploymentCaches:              newThresholdCaches(params),
-		bestNode:                      node,
-		index:                         index,
-		mainNodesByHeight:             mainNodesByHeight,
-		isVoterMajorityVersionCache:   make(map[[stakeMajorityCacheKeySize]byte]bool),
-		isStakeMajorityVersionCache:   make(map[[stakeMajorityCacheKeySize]byte]bool),
-		calcPriorStakeVersionCache:    make(map[[chainhash.HashSize]byte]uint32),
-		calcVoterVersionIntervalCache: make(map[[chainhash.HashSize]byte]uint32),
-		calcStakeVersionCache:         make(map[[chainhash.HashSize]byte]uint32),
+	filename = filepath.Join("testdata", filename)
+	fi, err := os.Open(filename)
+	if err != nil {
+		return nil, err
 	}
-}
 
-// testNoncePrng provides a deterministic prng for the nonce in generated fake
-// nodes.  The ensures that the nodes have unique hashes.
-var testNoncePrng = mrand.New(mrand.NewSource(0))
-
-// newFakeNode creates a block node connected to the passed parent with the
-// provided fields populated and fake values for the other fields.
-func newFakeNode(parent *blockNode, blockVersion int32, stakeVersion uint32, bits uint32, timestamp time.Time) *blockNode {
-	// Make up a header and create a block node from it.
-	header := &wire.BlockHeader{
-		Version:      blockVersion,
-		PrevBlock:    parent.hash,
-		VoteBits:     0x01,
-		Bits:         bits,
-		Height:       uint32(parent.height) + 1,
-		Timestamp:    timestamp,
-		Nonce:        testNoncePrng.Uint32(),
-		StakeVersion: stakeVersion,
+	// Choose read based on whether the file is compressed or not.
+	var r io.Reader
+	if strings.HasSuffix(filename, ".bz2") {
+		r = bzip2.NewReader(fi)
+	} else {
+		r = fi
 	}
-	return newBlockNode(header, parent)
-}
+	defer fi.Close()
 
-// chainedFakeNodes returns the specified number of nodes constructed such that
-// each subsequent node points to the previous one to create a chain.  The first
-// node will point to the passed parent which can be nil if desired.
-func chainedFakeNodes(parent *blockNode, numNodes int) []*blockNode {
-	nodes := make([]*blockNode, numNodes)
-	tip := parent
-	blockTime := time.Now()
-	if tip != nil {
-		blockTime = time.Unix(tip.timestamp, 0)
+	view := blockchain.NewUtxoViewpoint()
+	for {
+		// Hash of the utxo entry.
+		var hash chainhash.Hash
+		_, err := io.ReadAtLeast(r, hash[:], len(hash[:]))
+		if err != nil {
+			// Expected EOF at the right offset.
+			if err == io.EOF {
+				break
+			}
+			return nil, err
+		}
+
+		// Num of serialize utxo entry bytes.
+		var numBytes uint32
+		err = binary.Read(r, binary.LittleEndian, &numBytes)
+		if err != nil {
+			return nil, err
+		}
+
+		// Serialized utxo entry.
+		serialized := make([]byte, numBytes)
+		_, err = io.ReadAtLeast(r, serialized, int(numBytes))
+		if err != nil {
+			return nil, err
+		}
+
+		// Deserialize it and add it to the view.
+		utxoEntry, err := blockchain.TstDeserializeUtxoEntry(serialized)
+		if err != nil {
+			return nil, err
+		}
+		view.Entries()[hash] = utxoEntry
 	}
-	for i := 0; i < numNodes; i++ {
-		blockTime = blockTime.Add(time.Second)
-		node := newFakeNode(tip, 1, 1, 0, blockTime)
-		tip = node
 
-		nodes[i] = node
-	}
-	return nodes
-}
-
-// branchTip is a convenience function to grab the tip of a chain of block nodes
-// created via chainedFakeNodes.
-func branchTip(nodes []*blockNode) *blockNode {
-	return nodes[len(nodes)-1]
-}
-
-// appendFakeVotes appends the passed number of votes to the node with the
-// provided version and vote bits.
-func appendFakeVotes(node *blockNode, numVotes uint16, voteVersion uint32, voteBits uint16) {
-	for i := uint16(0); i < numVotes; i++ {
-		node.votes = append(node.votes, stake.VoteVersionTuple{
-			Version: voteVersion,
-			Bits:    voteBits,
-		})
-	}
+	return view, nil
 }

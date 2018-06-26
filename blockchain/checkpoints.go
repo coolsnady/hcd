@@ -8,11 +8,11 @@ package blockchain
 import (
 	"fmt"
 
-	"github.com/coolsnady/hxd/chaincfg"
-	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/hxd/database"
-	"github.com/coolsnady/hxd/dcrutil"
-	"github.com/coolsnady/hxd/txscript"
+	"github.com/coolsnady/hcd/chaincfg"
+	"github.com/coolsnady/hcd/chaincfg/chainhash"
+	"github.com/coolsnady/hcd/database"
+	"github.com/coolsnady/hcd/txscript"
+	dcrutil "github.com/coolsnady/hcutil"
 )
 
 // CheckpointConfirmations is the number of blocks before the end of the current
@@ -99,58 +99,87 @@ func (b *BlockChain) verifyCheckpoint(height int64, hash *chainhash.Hash) bool {
 
 // findPreviousCheckpoint finds the most recent checkpoint that is already
 // available in the downloaded portion of the block chain and returns the
-// associated block node.  It returns nil if a checkpoint can't be found (this
-// should really only happen for blocks before the first checkpoint).
+// associated block.  It returns nil if a checkpoint can't be found (this should
+// really only happen for blocks before the first checkpoint).
 //
 // This function MUST be called with the chain lock held (for reads).
-func (b *BlockChain) findPreviousCheckpoint() (*blockNode, error) {
+func (b *BlockChain) findPreviousCheckpoint() (*dcrutil.Block, error) {
 	if b.noCheckpoints || len(b.chainParams.Checkpoints) == 0 {
+		return nil, nil
+	}
+
+	// No checkpoints.
+	checkpoints := b.chainParams.Checkpoints
+	numCheckpoints := len(checkpoints)
+	if numCheckpoints == 0 {
 		return nil, nil
 	}
 
 	// Perform the initial search to find and cache the latest known
 	// checkpoint if the best chain is not known yet or we haven't already
 	// previously searched.
-	checkpoints := b.chainParams.Checkpoints
-	numCheckpoints := len(checkpoints)
-	if b.checkpointNode == nil && b.nextCheckpoint == nil {
+	if b.checkpointBlock == nil && b.nextCheckpoint == nil {
 		// Loop backwards through the available checkpoints to find one
 		// that is already available.
-		for i := numCheckpoints - 1; i >= 0; i-- {
-			node := b.index.LookupNode(checkpoints[i].Hash)
-			if node == nil || !node.inMainChain {
-				continue
+		checkpointIndex := -1
+		err := b.db.View(func(dbTx database.Tx) error {
+			for i := numCheckpoints - 1; i >= 0; i-- {
+				if dbMainChainHasBlock(dbTx, checkpoints[i].Hash) {
+					checkpointIndex = i
+					break
+				}
 			}
-
-			// Checkpoint found.  Cache it for future lookups and
-			// set the next expected checkpoint accordingly.
-			b.checkpointNode = node
-			if i < numCheckpoints-1 {
-				b.nextCheckpoint = &checkpoints[i+1]
-			}
-			return b.checkpointNode, nil
+			return nil
+		})
+		if err != nil {
+			return nil, err
 		}
 
 		// No known latest checkpoint.  This will only happen on blocks
 		// before the first known checkpoint.  So, set the next expected
 		// checkpoint to the first checkpoint and return the fact there
 		// is no latest known checkpoint block.
-		b.nextCheckpoint = &checkpoints[0]
-		return nil, nil
+		if checkpointIndex == -1 {
+			b.nextCheckpoint = &checkpoints[0]
+			return nil, nil
+		}
+
+		// Cache the latest known checkpoint block for future lookups.
+		checkpoint := checkpoints[checkpointIndex]
+		err = b.db.View(func(dbTx database.Tx) error {
+			block, err := dbFetchBlockByHash(dbTx, checkpoint.Hash)
+			if err != nil {
+				return err
+			}
+			b.checkpointBlock = block
+
+			// Set the next expected checkpoint block accordingly.
+			b.nextCheckpoint = nil
+			if checkpointIndex < numCheckpoints-1 {
+				b.nextCheckpoint = &checkpoints[checkpointIndex+1]
+			}
+
+			return nil
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		return b.checkpointBlock, nil
 	}
 
 	// At this point we've already searched for the latest known checkpoint,
 	// so when there is no next checkpoint, the current checkpoint lockin
 	// will always be the latest known checkpoint.
 	if b.nextCheckpoint == nil {
-		return b.checkpointNode, nil
+		return b.checkpointBlock, nil
 	}
 
 	// When there is a next checkpoint and the height of the current best
 	// chain does not exceed it, the current checkpoint lockin is still
 	// the latest known checkpoint.
 	if b.bestNode.height < b.nextCheckpoint.Height {
-		return b.checkpointNode, nil
+		return b.checkpointBlock, nil
 	}
 
 	// We've reached or exceeded the next checkpoint height.  Note that
@@ -158,17 +187,21 @@ func (b *BlockChain) findPreviousCheckpoint() (*blockNode, error) {
 	// any blocks before the checkpoint, so we don't have to worry about the
 	// checkpoint going away out from under us due to a chain reorganize.
 
-	// Cache the latest known checkpoint for future lookups.  Note that if
-	// this lookup fails something is very wrong since the chain has already
-	// passed the checkpoint which was verified as accurate before inserting
-	// it.
-	checkpointNode := b.index.LookupNode(b.nextCheckpoint.Hash)
-	if checkpointNode == nil {
-		return nil, AssertError(fmt.Sprintf("findPreviousCheckpoint "+
-			"failed lookup of known good block node %s",
-			b.nextCheckpoint.Hash))
+	// Cache the latest known checkpoint block for future lookups.  Note
+	// that if this lookup fails something is very wrong since the chain
+	// has already passed the checkpoint which was verified as accurate
+	// before inserting it.
+	err := b.db.View(func(tx database.Tx) error {
+		block, err := dbFetchBlockByHash(tx, b.nextCheckpoint.Hash)
+		if err != nil {
+			return err
+		}
+		b.checkpointBlock = block
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
-	b.checkpointNode = checkpointNode
 
 	// Set the next expected checkpoint.
 	checkpointIndex := -1
@@ -183,7 +216,7 @@ func (b *BlockChain) findPreviousCheckpoint() (*blockNode, error) {
 		b.nextCheckpoint = &checkpoints[checkpointIndex+1]
 	}
 
-	return b.checkpointNode, nil
+	return b.checkpointBlock, nil
 }
 
 // isNonstandardTransaction determines whether a transaction contains any

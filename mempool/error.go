@@ -6,8 +6,8 @@
 package mempool
 
 import (
-	"github.com/coolsnady/hxd/blockchain"
-	"github.com/coolsnady/hxd/wire"
+	"github.com/coolsnady/hcd/blockchain"
+	"github.com/coolsnady/hcd/wire"
 )
 
 // RuleError identifies a rule violation.  It is used to indicate that
@@ -75,6 +75,8 @@ func extractRejectCode(err error) (wire.RejectCode, bool) {
 		switch err.ErrorCode {
 		// Rejected due to duplicate.
 		case blockchain.ErrDuplicateBlock:
+			fallthrough
+		case blockchain.ErrDoubleSpend:
 			code = wire.RejectDuplicate
 
 		// Rejected due to obsolete version.

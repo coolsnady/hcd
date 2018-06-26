@@ -1,5 +1,5 @@
 // Copyright (c) 2013-2016 The btcsuite developers
-// Copyright (c) 2015-2018 The Decred developers
+// Copyright (c) 2015-2017 The Decred developers
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
@@ -12,7 +12,6 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"os/user"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -21,23 +20,23 @@ import (
 	"strings"
 	"time"
 
+	"github.com/btcsuite/btclog"
 	"github.com/btcsuite/go-socks/socks"
-	"github.com/coolsnady/hxd/connmgr"
-	"github.com/coolsnady/hxd/database"
-	_ "github.com/coolsnady/hxd/database/ffldb"
-	"github.com/coolsnady/hxd/dcrutil"
-	"github.com/coolsnady/hxd/mempool"
-	"github.com/coolsnady/hxd/sampleconfig"
-	"github.com/decred/slog"
+	"github.com/coolsnady/hcd/connmgr"
+	"github.com/coolsnady/hcd/database"
+	_ "github.com/coolsnady/hcd/database/ffldb"
+	"github.com/coolsnady/hcd/mempool"
+	"github.com/coolsnady/hcd/sampleconfig"
+	dcrutil "github.com/coolsnady/hcutil"
 	flags "github.com/jessevdk/go-flags"
 )
 
 const (
-	defaultConfigFilename        = "hxd.conf"
+	defaultConfigFilename        = "hcd.conf"
 	defaultDataDirname           = "data"
 	defaultLogLevel              = "info"
 	defaultLogDirname            = "logs"
-	defaultLogFilename           = "hxd.log"
+	defaultLogFilename           = "hcd.log"
 	defaultMaxPeers              = 125
 	defaultBanDuration           = time.Hour * 24
 	defaultBanThreshold          = 100
@@ -58,11 +57,10 @@ const (
 	defaultSigCacheMaxSize       = 100000
 	defaultTxIndex               = false
 	defaultNoExistsAddrIndex     = false
-	defaultNoCFilters            = false
 )
 
 var (
-	defaultHomeDir     = dcrutil.AppDataDir("hxd", false)
+	defaultHomeDir     = dcrutil.AppDataDir("hcd", false)
 	defaultConfigFile  = filepath.Join(defaultHomeDir, defaultConfigFilename)
 	defaultDataDir     = filepath.Join(defaultHomeDir, defaultDataDirname)
 	knownDbTypes       = database.SupportedDrivers()
@@ -84,7 +82,7 @@ func minUint32(a, b uint32) uint32 {
 	return b
 }
 
-// config defines the configuration options for hxd.
+// config defines the configuration options for hcd.
 //
 // See loadConfig for details on the configuration load process.
 type config struct {
@@ -93,7 +91,6 @@ type config struct {
 	ConfigFile           string        `short:"C" long:"configfile" description:"Path to configuration file"`
 	DataDir              string        `short:"b" long:"datadir" description:"Directory to store data"`
 	LogDir               string        `long:"logdir" description:"Directory to log output."`
-	NoFileLogging        bool          `long:"nofilelogging" description:"Disable file logging."`
 	AddPeers             []string      `short:"a" long:"addpeer" description:"Add a peer to connect with at startup"`
 	ConnectPeers         []string      `long:"connect" description:"Connect only to the specified peers at startup"`
 	DisableListen        bool          `long:"nolisten" description:"Disable listening for incoming connections -- NOTE: Listening is automatically disabled if the --connect or --proxy options are used without also specifying listen interfaces via --listen"`
@@ -146,12 +143,13 @@ type config struct {
 	BlockMaxSize         uint32        `long:"blockmaxsize" description:"Maximum block size in bytes to be used when creating a block"`
 	BlockPrioritySize    uint32        `long:"blockprioritysize" description:"Size in bytes for high-priority/low-fee transactions when creating a block"`
 	GetWorkKeys          []string      `long:"getworkkey" description:"DEPRECATED -- Use the --miningaddr option instead"`
+	NoPeerBloomFilters   bool          `long:"nopeerbloomfilters" description:"Disable bloom filtering support"`
 	SigCacheMaxSize      uint          `long:"sigcachemaxsize" description:"The maximum number of entries in the signature verification cache"`
 	NonAggressive        bool          `long:"nonaggressive" description:"Disable mining off of the parent block of the blockchain if there aren't enough voters"`
 	NoMiningStateSync    bool          `long:"nominingstatesync" description:"Disable synchronizing the mining state with other nodes"`
 	AllowOldVotes        bool          `long:"allowoldvotes" description:"Enable the addition of very old votes to the mempool"`
 	BlocksOnly           bool          `long:"blocksonly" description:"Do not accept transactions from remote peers."`
-	AcceptNonStd         bool          `long:"acceptnonstd" description:"Accept and relay non-standard transactions to the network regardless of the default settings for the active network."`
+	RelayNonStd          bool          `long:"relaynonstd" description:"Relay non-standard transactions regardless of the default settings for the active network."`
 	RejectNonStd         bool          `long:"rejectnonstd" description:"Reject non-standard transactions regardless of the default settings for the active network."`
 	TxIndex              bool          `long:"txindex" description:"Maintain a full hash-based transaction index which makes all transactions available via the getrawtransaction RPC"`
 	DropTxIndex          bool          `long:"droptxindex" description:"Deletes the hash-based transaction index from the database on start up and then exits."`
@@ -159,8 +157,6 @@ type config struct {
 	DropAddrIndex        bool          `long:"dropaddrindex" description:"Deletes the address-based transaction index from the database on start up and then exits."`
 	NoExistsAddrIndex    bool          `long:"noexistsaddrindex" description:"Disable the exists address index, which tracks whether or not an address has even been used."`
 	DropExistsAddrIndex  bool          `long:"dropexistsaddrindex" description:"Deletes the exists address index from the database on start up and then exits."`
-	NoCFilters           bool          `long:"nocfilters" description:"Disable compact filtering (CF) support"`
-	DropCFIndex          bool          `long:"dropcfindex" description:"Deletes the index used for compact filtering (CF) support from the database on start up and then exits."`
 	PipeRx               uint          `long:"piperx" description:"File descriptor of read end pipe to enable parent -> child process communication"`
 	PipeTx               uint          `long:"pipetx" description:"File descriptor of write end pipe to enable parent <- child process communication"`
 	LifetimeEvents       bool          `long:"lifetimeevents" description:"Send lifetime notifications over the TX pipe"`
@@ -182,60 +178,20 @@ type serviceOptions struct {
 // cleanAndExpandPath expands environment variables and leading ~ in the
 // passed path, cleans the result, and returns it.
 func cleanAndExpandPath(path string) string {
-	// Nothing to do when no path is given.
-	if path == "" {
-		return path
+	// Expand initial ~ to OS specific home directory.
+	if strings.HasPrefix(path, "~") {
+		homeDir := filepath.Dir(defaultHomeDir)
+		path = strings.Replace(path, "~", homeDir, 1)
 	}
 
-	// NOTE: The os.ExpandEnv doesn't work with Windows cmd.exe-style
-	// %VARIABLE%, but the variables can still be expanded via POSIX-style
-	// $VARIABLE.
-	path = os.ExpandEnv(path)
-
-	if !strings.HasPrefix(path, "~") {
-		return filepath.Clean(path)
-	}
-
-	// Expand initial ~ to the current user's home directory, or ~otheruser
-	// to otheruser's home directory.  On Windows, both forward and backward
-	// slashes can be used.
-	path = path[1:]
-
-	var pathSeparators string
-	if runtime.GOOS == "windows" {
-		pathSeparators = string(os.PathSeparator) + "/"
-	} else {
-		pathSeparators = string(os.PathSeparator)
-	}
-
-	userName := ""
-	if i := strings.IndexAny(path, pathSeparators); i != -1 {
-		userName = path[:i]
-		path = path[i:]
-	}
-
-	homeDir := ""
-	var u *user.User
-	var err error
-	if userName == "" {
-		u, err = user.Current()
-	} else {
-		u, err = user.Lookup(userName)
-	}
-	if err == nil {
-		homeDir = u.HomeDir
-	}
-	// Fallback to CWD if user lookup fails or user has no home directory.
-	if homeDir == "" {
-		homeDir = "."
-	}
-
-	return filepath.Join(homeDir, path)
+	// NOTE: The os.ExpandEnv doesn't work with Windows-style %VARIABLE%,
+	// but they variables can still be expanded via POSIX-style $VARIABLE.
+	return filepath.Clean(os.ExpandEnv(path))
 }
 
 // validLogLevel returns whether or not logLevel is a valid debug log level.
 func validLogLevel(logLevel string) bool {
-	_, ok := slog.LevelFromString(logLevel)
+	_, ok := btclog.LevelFromString(logLevel)
 	return ok
 }
 
@@ -368,7 +324,7 @@ func newConfigParser(cfg *config, so *serviceOptions, options flags.Options) *fl
 	return parser
 }
 
-// createDefaultConfig copies the file sample-hxd.conf to the given destination path,
+// createDefaultConfig copies the file sample-hcd.conf to the given destination path,
 // and populates it with some randomly generated RPC username and password.
 func createDefaultConfigFile(destPath string) error {
 	// Create the destination directory if it does not exist.
@@ -421,7 +377,7 @@ func createDefaultConfigFile(destPath string) error {
 // 	3) Load configuration file overwriting defaults with any specified options
 // 	4) Parse CLI options and overwrite/add any specified options
 //
-// The above results in hxd functioning properly without any config settings
+// The above results in hcd functioning properly without any config settings
 // while still allowing the user to override settings with config files and
 // command line options.  Command line options always take precedence.
 func loadConfig() (*config, []string, error) {
@@ -454,7 +410,6 @@ func loadConfig() (*config, []string, error) {
 		AddrIndex:            defaultAddrIndex,
 		AllowOldVotes:        defaultAllowOldVotes,
 		NoExistsAddrIndex:    defaultNoExistsAddrIndex,
-		NoCFilters:           defaultNoCFilters,
 	}
 
 	// Service options which are only added on Windows.
@@ -497,7 +452,7 @@ func loadConfig() (*config, []string, error) {
 		os.Exit(0)
 	}
 
-	// Update the home directory for hxd if specified. Since the home
+	// Update the home directory for hcd if specified. Since the home
 	// directory is updated, other variables need to be updated to
 	// reflect the new changes.
 	if preCfg.HomeDir != "" {
@@ -618,21 +573,21 @@ func loadConfig() (*config, []string, error) {
 	// according to the default of the active network. The set
 	// configuration value takes precedence over the default value for the
 	// selected network.
-	acceptNonStd := activeNetParams.AcceptNonStdTxs
+	relayNonStd := activeNetParams.RelayNonStdTxs
 	switch {
-	case cfg.AcceptNonStd && cfg.RejectNonStd:
-		str := "%s: rejectnonstd and acceptnonstd cannot be used " +
+	case cfg.RelayNonStd && cfg.RejectNonStd:
+		str := "%s: rejectnonstd and relaynonstd cannot be used " +
 			"together -- choose only one"
 		err := fmt.Errorf(str, funcName)
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, usageMessage)
 		return nil, nil, err
 	case cfg.RejectNonStd:
-		acceptNonStd = false
-	case cfg.AcceptNonStd:
-		acceptNonStd = true
+		relayNonStd = false
+	case cfg.RelayNonStd:
+		relayNonStd = true
 	}
-	cfg.AcceptNonStd = acceptNonStd
+	cfg.RelayNonStd = relayNonStd
 
 	// Append the network type to the data directory so it is "namespaced"
 	// per network.  In addition to the block database, there are other
@@ -647,23 +602,21 @@ func loadConfig() (*config, []string, error) {
 	var oldTestNets []string
 	oldTestNets = append(oldTestNets, filepath.Join(cfg.DataDir, "testnet"))
 	cfg.DataDir = filepath.Join(cfg.DataDir, netName(activeNetParams))
-	logRotator = nil
-	if !cfg.NoFileLogging {
-		// Append the network type to the log directory so it is "namespaced"
-		// per network in the same fashion as the data directory.
-		cfg.LogDir = cleanAndExpandPath(cfg.LogDir)
-		cfg.LogDir = filepath.Join(cfg.LogDir, netName(activeNetParams))
 
-		// Initialize log rotation.  After log rotation has been initialized, the
-		// logger variables may be used.
-		initLogRotator(filepath.Join(cfg.LogDir, defaultLogFilename))
-	}
+	// Append the network type to the log directory so it is "namespaced"
+	// per network in the same fashion as the data directory.
+	cfg.LogDir = cleanAndExpandPath(cfg.LogDir)
+	cfg.LogDir = filepath.Join(cfg.LogDir, netName(activeNetParams))
 
 	// Special show command to list supported subsystems and exit.
 	if cfg.DebugLevel == "show" {
 		fmt.Println("Supported subsystems", supportedSubsystems())
 		os.Exit(0)
 	}
+
+	// Initialize log rotation.  After log rotation has been initialized, the
+	// logger variables may be used.
+	initLogRotator(filepath.Join(cfg.LogDir, defaultLogFilename))
 
 	// Parse, validate, and set debug log level(s).
 	if err := parseAndSetDebugLevels(cfg.DebugLevel); err != nil {
@@ -909,14 +862,6 @@ func loadConfig() (*config, []string, error) {
 		return nil, nil, err
 	}
 
-	// !--nocfilters and --dropcfindex do not mix.
-	if !cfg.NoCFilters && cfg.DropCFIndex {
-		err := errors.New("dropcfindex cannot be actived without nocfilters")
-		fmt.Fprintln(os.Stderr, err)
-		fmt.Fprintln(os.Stderr, usageMessage)
-		return nil, nil, err
-	}
-
 	// Check getwork keys are valid and saved parsed versions.
 	cfg.miningAddrs = make([]dcrutil.Address, 0, len(cfg.GetWorkKeys)+
 		len(cfg.MiningAddrs))
@@ -1142,11 +1087,11 @@ func loadConfig() (*config, []string, error) {
 // example, .onion addresses will be dialed using the onion specific proxy if
 // one was specified, but will otherwise use the normal dial function (which
 // could itself use a proxy or not).
-func dcrdDial(network, addr string) (net.Conn, error) {
-	if strings.Contains(addr, ".onion:") {
-		return cfg.oniondial(network, addr)
+func dcrdDial(addr net.Addr) (net.Conn, error) {
+	if strings.Contains(addr.String(), ".onion:") {
+		return cfg.oniondial(addr.Network(), addr.String())
 	}
-	return cfg.dial(network, addr)
+	return cfg.dial(addr.Network(), addr.String())
 }
 
 // dcrdLookup returns the correct DNS lookup function to use depending on the

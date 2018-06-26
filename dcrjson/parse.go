@@ -9,8 +9,8 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	"github.com/coolsnady/hxd/blockchain/stake"
-	"github.com/coolsnady/hxd/chaincfg/chainhash"
+	"github.com/coolsnady/hcd/blockchain/stake"
+	"github.com/coolsnady/hcd/chaincfg/chainhash"
 )
 
 // EncodeConcatenatedHashes serializes a slice of chainhash.Hash values into a

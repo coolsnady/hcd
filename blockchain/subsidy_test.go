@@ -1,19 +1,20 @@
 // Copyright (c) 2013-2015 The btcsuite developers
-// Copyright (c) 2015-2018 The Decred developers
+// Copyright (c) 2015-2016 The Decred developers
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package blockchain
+package blockchain_test
 
 import (
 	"testing"
 
-	"github.com/coolsnady/hxd/chaincfg"
+	"github.com/coolsnady/hcd/blockchain"
+	"github.com/coolsnady/hcd/chaincfg"
 )
 
 func TestBlockSubsidy(t *testing.T) {
 	mainnet := &chaincfg.MainNetParams
-	subsidyCache := NewSubsidyCache(0, mainnet)
+	subsidyCache := blockchain.NewSubsidyCache(0, mainnet)
 
 	totalSubsidy := mainnet.BlockOneSubsidy()
 	for i := int64(0); ; i++ {
@@ -31,11 +32,11 @@ func TestBlockSubsidy(t *testing.T) {
 			}
 			height := i - numBlocks
 
-			work := CalcBlockWorkSubsidy(subsidyCache, height,
+			work := blockchain.CalcBlockWorkSubsidy(subsidyCache, height,
 				mainnet.TicketsPerBlock, mainnet)
-			stake := CalcStakeVoteSubsidy(subsidyCache, height,
+			stake := blockchain.CalcStakeVoteSubsidy(subsidyCache, height,
 				mainnet) * int64(mainnet.TicketsPerBlock)
-			tax := CalcBlockTaxSubsidy(subsidyCache, height,
+			tax := blockchain.CalcBlockTaxSubsidy(subsidyCache, height,
 				mainnet.TicketsPerBlock, mainnet)
 			if (work + stake + tax) == 0 {
 				break

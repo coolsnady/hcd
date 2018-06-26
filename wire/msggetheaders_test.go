@@ -12,7 +12,7 @@ import (
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/coolsnady/hxd/chaincfg/chainhash"
+	"github.com/coolsnady/hcd/chaincfg/chainhash"
 )
 
 // TestGetHeaders tests the MsgGetHeader API.
@@ -66,6 +66,8 @@ func TestGetHeaders(t *testing.T) {
 		t.Errorf("AddBlockLocatorHash: expected error on too many " +
 			"block locator hashes not received")
 	}
+
+	return
 }
 
 // TestGetHeadersWire tests the MsgGetHeaders wire encode and decode for various

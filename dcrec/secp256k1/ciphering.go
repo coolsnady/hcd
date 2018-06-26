@@ -69,7 +69,7 @@ func GenerateSharedSecret(privkey *PrivateKey, pubkey *PublicKey) []byte {
 // The primary aim is to ensure byte compatibility with Pyelliptic.  Also, refer
 // to section 5.8.1 of ANSI X9.63 for rationale on this format.
 func Encrypt(pubkey *PublicKey, in []byte) ([]byte, error) {
-	ephemeral, err := GeneratePrivateKey()
+	ephemeral, err := GeneratePrivateKey(S256())
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +86,8 @@ func Encrypt(pubkey *PublicKey, in []byte) ([]byte, error) {
 		return nil, err
 	}
 	// start writing public key
-	pbk := NewPublicKey(ephemeral.PublicKey.X, ephemeral.PublicKey.Y)
+	kc, _ := ephemeral.PublicKey.Curve.(*KoblitzCurve)
+	pbk := NewPublicKey(kc, ephemeral.PublicKey.X, ephemeral.PublicKey.Y)
 	pb := pbk.SerializeUncompressed()
 	offset := aes.BlockSize
 
@@ -157,7 +158,7 @@ func Decrypt(priv *PrivateKey, in []byte) ([]byte, error) {
 	copy(pb[1:33], xBytes)
 	copy(pb[33:], yBytes)
 	// check if (X, Y) lies on the curve and create a Pubkey if it does
-	pubkey, err := ParsePubKey(pb)
+	pubkey, err := ParsePubKey(pb, S256())
 	if err != nil {
 		return nil, err
 	}

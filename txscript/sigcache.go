@@ -9,8 +9,8 @@ import (
 	"bytes"
 	"sync"
 
-	"github.com/coolsnady/hxd/chaincfg/chainec"
-	"github.com/coolsnady/hxd/chaincfg/chainhash"
+	"github.com/coolsnady/hcd/chaincfg/chainec"
+	"github.com/coolsnady/hcd/chaincfg/chainhash"
 )
 
 // sigCacheEntry represents an entry in the SigCache. Entries within the
@@ -59,13 +59,16 @@ func NewSigCache(maxEntries uint) *SigCache {
 // unless there exists a writer, adding an entry to the SigCache.
 func (s *SigCache) Exists(sigHash chainhash.Hash, sig chainec.Signature, pubKey chainec.PublicKey) bool {
 	s.RLock()
-	entry, ok := s.validSigs[sigHash]
-	s.RUnlock()
+	defer s.RUnlock()
 
-	return ok &&
-		bytes.Equal(entry.pubKey.SerializeCompressed(),
-			pubKey.SerializeCompressed()) &&
-		bytes.Equal(entry.sig.Serialize(), sig.Serialize())
+	if entry, ok := s.validSigs[sigHash]; ok {
+		pkEqual := bytes.Equal(entry.pubKey.SerializeCompressed(),
+			pubKey.SerializeCompressed())
+		sigEqual := bytes.Equal(entry.sig.Serialize(), sig.Serialize())
+		return pkEqual && sigEqual
+	}
+
+	return false
 }
 
 // Add adds an entry for a signature over 'sigHash' under public key 'pubKey'

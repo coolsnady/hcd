@@ -13,8 +13,8 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/hxd/wire"
+	"github.com/coolsnady/hcd/chaincfg/chainhash"
+	"github.com/coolsnady/hcd/wire"
 )
 
 // These variables are the chain proof-of-work limit parameters for each default
@@ -160,19 +160,6 @@ const (
 	// VoteIDMaxBlockSize is the vote ID for the the maximum block size
 	// increase agenda used for the hard fork demo.
 	VoteIDMaxBlockSize = "maxblocksize"
-
-	// VoteIDSDiffAlgorithm is the vote ID for the new stake difficulty
-	// algorithm (aka ticket price) agenda defined by DCP0001.
-	VoteIDSDiffAlgorithm = "sdiffalgorithm"
-
-	// VoteIDLNSupport is the vote ID for determining if the developers
-	// should work on integrating Lightning Network support.
-	VoteIDLNSupport = "lnsupport"
-
-	// VoteIDLNFeatures is the vote ID for the agenda that introduces
-	// features useful for the Lightning Network (among other uses) defined
-	// by DCP0002 and DCP0003.
-	VoteIDLNFeatures = "lnfeatures"
 )
 
 // ConsensusDeployment defines details related to a specific consensus rule
@@ -199,16 +186,6 @@ type TokenPayout struct {
 	Amount  int64
 }
 
-// DNSSeed identifies a DNS seed.
-type DNSSeed struct {
-	// Host defines the hostname of the seed.
-	Host string
-
-	// HasFiltering defines whether the seed supports filtering
-	// by service flags (wire.ServiceFlag).
-	HasFiltering bool
-}
-
 // Params defines a Decred network by its parameters.  These parameters may be
 // used by Decred applications to differentiate networks as well as addresses
 // and keys for one network from those intended for use on another network.
@@ -224,7 +201,7 @@ type Params struct {
 
 	// DNSSeeds defines a list of DNS seeds for the network that are used
 	// as one method to discover peers.
-	DNSSeeds []DNSSeed
+	DNSSeeds []string
 
 	// GenesisBlock defines the first block of the chain.
 	GenesisBlock *wire.MsgBlock
@@ -359,21 +336,22 @@ type Params struct {
 	// The number of nodes to check.
 	BlockUpgradeNumToCheck uint64
 
-	// AcceptNonStdTxs is a mempool param to either accept and relay
-	// non standard txs to the network or reject them
-	AcceptNonStdTxs bool
+	// Mempool parameters
+	RelayNonStdTxs bool
 
 	// NetworkAddressPrefix is the first letter of the network
 	// for any given address encoded as a string.
 	NetworkAddressPrefix string
 
 	// Address encoding magics
-	PubKeyAddrID     [2]byte // First 2 bytes of a P2PK address
-	PubKeyHashAddrID [2]byte // First 2 bytes of a P2PKH address
-	PKHEdwardsAddrID [2]byte // First 2 bytes of an Edwards P2PKH address
-	PKHSchnorrAddrID [2]byte // First 2 bytes of a secp256k1 Schnorr P2PKH address
-	ScriptHashAddrID [2]byte // First 2 bytes of a P2SH address
-	PrivateKeyID     [2]byte // First 2 bytes of a WIF private key
+	PubKeyAddrID      [2]byte // First 2 bytes of a P2PK address
+	PubKeyBlissAddrID [2]byte // First 2 bytes of a P2PK bliss address
+	PubKeyHashAddrID  [2]byte // First 2 bytes of a P2PKH address
+	PKHEdwardsAddrID  [2]byte // First 2 bytes of an Edwards P2PKH address
+	PKHSchnorrAddrID  [2]byte // First 2 bytes of a secp256k1 Schnorr P2PKH address
+	PKHBlissAddrID    [2]byte // First 2 bytes of a Bliss P2PKH address
+	ScriptHashAddrID  [2]byte // First 2 bytes of a P2SH address
+	PrivateKeyID      [2]byte // First 2 bytes of a WIF private key
 
 	// BIP32 hierarchical deterministic extended key magics
 	HDPrivateKeyID [4]byte
@@ -472,12 +450,8 @@ type Params struct {
 var MainNetParams = Params{
 	Name:        "mainnet",
 	Net:         wire.MainNet,
-	DefaultPort: "9108",
-	DNSSeeds: []DNSSeed{
-		{"mainnet-seed.coolsnady.mindcry.org", true},
-		{"mainnet-seed.coolsnady.netpurgatory.com", true},
-		{"mainnet-seed.coolsnady.org", true},
-	},
+	DefaultPort: "14008",
+	DNSSeeds:    []string{},
 
 	// Chain parameters
 	GenesisBlock:             &genesisBlock,
@@ -489,7 +463,7 @@ var MainNetParams = Params{
 	GenerateSupported:        false,
 	MaximumBlockSizes:        []int{393216},
 	MaxTxSize:                393216,
-	TargetTimePerBlock:       time.Minute * 5,   //出块时间
+	TargetTimePerBlock:       time.Minute * 5,
 	WorkDiffAlpha:            1,
 	WorkDiffWindowSize:       144,
 	WorkDiffWindows:          20,
@@ -497,34 +471,16 @@ var MainNetParams = Params{
 	RetargetAdjustmentFactor: 4,
 
 	// Subsidy parameters.
-	BaseSubsidy:              3119582664, // 21m  //单块奖励
-	MulSubsidy:               100,				  //
-	DivSubsidy:               101,				  // Mul Div 决定衰减比例
-	SubsidyReductionInterval: 6144,				  //块衰减周期
-	WorkRewardProportion:     6,				  //pow比例
-	StakeRewardProportion:    3,				  //pos比例
-	BlockTaxProportion:       1,				  //块税比例
+	BaseSubsidy:              6368783988, // ~84m = Premine + Total subsidy
+	MulSubsidy:               100,
+	DivSubsidy:               101,
+	SubsidyReductionInterval: 6144,
+	WorkRewardProportion:     6,
+	StakeRewardProportion:    3,
+	BlockTaxProportion:       1,
 
 	// Checkpoints ordered from oldest to newest.
-	Checkpoints: []Checkpoint{
-		{440, newHashFromStr("0000000000002203eb2c95ee96906730bb56b2985e174518f90eb4db29232d93")},
-		{24480, newHashFromStr("0000000000000c9d4239c4ef7ef3fb5aaeed940244bc69c57c8c5e1f071b28a6")},
-		{48590, newHashFromStr("0000000000000d5e0de21a96d3c965f5f2db2c82612acd7389c140c9afe92ba7")},
-		{54770, newHashFromStr("00000000000009293d067b1126b7de07fc9b2b94ee50dfe0d48c239a7adb072c")},
-		{60720, newHashFromStr("0000000000000a64475d68ffb9ad89a3d147c0f5138db26b40da9d19d0004117")},
-		{65270, newHashFromStr("0000000000000021f107601962789b201f0a0cbb98ac5f8c12b93d94e795b441")},
-		{75380, newHashFromStr("0000000000000e7d13cfc85806aa720fe3670980f5b7d33253e4f41985558372")},
-		{85410, newHashFromStr("00000000000013ec928074bea6eac9754aa614c7acb20edf300f18b0cd122692")},
-		{99880, newHashFromStr("0000000000000cb2a9a9ded647b9f78aae51ace32dd8913701d420ead272913c")},
-		{123080, newHashFromStr("000000000000009ea6e02d0f0424f445ed50686f9ae4aecdf3b268e981114477")},
-		{135960, newHashFromStr("00000000000001d2f9bbca9177972c0ba45acb40836b72945a75d73b99079498")},
-		{139740, newHashFromStr("00000000000001397179ae1aff156fb1aea228938d06b83e43b78b1c44527b5b")},
-		{155900, newHashFromStr("000000000000008557e37fb05177fc5a54e693de20689753639135f85a2dcb2e")},
-		{164300, newHashFromStr("000000000000009ed067ff51cd5e15f3c786222a5183b20a991a80ce535907a9")},
-		{181020, newHashFromStr("00000000000000b77d832cb2cbed02908d69323862a53e56345400ad81a6fb8f")},
-		{189950, newHashFromStr("000000000000007341d8ae2ea7e41f25cee00e1a70a4a3dc1cb055d14ecb2e11")},
-		{214672, newHashFromStr("0000000000000021d5cbeead55cb7fd659f07e8127358929ffc34cd362209758")},
-	},
+	Checkpoints: []Checkpoint{},
 
 	// The miner confirmation window is defined as:
 	//   target proof of work timespan / target proof of work spacing
@@ -532,91 +488,7 @@ var MainNetParams = Params{
 	RuleChangeActivationMultiplier: 3,    // 75%
 	RuleChangeActivationDivisor:    4,
 	RuleChangeActivationInterval:   2016 * 4, // 4 weeks
-	Deployments: map[uint32][]ConsensusDeployment{
-		4: {{
-			Vote: Vote{
-				Id:          VoteIDSDiffAlgorithm,
-				Description: "Change stake difficulty algorithm as defined in DCP0001",
-				Mask:        0x0006, // Bits 1 and 2
-				Choices: []Choice{{
-					Id:          "abstain",
-					Description: "abstain voting for change",
-					Bits:        0x0000,
-					IsAbstain:   true,
-					IsNo:        false,
-				}, {
-					Id:          "no",
-					Description: "keep the existing algorithm",
-					Bits:        0x0002, // Bit 1
-					IsAbstain:   false,
-					IsNo:        true,
-				}, {
-					Id:          "yes",
-					Description: "change to the new algorithm",
-					Bits:        0x0004, // Bit 2
-					IsAbstain:   false,
-					IsNo:        false,
-				}},
-			},
-			StartTime:  1493164800, // Apr 26th, 2017
-			ExpireTime: 1524700800, // Apr 26th, 2018
-		}, {
-			Vote: Vote{
-				Id:          VoteIDLNSupport,
-				Description: "Request developers begin work on Lightning Network (LN) integration",
-				Mask:        0x0018, // Bits 3 and 4
-				Choices: []Choice{{
-					Id:          "abstain",
-					Description: "abstain from voting",
-					Bits:        0x0000,
-					IsAbstain:   true,
-					IsNo:        false,
-				}, {
-					Id:          "no",
-					Description: "no, do not work on integrating LN support",
-					Bits:        0x0008, // Bit 3
-					IsAbstain:   false,
-					IsNo:        true,
-				}, {
-					Id:          "yes",
-					Description: "yes, begin work on integrating LN support",
-					Bits:        0x0010, // Bit 4
-					IsAbstain:   false,
-					IsNo:        false,
-				}},
-			},
-			StartTime:  1493164800, // Apr 26th, 2017
-			ExpireTime: 1508976000, // Oct 26th, 2017
-		}},
-		5: {{
-			Vote: Vote{
-				Id:          VoteIDLNFeatures,
-				Description: "Enable features defined in DCP0002 and DCP0003 necessary to support Lightning Network (LN)",
-				Mask:        0x0006, // Bits 1 and 2
-				Choices: []Choice{{
-					Id:          "abstain",
-					Description: "abstain voting for change",
-					Bits:        0x0000,
-					IsAbstain:   true,
-					IsNo:        false,
-				}, {
-					Id:          "no",
-					Description: "keep the existing consensus rules",
-					Bits:        0x0002, // Bit 1
-					IsAbstain:   false,
-					IsNo:        true,
-				}, {
-					Id:          "yes",
-					Description: "change to the new consensus rules",
-					Bits:        0x0004, // Bit 2
-					IsAbstain:   false,
-					IsNo:        false,
-				}},
-			},
-			StartTime:  1505260800, // Sep 13th, 2017
-			ExpireTime: 1536796800, // Sep 13th, 2018
-		}},
-	},
+	Deployments:                    map[uint32][]ConsensusDeployment{},
 
 	// Enforce current block version once majority of the network has
 	// upgraded.
@@ -628,18 +500,19 @@ var MainNetParams = Params{
 	BlockRejectNumRequired:  950,
 	BlockUpgradeNumToCheck:  1000,
 
-	// AcceptNonStdTxs is a mempool param to either accept and relay
-	// non standard txs to the network or reject them
-	AcceptNonStdTxs: false,
+	// Mempool parameters
+	RelayNonStdTxs: false,
 
 	// Address encoding magics
-	NetworkAddressPrefix: "D",
-	PubKeyAddrID:         [2]byte{0x13, 0x86}, // starts with Dk
-	PubKeyHashAddrID:     [2]byte{0x07, 0x3f}, // starts with Ds
-	PKHEdwardsAddrID:     [2]byte{0x07, 0x1f}, // starts with De
-	PKHSchnorrAddrID:     [2]byte{0x07, 0x01}, // starts with DS
-	ScriptHashAddrID:     [2]byte{0x07, 0x1a}, // starts with Dc
-	PrivateKeyID:         [2]byte{0x22, 0xde}, // starts with Pm
+	NetworkAddressPrefix: "H",
+	PubKeyAddrID:         [2]byte{0x19, 0xa4}, // starts with Hk
+	PubKeyBlissAddrID:    [2]byte{0x07, 0xc3}, // starts with Hk
+	PubKeyHashAddrID:     [2]byte{0x09, 0x7f}, // starts with Hs
+	PKHEdwardsAddrID:     [2]byte{0x09, 0x60}, // starts with He
+	PKHSchnorrAddrID:     [2]byte{0x09, 0x41}, // starts with HS
+	PKHBlissAddrID:       [2]byte{0x09, 0x57}, // starts with Hb
+	ScriptHashAddrID:     [2]byte{0x09, 0x5a}, // starts with Hc
+	PrivateKeyID:         [2]byte{0x19, 0xab}, // starts with Hm
 
 	// BIP32 hierarchical deterministic extended key magics
 	HDPrivateKeyID: [4]byte{0x02, 0xfd, 0xa4, 0xe8}, // starts with dprv
@@ -682,12 +555,8 @@ var MainNetParams = Params{
 var TestNet2Params = Params{
 	Name:        "testnet2",
 	Net:         wire.TestNet2,
-	DefaultPort: "19108",
-	DNSSeeds: []DNSSeed{
-		{"192.168.11.135", true},
-		/*{"testnet-seed.coolsnady.netpurgatory.com", true},
-		{"testnet-seed.coolsnady.org", true},*/
-	},
+	DefaultPort: "12008",
+	DNSSeeds:    []string{},
 
 	// Chain parameters
 	GenesisBlock:             &testNet2GenesisBlock,
@@ -707,7 +576,7 @@ var TestNet2Params = Params{
 	RetargetAdjustmentFactor: 4,
 
 	// Subsidy parameters.
-	BaseSubsidy:              2500000000, // 25 Coin
+	BaseSubsidy:              6368783988,
 	MulSubsidy:               100,
 	DivSubsidy:               101,
 	SubsidyReductionInterval: 2048,
@@ -716,8 +585,7 @@ var TestNet2Params = Params{
 	BlockTaxProportion:       1,
 
 	// Checkpoints ordered from oldest to newest.
-	Checkpoints: []Checkpoint{
-	},
+	Checkpoints: []Checkpoint{},
 
 	// Consensus rule change deployments.
 	//
@@ -727,64 +595,7 @@ var TestNet2Params = Params{
 	RuleChangeActivationMultiplier: 3,    // 75%
 	RuleChangeActivationDivisor:    4,
 	RuleChangeActivationInterval:   5040, // 1 week
-	Deployments: map[uint32][]ConsensusDeployment{
-		5: {{
-			Vote: Vote{
-				Id:          VoteIDSDiffAlgorithm,
-				Description: "Change stake difficulty algorithm as defined in DCP0001",
-				Mask:        0x0006, // Bits 1 and 2
-				Choices: []Choice{{
-					Id:          "abstain",
-					Description: "abstain voting for change",
-					Bits:        0x0000,
-					IsAbstain:   true,
-					IsNo:        false,
-				}, {
-					Id:          "no",
-					Description: "keep the existing algorithm",
-					Bits:        0x0002, // Bit 1
-					IsAbstain:   false,
-					IsNo:        true,
-				}, {
-					Id:          "yes",
-					Description: "change to the new algorithm",
-					Bits:        0x0004, // Bit 2
-					IsAbstain:   false,
-					IsNo:        false,
-				}},
-			},
-			StartTime:  1493164800, // Apr 26th, 2017
-			ExpireTime: 1524700800, // Apr 26th, 2018
-		}},
-		6: {{
-			Vote: Vote{
-				Id:          VoteIDLNFeatures,
-				Description: "Enable features defined in DCP0002 and DCP0003 necessary to support Lightning Network (LN)",
-				Mask:        0x0006, // Bits 1 and 2
-				Choices: []Choice{{
-					Id:          "abstain",
-					Description: "abstain voting for change",
-					Bits:        0x0000,
-					IsAbstain:   true,
-					IsNo:        false,
-				}, {
-					Id:          "no",
-					Description: "keep the existing consensus rules",
-					Bits:        0x0002, // Bit 1
-					IsAbstain:   false,
-					IsNo:        true,
-				}, {
-					Id:          "yes",
-					Description: "change to the new consensus rules",
-					Bits:        0x0004, // Bit 2
-					IsAbstain:   false,
-					IsNo:        false,
-				}},
-			},
-			StartTime:  1505260800, // Sep 13th, 2017
-			ExpireTime: 1536796800, // Sep 13th, 2018
-		}},
-	},
+	Deployments:                    map[uint32][]ConsensusDeployment{},
 
 	// Enforce current block version once majority of the network has
 	// upgraded.
@@ -796,16 +607,17 @@ var TestNet2Params = Params{
 	BlockRejectNumRequired:  75,
 	BlockUpgradeNumToCheck:  100,
 
-	// AcceptNonStdTxs is a mempool param to either accept and relay
-	// non standard txs to the network or reject them
-	AcceptNonStdTxs: true,
+	// Mempool parameters
+	RelayNonStdTxs: true,
 
 	// Address encoding magics
 	NetworkAddressPrefix: "T",
 	PubKeyAddrID:         [2]byte{0x28, 0xf7}, // starts with Tk
+	PubKeyBlissAddrID:    [2]byte{0x0b, 0xf0}, // starts with Tk
 	PubKeyHashAddrID:     [2]byte{0x0f, 0x21}, // starts with Ts
 	PKHEdwardsAddrID:     [2]byte{0x0f, 0x01}, // starts with Te
 	PKHSchnorrAddrID:     [2]byte{0x0e, 0xe3}, // starts with TS
+	PKHBlissAddrID:       [2]byte{0x0e, 0xf8}, // starts with Tb
 	ScriptHashAddrID:     [2]byte{0x0e, 0xfc}, // starts with Tc
 	PrivateKeyID:         [2]byte{0x23, 0x0e}, // starts with Pt
 
@@ -832,14 +644,14 @@ var TestNet2Params = Params{
 	StakeVersionInterval:    144 * 2 * 7, // ~1 week
 	MaxFreshStakePerBlock:   20,          // 4*TicketsPerBlock
 	StakeEnabledHeight:      16 + 16,     // CoinbaseMaturity + TicketMaturity
-	StakeValidationHeight:   768,         // Arbitrary
+	StakeValidationHeight:   775,         // Arbitrary
 	StakeBaseSigScript:      []byte{0x00, 0x00},
 	StakeMajorityMultiplier: 3,
 	StakeMajorityDivisor:    4,
 
 	// Decred organization related parameters.
-	// Organization address is TccTkqj8wFqrUemmHMRSx8SYEueQYLmuuFk
-	OrganizationPkScript:        hexDecode("4fa6cbd0dbe5ec407fe4c8ad374e667771fa0d44"),
+	// Organization address is TcYvmPS6xs41gJExBaeUzT55epgwtHzjMAC
+	OrganizationPkScript:        hexDecode("5221031377eb7eb294ba8d0c81bb64a047c9b36561f3899507679b38cfcbf59e016f9421036806c694f4d5d617259b5fabaf9ad84c20c2bf57b1a171fb6048215d6d71e13e52ae"),
 	OrganizationPkScriptVersion: 0,
 	BlockOneLedger:              BlockOneLedgerTestNet2,
 }
@@ -854,8 +666,8 @@ var TestNet2Params = Params{
 var SimNetParams = Params{
 	Name:        "simnet",
 	Net:         wire.SimNet,
-	DefaultPort: "18555",
-	DNSSeeds:    []DNSSeed{}, // NOTE: There must NOT be any seeds.
+	DefaultPort: "13008",
+	DNSSeeds:    []string{}, // NOTE: There must NOT be any seeds.
 
 	// Chain parameters
 	GenesisBlock:             &simNetGenesisBlock,
@@ -866,7 +678,7 @@ var SimNetParams = Params{
 	MinDiffReductionTime:     0, // Does not apply since ReduceMinDifficulty false
 	GenerateSupported:        true,
 	MaximumBlockSizes:        []int{1000000, 1310720},
-	MaxTxSize:                1000000,
+	MaxTxSize:                2048000,
 	TargetTimePerBlock:       time.Second,
 	WorkDiffAlpha:            1,
 	WorkDiffWindowSize:       8,
@@ -923,62 +735,6 @@ var SimNetParams = Params{
 			StartTime:  0,             // Always available for vote
 			ExpireTime: math.MaxInt64, // Never expires
 		}},
-		5: {{
-			Vote: Vote{
-				Id:          VoteIDSDiffAlgorithm,
-				Description: "Change stake difficulty algorithm as defined in DCP0001",
-				Mask:        0x0006, // Bits 1 and 2
-				Choices: []Choice{{
-					Id:          "abstain",
-					Description: "abstain voting for change",
-					Bits:        0x0000,
-					IsAbstain:   true,
-					IsNo:        false,
-				}, {
-					Id:          "no",
-					Description: "keep the existing algorithm",
-					Bits:        0x0002, // Bit 1
-					IsAbstain:   false,
-					IsNo:        true,
-				}, {
-					Id:          "yes",
-					Description: "change to the new algorithm",
-					Bits:        0x0004, // Bit 2
-					IsAbstain:   false,
-					IsNo:        false,
-				}},
-			},
-			StartTime:  0,             // Always available for vote
-			ExpireTime: math.MaxInt64, // Never expires
-		}},
-		6: {{
-			Vote: Vote{
-				Id:          VoteIDLNFeatures,
-				Description: "Enable features defined in DCP0002 and DCP0003 necessary to support Lightning Network (LN)",
-				Mask:        0x0006, // Bits 1 and 2
-				Choices: []Choice{{
-					Id:          "abstain",
-					Description: "abstain voting for change",
-					Bits:        0x0000,
-					IsAbstain:   true,
-					IsNo:        false,
-				}, {
-					Id:          "no",
-					Description: "keep the existing consensus rules",
-					Bits:        0x0002, // Bit 1
-					IsAbstain:   false,
-					IsNo:        true,
-				}, {
-					Id:          "yes",
-					Description: "change to the new consensus rules",
-					Bits:        0x0004, // Bit 2
-					IsAbstain:   false,
-					IsNo:        false,
-				}},
-			},
-			StartTime:  0,             // Always available for vote
-			ExpireTime: math.MaxInt64, // Never expires
-		}},
 	},
 
 	// Enforce current block version once majority of the network has
@@ -991,16 +747,17 @@ var SimNetParams = Params{
 	BlockRejectNumRequired:  75,
 	BlockUpgradeNumToCheck:  100,
 
-	// AcceptNonStdTxs is a mempool param to either accept and relay
-	// non standard txs to the network or reject them
-	AcceptNonStdTxs: true,
+	// Mempool parameters
+	RelayNonStdTxs: true,
 
 	// Address encoding magics
 	NetworkAddressPrefix: "S",
 	PubKeyAddrID:         [2]byte{0x27, 0x6f}, // starts with Sk
+	PubKeyBlissAddrID:    [2]byte{0x0b, 0xef}, // starts with Sk
 	PubKeyHashAddrID:     [2]byte{0x0e, 0x91}, // starts with Ss
 	PKHEdwardsAddrID:     [2]byte{0x0e, 0x71}, // starts with Se
 	PKHSchnorrAddrID:     [2]byte{0x0e, 0x53}, // starts with SS
+	PKHBlissAddrID:       [2]byte{0x0e, 0x68}, // starts with Sb
 	ScriptHashAddrID:     [2]byte{0x0e, 0x6c}, // starts with Sc
 	PrivateKeyID:         [2]byte{0x23, 0x07}, // starts with Ps
 
@@ -1071,7 +828,7 @@ var (
 	// ErrDuplicateNet describes an error where the parameters for a Decred
 	// network could not be set due to the network already being a standard
 	// network or previously-registered into this package.
-	ErrDuplicateNet = errors.New("duplicate Decred network")
+	ErrDuplicateNet = errors.New("duplicate Hx network")
 
 	// ErrUnknownHDKeyID describes an error where the provided id which
 	// is intended to identify the network for a hierarchical deterministic
@@ -1088,11 +845,6 @@ var (
 	scriptHashAddrIDs = make(map[[2]byte]struct{})
 	hdPrivToPubKeyIDs = make(map[[4]byte][]byte)
 )
-
-// String returns the hostname of the DNS seed in human-readable form.
-func (d DNSSeed) String() string {
-	return d.Host
-}
 
 // Register registers the network parameters for a Decred network.  This may
 // error with ErrDuplicateNet if the network is already registered (either

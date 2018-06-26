@@ -9,8 +9,8 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/coolsnady/hxd/dcrjson"
-	"github.com/coolsnady/hxd/rpcclient"
+	"github.com/coolsnady/hcd/dcrjson"
+	hcrpcclient "github.com/coolsnady/hcrpcclient"
 )
 
 // JoinType is an enum representing a particular type of "node join". A node
@@ -115,7 +115,7 @@ func ConnectNode(from *Harness, to *Harness) error {
 	numPeers := len(peerInfo)
 
 	targetAddr := to.node.config.listen
-	if err := from.Node.AddNode(targetAddr, rpcclient.ANAdd); err != nil {
+	if err := from.Node.AddNode(targetAddr, hcrpcclient.ANAdd); err != nil {
 		return err
 	}
 

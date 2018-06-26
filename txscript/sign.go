@@ -9,10 +9,11 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/coolsnady/hxd/chaincfg"
-	"github.com/coolsnady/hxd/chaincfg/chainec"
-	"github.com/coolsnady/hxd/dcrutil"
-	"github.com/coolsnady/hxd/wire"
+	"github.com/coolsnady/hcd/chaincfg"
+	"github.com/coolsnady/hcd/chaincfg/chainec"
+	"github.com/coolsnady/hcd/wire"
+	dcrutil "github.com/coolsnady/hcutil"
+	bs "github.com/coolsnady/hcd/crypto/bliss"
 )
 
 // RawTxInSignature returns the serialized ECDSA signature for the input idx of
@@ -67,6 +68,11 @@ func RawTxInSignatureAlt(tx *wire.MsgTx, idx int, subScript []byte,
 			return nil, fmt.Errorf("cannot sign tx input: %s", err)
 		}
 		sig = chainec.SecSchnorr.NewSignature(r, s)
+	case bliss:
+		sig, err = bs.Bliss.Sign(key.(bs.PrivateKey), hash)
+		if err != nil {
+			return nil, fmt.Errorf("cannot sign tx input: %s", err)
+		}
 	default:
 		return nil, fmt.Errorf("unknown alt sig type %v", sigType)
 	}
@@ -127,6 +133,8 @@ func SignatureScriptAlt(tx *wire.MsgTx, idx int, subscript []byte,
 		pub = chainec.Edwards.NewPublicKey(pubx, puby)
 	case secSchnorr:
 		pub = chainec.SecSchnorr.NewPublicKey(pubx, puby)
+	case bliss:
+		pub = privKey.(bs.PrivateKey).PublicKey()
 	}
 	pkData := pub.Serialize()
 
@@ -380,9 +388,8 @@ func mergeScripts(chainParams *chaincfg.Params, tx *wire.MsgTx, idx int,
 		// made it.
 		script := sigPops[len(sigPops)-1].data
 
-		// We already know this information somewhere up the stack,
-		// therefore the error is ignored.
-		class, addresses, nrequired, _ :=
+		// We already know this information somewhere up the stack.
+		class, addresses, nrequired, err :=
 			ExtractPkScriptAddrs(DefaultScriptVersion, script, chainParams)
 
 		// regenerate scripts.
