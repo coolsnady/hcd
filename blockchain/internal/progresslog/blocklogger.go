@@ -12,7 +12,7 @@ import (
 	"github.com/btcsuite/btclog"
 
 	"github.com/coolsnady/hcd/wire"
-	dcrutil "github.com/coolsnady/hcutil"
+	"github.com/coolsnady/hcutil"
 )
 
 // BlockProgressLogger provides periodic logging for other services in order
@@ -47,8 +47,8 @@ func (b *BlockProgressLogger) LogBlockHeight(block, parent *wire.MsgBlock) {
 	b.Lock()
 	defer b.Unlock()
 	b.receivedLogBlocks++
-	regularTxTreeValid := dcrutil.IsFlagSet16(block.Header.VoteBits,
-		dcrutil.BlockValid)
+	regularTxTreeValid := hcutil.IsFlagSet16(block.Header.VoteBits,
+		hcutil.BlockValid)
 	if regularTxTreeValid {
 		b.receivedLogTx += int64(len(parent.Transactions))
 	}

@@ -20,7 +20,7 @@ import (
 	"github.com/coolsnady/hcd/chaincfg/chainhash"
 	"github.com/coolsnady/hcd/wire"
 	hcrpcclient "github.com/coolsnady/hcrpcclient"
-	dcrutil "github.com/coolsnady/hcutil"
+	"github.com/coolsnady/hcutil"
 )
 
 const (
@@ -207,7 +207,7 @@ func (h *Harness) SetUp(createTestChain bool, numMatureOutputs uint32) error {
 
 	// Filter transactions that pay to the coinbase associated with the
 	// wallet.
-	filterAddrs := []dcrutil.Address{h.wallet.coinbaseAddr}
+	filterAddrs := []hcutil.Address{h.wallet.coinbaseAddr}
 	if err := h.Node.LoadTxFilter(true, filterAddrs, nil); err != nil {
 		return err
 	}
@@ -306,7 +306,7 @@ func (h *Harness) connectRPCClient() error {
 // wallet.
 //
 // This function is safe for concurrent access.
-func (h *Harness) NewAddress() (dcrutil.Address, error) {
+func (h *Harness) NewAddress() (hcutil.Address, error) {
 	return h.wallet.NewAddress()
 }
 
@@ -314,7 +314,7 @@ func (h *Harness) NewAddress() (dcrutil.Address, error) {
 // wallet.
 //
 // This function is safe for concurrent access.
-func (h *Harness) ConfirmedBalance() dcrutil.Amount {
+func (h *Harness) ConfirmedBalance() hcutil.Amount {
 	return h.wallet.ConfirmedBalance()
 }
 
@@ -323,7 +323,7 @@ func (h *Harness) ConfirmedBalance() dcrutil.Amount {
 // according to targetOutputs.
 //
 // This function is safe for concurrent access.
-func (h *Harness) SendOutputs(targetOutputs []*wire.TxOut, feeRate dcrutil.Amount) (*chainhash.Hash, error) {
+func (h *Harness) SendOutputs(targetOutputs []*wire.TxOut, feeRate hcutil.Amount) (*chainhash.Hash, error) {
 	return h.wallet.SendOutputs(targetOutputs, feeRate)
 }
 
@@ -337,7 +337,7 @@ func (h *Harness) SendOutputs(targetOutputs []*wire.TxOut, feeRate dcrutil.Amoun
 // returned to the pool of spendable outputs.
 //
 // This function is safe for concurrent access.
-func (h *Harness) CreateTransaction(targetOutputs []*wire.TxOut, feeRate dcrutil.Amount) (*wire.MsgTx, error) {
+func (h *Harness) CreateTransaction(targetOutputs []*wire.TxOut, feeRate hcutil.Amount) (*wire.MsgTx, error) {
 	return h.wallet.CreateTransaction(targetOutputs, feeRate)
 }
 

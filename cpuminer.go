@@ -17,7 +17,7 @@ import (
 	"github.com/coolsnady/hcd/chaincfg/chainhash"
 	"github.com/coolsnady/hcd/mining"
 	"github.com/coolsnady/hcd/wire"
-	dcrutil "github.com/coolsnady/hcutil"
+	"github.com/coolsnady/hcutil"
 )
 
 const (
@@ -129,7 +129,7 @@ out:
 
 // submitBlock submits the passed block to network after ensuring it passes all
 // of the consensus validation rules.
-func (m *CPUMiner) submitBlock(block *dcrutil.Block) bool {
+func (m *CPUMiner) submitBlock(block *hcutil.Block) bool {
 	m.submitBlockLock.Lock()
 	defer m.submitBlockLock.Unlock()
 
@@ -174,7 +174,7 @@ func (m *CPUMiner) submitBlock(block *dcrutil.Block) bool {
 	}
 	minrLog.Infof("Block submitted via CPU miner accepted (hash %s, "+
 		"height %v, amount %v)", block.Hash(), block.Height(),
-		dcrutil.Amount(coinbaseTxGenerated))
+		hcutil.Amount(coinbaseTxGenerated))
 	return true
 }
 
@@ -364,7 +364,7 @@ out:
 		// a new block template can be generated.  When the return is
 		// true a solution was found, so submit the solved block.
 		if m.solveBlock(template.Block, ticker, quit) {
-			block := dcrutil.NewBlock(template.Block)
+			block := hcutil.NewBlock(template.Block)
 			m.submitBlock(block)
 			m.minedOnParents[template.Block.Header.PrevBlock]++
 		}
@@ -632,7 +632,7 @@ func (m *CPUMiner) GenerateNBlocks(n uint32) ([]*chainhash.Hash, error) {
 		// a new block template can be generated.  When the return is
 		// true a solution was found, so submit the solved block.
 		if m.solveBlock(template.Block, ticker, nil) {
-			block := dcrutil.NewBlock(template.Block)
+			block := hcutil.NewBlock(template.Block)
 			m.submitBlock(block)
 			blockHashes[i] = block.Hash()
 			i++

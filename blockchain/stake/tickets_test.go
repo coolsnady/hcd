@@ -19,7 +19,7 @@ import (
 	"github.com/coolsnady/hcd/chaincfg/chainhash"
 	"github.com/coolsnady/hcd/database"
 	_ "github.com/coolsnady/hcd/database/ffldb"
-	dcrutil "github.com/coolsnady/hcutil"
+	"github.com/coolsnady/hcutil"
 )
 
 const (
@@ -70,7 +70,7 @@ func copyNode(n *Node) *Node {
 }
 
 // ticketsInBlock finds all the new tickets in the block.
-func ticketsInBlock(bl *dcrutil.Block) []chainhash.Hash {
+func ticketsInBlock(bl *hcutil.Block) []chainhash.Hash {
 	tickets := make([]chainhash.Hash, 0)
 	for _, stx := range bl.STransactions() {
 		if DetermineTxType(stx.MsgTx()) == TxTypeSStx {
@@ -83,7 +83,7 @@ func ticketsInBlock(bl *dcrutil.Block) []chainhash.Hash {
 }
 
 // ticketsSpentInBlock finds all the tickets spent in the block.
-func ticketsSpentInBlock(bl *dcrutil.Block) []chainhash.Hash {
+func ticketsSpentInBlock(bl *hcutil.Block) []chainhash.Hash {
 	tickets := make([]chainhash.Hash, 0)
 	for _, stx := range bl.STransactions() {
 		if DetermineTxType(stx.MsgTx()) == TxTypeSSGen {
@@ -95,7 +95,7 @@ func ticketsSpentInBlock(bl *dcrutil.Block) []chainhash.Hash {
 }
 
 // votesInBlock finds all the votes in the block.
-func votesInBlock(bl *dcrutil.Block) []chainhash.Hash {
+func votesInBlock(bl *hcutil.Block) []chainhash.Hash {
 	votes := make([]chainhash.Hash, 0)
 	for _, stx := range bl.STransactions() {
 		if DetermineTxType(stx.MsgTx()) == TxTypeSSGen {
@@ -108,7 +108,7 @@ func votesInBlock(bl *dcrutil.Block) []chainhash.Hash {
 }
 
 // revokedTicketsInBlock finds all the revoked tickets in the block.
-func revokedTicketsInBlock(bl *dcrutil.Block) []chainhash.Hash {
+func revokedTicketsInBlock(bl *hcutil.Block) []chainhash.Hash {
 	tickets := make([]chainhash.Hash, 0)
 	for _, stx := range bl.STransactions() {
 		if DetermineTxType(stx.MsgTx()) == TxTypeSSRtx {
@@ -267,9 +267,9 @@ func TestTicketDBLongChain(t *testing.T) {
 	if err := bcDecoder.Decode(&testBlockchainBytes); err != nil {
 		t.Errorf("error decoding test blockchain")
 	}
-	testBlockchain := make(map[int64]*dcrutil.Block, len(testBlockchainBytes))
+	testBlockchain := make(map[int64]*hcutil.Block, len(testBlockchainBytes))
 	for k, v := range testBlockchainBytes {
-		bl, err := dcrutil.NewBlockFromBytes(v)
+		bl, err := hcutil.NewBlockFromBytes(v)
 		if err != nil {
 			t.Fatalf("couldn't decode block")
 		}
@@ -586,9 +586,9 @@ func TestTicketDBGeneral(t *testing.T) {
 	if err := bcDecoder.Decode(&testBlockchainBytes); err != nil {
 		t.Errorf("error decoding test blockchain")
 	}
-	testBlockchain := make(map[int64]*dcrutil.Block, len(testBlockchainBytes))
+	testBlockchain := make(map[int64]*hcutil.Block, len(testBlockchainBytes))
 	for k, v := range testBlockchainBytes {
-		bl, err := dcrutil.NewBlockFromBytes(v)
+		bl, err := hcutil.NewBlockFromBytes(v)
 		if err != nil {
 			t.Fatalf("couldn't decode block")
 		}

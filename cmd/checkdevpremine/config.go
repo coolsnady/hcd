@@ -11,14 +11,14 @@ import (
 	"path/filepath"
 	"strings"
 
-	dcrutil "github.com/coolsnady/hcutil"
+	"github.com/coolsnady/hcutil"
 
 	flags "github.com/jessevdk/go-flags"
 )
 
 var (
-	dcrdHomeDir        = dcrutil.AppDataDir("hcd", false)
-	appHomeDir         = dcrutil.AppDataDir("checkdevpremine", false)
+	dcrdHomeDir        = hcutil.AppDataDir("hcd", false)
+	appHomeDir         = hcutil.AppDataDir("checkdevpremine", false)
 	defaultConfigFile  = filepath.Join(appHomeDir, "checkdevpremine.conf")
 	defaultRPCServer   = "localhost"
 	defaultRPCCertFile = filepath.Join(dcrdHomeDir, "rpc.cert")

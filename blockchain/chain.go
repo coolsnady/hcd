@@ -19,7 +19,7 @@ import (
 	"github.com/coolsnady/hcd/database"
 	"github.com/coolsnady/hcd/txscript"
 	"github.com/coolsnady/hcd/wire"
-	dcrutil "github.com/coolsnady/hcutil"
+     "github.com/coolsnady/hcutil"
 )
 
 const (
@@ -128,7 +128,7 @@ func newBlockNode(blockHeader *wire.BlockHeader, ticketsSpent []chainhash.Hash, 
 // is a normal block plus an expiration time to prevent caching the orphan
 // forever.
 type orphanBlock struct {
-	block      *dcrutil.Block
+	block      *hcutil.Block
 	expiration time.Time
 }
 
@@ -233,18 +233,18 @@ type BlockChain struct {
 	prevOrphans    map[chainhash.Hash][]*orphanBlock
 	oldestOrphan   *orphanBlock
 	blockCacheLock sync.RWMutex
-	blockCache     map[chainhash.Hash]*dcrutil.Block
+	blockCache     map[chainhash.Hash]*hcutil.Block
 
 	// The block cache for mainchain blocks, to facilitate faster
 	// reorganizations.
 	mainchainBlockCacheLock sync.RWMutex
-	mainchainBlockCache     map[chainhash.Hash]*dcrutil.Block
+	mainchainBlockCache     map[chainhash.Hash]*hcutil.Block
 	mainchainBlockCacheSize int
 
 	// These fields are related to checkpoint handling.  They are protected
 	// by the chain lock.
 	nextCheckpoint  *chaincfg.Checkpoint
-	checkpointBlock *dcrutil.Block
+	checkpointBlock *hcutil.Block
 
 	// The state is used as a fairly efficient way to cache information
 	// about the current best chain state that is returned to callers when
@@ -294,7 +294,7 @@ const (
 	stakeMajorityCacheKeySize = 4 + chainhash.HashSize
 )
 
-// StakeVersions is a condensed form of a dcrutil.Block that is used to prevent
+// StakeVersions is a condensed form of a hcutil.Block that is used to prevent
 // using gigabytes of memory.
 type StakeVersions struct {
 	Hash         chainhash.Hash
@@ -527,7 +527,7 @@ func (b *BlockChain) removeOrphanBlock(orphan *orphanBlock) {
 // It also imposes a maximum limit on the number of outstanding orphan
 // blocks and will remove the oldest received orphan block if the limit is
 // exceeded.
-func (b *BlockChain) addOrphanBlock(block *dcrutil.Block) {
+func (b *BlockChain) addOrphanBlock(block *hcutil.Block) {
 	// Remove expired orphan blocks.
 	for _, oBlock := range b.orphans {
 		if time.Now().After(oBlock.expiration) {
@@ -780,7 +780,7 @@ func (b *BlockChain) findNode(nodeHash *chainhash.Hash, searchDepth int) (*block
 // chain.
 //
 // This function is safe for concurrent access.
-func (b *BlockChain) fetchMainChainBlockByHash(hash *chainhash.Hash) (*dcrutil.Block, error) {
+func (b *BlockChain) fetchMainChainBlockByHash(hash *chainhash.Hash) (*hcutil.Block, error) {
 	b.mainchainBlockCacheLock.RLock()
 	block, ok := b.mainchainBlockCache[*hash]
 	b.mainchainBlockCacheLock.RUnlock()
@@ -801,7 +801,7 @@ func (b *BlockChain) fetchMainChainBlockByHash(hash *chainhash.Hash) (*dcrutil.B
 // such as the internal caches and the database.
 //
 // This function is safe for concurrent access.
-func (b *BlockChain) fetchBlockByHash(hash *chainhash.Hash) (*dcrutil.Block, error) {
+func (b *BlockChain) fetchBlockByHash(hash *chainhash.Hash) (*hcutil.Block, error) {
 	// Check side chain block cache.
 	b.blockCacheLock.RLock()
 	block, existsSidechain := b.blockCache[*hash]
@@ -835,7 +835,7 @@ func (b *BlockChain) fetchBlockByHash(hash *chainhash.Hash) (*dcrutil.Block, err
 			return err
 		}
 
-		block, err = dcrutil.NewBlockFromBytes(blockBytes)
+		block, err = hcutil.NewBlockFromBytes(blockBytes)
 		return err
 	})
 	if err == nil && block != nil {
@@ -852,7 +852,7 @@ func (b *BlockChain) fetchBlockByHash(hash *chainhash.Hash) (*dcrutil.Block, err
 // that are not part of the main chain (if they are known).
 //
 // This function is safe for concurrent access.
-func (b *BlockChain) FetchBlockByHash(hash *chainhash.Hash) (*dcrutil.Block, error) {
+func (b *BlockChain) FetchBlockByHash(hash *chainhash.Hash) (*hcutil.Block, error) {
 	return b.fetchBlockByHash(hash)
 }
 
@@ -863,7 +863,7 @@ func (b *BlockChain) FetchBlockByHash(hash *chainhash.Hash) (*dcrutil.Block, err
 // it.  The returned node will be nil if the genesis block is passed.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (b *BlockChain) getPrevNodeFromBlock(block *dcrutil.Block) (*blockNode,
+func (b *BlockChain) getPrevNodeFromBlock(block *hcutil.Block) (*blockNode,
 	error) {
 	// Genesis block.
 	prevHash := &block.MsgBlock().Header.PrevBlock
@@ -952,7 +952,7 @@ func (b *BlockChain) ancestorNode(node *blockNode, height int64) (*blockNode, er
 
 // GetTopBlock returns the current block at HEAD on the blockchain.  Needed
 // for mining in the daemon.
-func (b *BlockChain) GetTopBlock() (*dcrutil.Block, error) {
+func (b *BlockChain) GetTopBlock() (*hcutil.Block, error) {
 	return b.fetchMainChainBlockByHash(&b.bestNode.hash)
 }
 
@@ -1154,7 +1154,7 @@ func (b *BlockChain) getReorganizeNodes(node *blockNode) (*list.List, *list.List
 
 // pushMainChainBlockCache pushes a block onto the main chain block cache,
 // and removes any old blocks from the cache that might be present.
-func (b *BlockChain) pushMainChainBlockCache(block *dcrutil.Block) {
+func (b *BlockChain) pushMainChainBlockCache(block *hcutil.Block) {
 	curHeight := block.Height()
 	curHash := block.Hash()
 	b.mainchainBlockCacheLock.Lock()
@@ -1169,7 +1169,7 @@ func (b *BlockChain) pushMainChainBlockCache(block *dcrutil.Block) {
 
 // dbMaybeStoreBlock stores the provided block in the database if it's not
 // already there.
-func dbMaybeStoreBlock(dbTx database.Tx, block *dcrutil.Block) error {
+func dbMaybeStoreBlock(dbTx database.Tx, block *hcutil.Block) error {
 	hasBlock, err := dbTx.HasBlock(block.Hash())
 	if err != nil {
 		return err
@@ -1192,7 +1192,7 @@ func dbMaybeStoreBlock(dbTx database.Tx, block *dcrutil.Block) error {
 // it would be inefficient to repeat it.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (b *BlockChain) connectBlock(node *blockNode, block *dcrutil.Block, view *UtxoViewpoint, stxos []spentTxOut) error {
+func (b *BlockChain) connectBlock(node *blockNode, block *hcutil.Block, view *UtxoViewpoint, stxos []spentTxOut) error {
 	// Make sure it's extending the end of the best chain.
 	prevHash := block.MsgBlock().Header.PrevBlock
 	if prevHash != b.bestNode.hash {
@@ -1353,7 +1353,7 @@ func (b *BlockChain) connectBlock(node *blockNode, block *dcrutil.Block, view *U
 	}
 
 	// Assemble the current block and the parent into a slice.
-	blockAndParent := []*dcrutil.Block{block, parent}
+	blockAndParent := []*hcutil.Block{block, parent}
 
 	// Notify the caller that the block was connected to the main chain.
 	// The caller would typically want to react with actions such as
@@ -1378,7 +1378,7 @@ func (b *BlockChain) connectBlock(node *blockNode, block *dcrutil.Block, view *U
 }
 
 // dropMainChainBlockCache drops a block from the main chain block cache.
-func (b *BlockChain) dropMainChainBlockCache(block *dcrutil.Block) {
+func (b *BlockChain) dropMainChainBlockCache(block *hcutil.Block) {
 	curHash := block.Hash()
 	b.mainchainBlockCacheLock.Lock()
 	delete(b.mainchainBlockCache, *curHash)
@@ -1389,7 +1389,7 @@ func (b *BlockChain) dropMainChainBlockCache(block *dcrutil.Block) {
 // the main (best) chain.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (b *BlockChain) disconnectBlock(node *blockNode, block *dcrutil.Block, view *UtxoViewpoint) error {
+func (b *BlockChain) disconnectBlock(node *blockNode, block *hcutil.Block, view *UtxoViewpoint) error {
 	// Make sure the node being disconnected is the end of the best chain.
 	if node.hash != b.bestNode.hash {
 		return AssertError("disconnectBlock must be called with the " +
@@ -1522,7 +1522,7 @@ func (b *BlockChain) disconnectBlock(node *blockNode, block *dcrutil.Block, view
 	b.stateLock.Unlock()
 
 	// Assemble the current block and the parent into a slice.
-	blockAndParent := []*dcrutil.Block{block, parent}
+	blockAndParent := []*hcutil.Block{block, parent}
 
 	// Notify the caller that the block was disconnected from the main
 	// chain.  The caller would typically want to react with actions such as
@@ -1537,12 +1537,12 @@ func (b *BlockChain) disconnectBlock(node *blockNode, block *dcrutil.Block, view
 }
 
 // countSpentOutputs returns the number of utxos the passed block spends.
-func countSpentOutputs(block *dcrutil.Block, parent *dcrutil.Block) int {
+func countSpentOutputs(block *hcutil.Block, parent *hcutil.Block) int {
 	// We need to skip the regular tx tree if it's not valid.
 	// We also exclude the coinbase transaction since it can't
 	// spend anything.
-	regularTxTreeValid := dcrutil.IsFlagSet16(block.MsgBlock().Header.VoteBits,
-		dcrutil.BlockValid)
+	regularTxTreeValid := hcutil.IsFlagSet16(block.MsgBlock().Header.VoteBits,
+		hcutil.BlockValid)
 	var numSpent int
 	if regularTxTreeValid {
 		for _, tx := range parent.Transactions()[1:] {
@@ -1563,11 +1563,11 @@ func countSpentOutputs(block *dcrutil.Block, parent *dcrutil.Block) int {
 
 // countNumberOfTransactions returns the number of transactions inserted by
 // adding the block.
-func countNumberOfTransactions(block, parent *dcrutil.Block) uint64 {
+func countNumberOfTransactions(block, parent *hcutil.Block) uint64 {
 	var numTxns uint64
 
-	regularTxTreeValid := dcrutil.IsFlagSet16(block.MsgBlock().Header.VoteBits,
-		dcrutil.BlockValid)
+	regularTxTreeValid := hcutil.IsFlagSet16(block.MsgBlock().Header.VoteBits,
+		hcutil.BlockValid)
 	if regularTxTreeValid {
 		numTxns += uint64(len(parent.Transactions()))
 	}
@@ -1612,7 +1612,7 @@ func (b *BlockChain) reorganizeChain(detachNodes, attachNodes *list.List,
 	// be loaded from the database during the reorg check phase below and
 	// then they are needed again when doing the actual database updates.
 	// Rather than doing two loads, cache the loaded data into these slices.
-	detachBlocks := make([]*dcrutil.Block, 0, detachNodes.Len())
+	detachBlocks := make([]*hcutil.Block, 0, detachNodes.Len())
 	detachSpentTxOuts := make([][]spentTxOut, 0, detachNodes.Len())
 
 	// Disconnect all of the blocks back to the point of the fork.  This
@@ -1625,8 +1625,8 @@ func (b *BlockChain) reorganizeChain(detachNodes, attachNodes *list.List,
 	i := 0
 	for e := detachNodes.Front(); e != nil; e = e.Next() {
 		n := e.Value.(*blockNode)
-		var block *dcrutil.Block
-		var parent *dcrutil.Block
+		var block *hcutil.Block
+		var parent *hcutil.Block
 		var err error
 		block, err = b.fetchBlockByHash(&n.hash)
 		if err != nil {
@@ -1924,7 +1924,7 @@ func (b *BlockChain) ForceHeadReorganization(formerBest chainhash.Hash, newBest 
 //    modifying the state are avoided.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (b *BlockChain) connectBestChain(node *blockNode, block *dcrutil.Block, flags BehaviorFlags) (bool, error) {
+func (b *BlockChain) connectBestChain(node *blockNode, block *hcutil.Block, flags BehaviorFlags) (bool, error) {
 	fastAdd := flags&BFFastAdd == BFFastAdd
 	dryRun := flags&BFDryRun == BFDryRun
 
@@ -1984,8 +1984,8 @@ func (b *BlockChain) connectBestChain(node *blockNode, block *dcrutil.Block, fla
 		}
 
 		validateStr := "validating"
-		txTreeRegularValid := dcrutil.IsFlagSet16(node.header.VoteBits,
-			dcrutil.BlockValid)
+		txTreeRegularValid := hcutil.IsFlagSet16(node.header.VoteBits,
+			hcutil.BlockValid)
 		if !txTreeRegularValid {
 			validateStr = "invalidating"
 		}
@@ -2200,11 +2200,11 @@ type IndexManager interface {
 
 	// ConnectBlock is invoked when a new block has been connected to the
 	// main chain.
-	ConnectBlock(database.Tx, *dcrutil.Block, *dcrutil.Block, *UtxoViewpoint) error
+	ConnectBlock(database.Tx, *hcutil.Block, *hcutil.Block, *UtxoViewpoint) error
 
 	// DisconnectBlock is invoked when a block has been disconnected from
 	// the main chain.
-	DisconnectBlock(database.Tx, *dcrutil.Block, *dcrutil.Block, *UtxoViewpoint) error
+	DisconnectBlock(database.Tx, *hcutil.Block, *hcutil.Block, *UtxoViewpoint) error
 }
 
 // Config is a descriptor which specifies the blockchain instance configuration.
@@ -2289,8 +2289,8 @@ func New(config *Config) (*BlockChain, error) {
 		depNodes:                      make(map[chainhash.Hash][]*blockNode),
 		orphans:                       make(map[chainhash.Hash]*orphanBlock),
 		prevOrphans:                   make(map[chainhash.Hash][]*orphanBlock),
-		blockCache:                    make(map[chainhash.Hash]*dcrutil.Block),
-		mainchainBlockCache:           make(map[chainhash.Hash]*dcrutil.Block),
+		blockCache:                    make(map[chainhash.Hash]*hcutil.Block),
+		mainchainBlockCache:           make(map[chainhash.Hash]*hcutil.Block),
 		mainchainBlockCacheSize:       mainchainBlockCacheSize,
 		deploymentCaches:              newThresholdCaches(params),
 		isVoterMajorityVersionCache:   make(map[[stakeMajorityCacheKeySize]byte]bool),

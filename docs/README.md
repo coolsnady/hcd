@@ -23,7 +23,7 @@
 <a name="About" />
 
 ### 1. About
-hcd is a full node hx implementation written in [Go](http://golang.org),
+hcd is a full node hc implementation written in [Go](http://golang.org),
 licensed under the [copyfree](http://www.copyfree.org) ISC License.
 
 This project is currently under active development and is in a Beta state. It is
@@ -184,7 +184,7 @@ information.
 * The Hx-related Go Packages:
     * [hcrpcclient](https://github.com/coolsnady/hcrpcclient) - Implements a
 	  robust and easy to use Websocket-enabled Hx JSON-RPC client
-    * [hxjson](https://github.com/coolsnady/hxjson) - Provides an extensive API
+    * [dcrjson](https://github.com/coolsnady/dcrjson) - Provides an extensive API
 	  for the underlying JSON-RPC command and return values
     * [wire](https://github.com/coolsnady/hcd/tree/master/wire) - Implements the
 	  Hx wire protocol

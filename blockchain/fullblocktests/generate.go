@@ -20,7 +20,7 @@ import (
 	"github.com/coolsnady/hcd/dcrec/secp256k1"
 	"github.com/coolsnady/hcd/txscript"
 	"github.com/coolsnady/hcd/wire"
-	dcrutil "github.com/coolsnady/hcutil"
+	"github.com/coolsnady/hcutil"
 )
 
 const (
@@ -45,7 +45,7 @@ var (
 
 	// lowFee is a single atom and exists to make the test code more
 	// readable.
-	lowFee = dcrutil.Amount(1)
+	lowFee = hcutil.Amount(1)
 )
 
 // TestInstance is an interface that describes a specific test instance returned
@@ -144,7 +144,7 @@ func (b RejectedNonCanonicalBlock) FullBlockTestInstance() {}
 // payToScriptHashScript returns a standard pay-to-script-hash for the provided
 // redeem script.
 func payToScriptHashScript(redeemScript []byte) []byte {
-	redeemScriptHash := dcrutil.Hash160(redeemScript)
+	redeemScriptHash := hcutil.Hash160(redeemScript)
 	script, err := txscript.NewScriptBuilder().
 		AddOp(txscript.OP_HASH160).AddData(redeemScriptHash).
 		AddOp(txscript.OP_EQUAL).Script()
@@ -202,7 +202,7 @@ func standardCoinbaseOpReturnScript(blockHeight uint32) []byte {
 // additionalCoinbasePoW returns a function that itself takes a block and
 // modifies it by adding the provided amount to the first proof-of-work coinbase
 // subsidy.
-func additionalCoinbasePoW(amount dcrutil.Amount) func(*wire.MsgBlock) {
+func additionalCoinbasePoW(amount hcutil.Amount) func(*wire.MsgBlock) {
 	return func(b *wire.MsgBlock) {
 		// Increase the first proof-of-work coinbase subsidy by the
 		// provided amount.
@@ -212,7 +212,7 @@ func additionalCoinbasePoW(amount dcrutil.Amount) func(*wire.MsgBlock) {
 
 // additionalCoinbaseDev returns a function that itself takes a block and
 // modifies it by adding the provided amount to the coinbase developer subsidy.
-func additionalCoinbaseDev(amount dcrutil.Amount) func(*wire.MsgBlock) {
+func additionalCoinbaseDev(amount hcutil.Amount) func(*wire.MsgBlock) {
 	return func(b *wire.MsgBlock) {
 		// Increase the first proof-of-work coinbase subsidy by the
 		// provided amount.
@@ -225,7 +225,7 @@ func additionalCoinbaseDev(amount dcrutil.Amount) func(*wire.MsgBlock) {
 //
 // NOTE: The coinbase value is NOT updated to reflect the additional fee.  Use
 // 'additionalCoinbasePoW' for that purpose.
-func additionalSpendFee(fee dcrutil.Amount) func(*wire.MsgBlock) {
+func additionalSpendFee(fee hcutil.Amount) func(*wire.MsgBlock) {
 	return func(b *wire.MsgBlock) {
 		// Increase the fee of the spending transaction by reducing the
 		// amount paid,
@@ -764,8 +764,8 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 		_, addrs, _, _ := txscript.ExtractPkScriptAddrs(
 			g.Params().OrganizationPkScriptVersion,
 			taxOutput.PkScript, g.Params())
-		p2shTaxAddr := addrs[0].(*dcrutil.AddressScriptHash)
-		p2pkhTaxAddr, err := dcrutil.NewAddressPubKeyHash(
+		p2shTaxAddr := addrs[0].(*hcutil.AddressScriptHash)
+		p2pkhTaxAddr, err := hcutil.NewAddressPubKeyHash(
 			p2shTaxAddr.Hash160()[:], g.Params(),
 			chainec.ECTypeSecp256k1)
 		if err != nil {
@@ -1833,7 +1833,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	//                 \-> b76(19)
 	g.SetTip("b67")
 	g.NextBlock("b76", outs[19], ticketOuts[19], func(b *wire.MsgBlock) {
-		b.Transactions[1].TxOut[0].Value = dcrutil.MaxAmount + 1
+		b.Transactions[1].TxOut[0].Value = hcutil.MaxAmount + 1
 	})
 	rejected(blockchain.ErrBadTxOutValue)
 
@@ -1844,7 +1844,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	//                 \-> b77(19)
 	g.SetTip("b67")
 	g.NextBlock("b77", outs[19], ticketOuts[19], func(b *wire.MsgBlock) {
-		b.Transactions[1].TxOut[0].Value = dcrutil.MaxAmount
+		b.Transactions[1].TxOut[0].Value = hcutil.MaxAmount
 		b.Transactions[1].TxOut[1].Value = 1
 	})
 	rejected(blockchain.ErrBadTxOutValue)
@@ -2024,7 +2024,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 		// each contain an OP_RETURN output.
 		//
 		// NOTE: The CreateSpendTx func adds the OP_RETURN output.
-		zeroFee := dcrutil.Amount(0)
+		zeroFee := hcutil.Amount(0)
 		for i := uint32(0); i < numAdditionalOutputs; i++ {
 			spend := chaingen.MakeSpendableOut(b, 1, i+2)
 			tx := g.CreateSpendTx(&spend, zeroFee)
@@ -2065,7 +2065,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	//                 \-> b88(20) -> b89(21)           \-> b92(b87.tx[5].out[1])
 	g.NextBlock("b92", nil, ticketOuts[23], func(b *wire.MsgBlock) {
 		// An OP_RETURN output doesn't have any value so use a fee of 0.
-		zeroFee := dcrutil.Amount(0)
+		zeroFee := hcutil.Amount(0)
 		tx := g.CreateSpendTx(&b87OpReturnOut, zeroFee)
 		b.AddTransaction(tx)
 	})

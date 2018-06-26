@@ -17,7 +17,7 @@ import (
 	"github.com/coolsnady/hcd/chaincfg/chainhash"
 	"github.com/coolsnady/hcd/database"
 	"github.com/coolsnady/hcd/wire"
-	dcrutil "github.com/coolsnady/hcutil"
+	"github.com/coolsnady/hcutil"
 )
 
 var zeroHash = chainhash.Hash{}
@@ -97,7 +97,7 @@ func (bi *blockImporter) readBlock() ([]byte, error) {
 // with any potential errors.
 func (bi *blockImporter) processBlock(serializedBlock []byte) (bool, error) {
 	// Deserialize the block which includes checks for malformed blocks.
-	block, err := dcrutil.NewBlockFromBytes(serializedBlock)
+	block, err := hcutil.NewBlockFromBytes(serializedBlock)
 	if err != nil {
 		return false, err
 	}

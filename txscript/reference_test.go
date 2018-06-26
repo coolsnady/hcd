@@ -18,7 +18,7 @@ import (
 	"github.com/coolsnady/hcd/chaincfg/chainhash"
 	. "github.com/coolsnady/hcd/txscript"
 	"github.com/coolsnady/hcd/wire"
-	dcrutil "github.com/coolsnady/hcutil"
+	"github.com/coolsnady/hcutil"
 )
 
 // testName returns a descriptive test name for the given reference test data.
@@ -377,7 +377,7 @@ testloop:
 			continue
 		}
 
-		tx, err := dcrutil.NewTxFromBytes(serializedTx)
+		tx, err := hcutil.NewTxFromBytes(serializedTx)
 		if err != nil {
 			t.Errorf("bad test (arg 2 not msgtx %v) %d: %v", err,
 				i, test)
@@ -520,7 +520,7 @@ testloop:
 			continue
 		}
 
-		tx, err := dcrutil.NewTxFromBytes(serializedTx)
+		tx, err := hcutil.NewTxFromBytes(serializedTx)
 		if err != nil {
 			t.Errorf("bad test (arg 2 not msgtx %v) %d: %v", err,
 				i, test)

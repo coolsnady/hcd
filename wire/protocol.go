@@ -94,7 +94,7 @@ type CurrencyNet uint32
 // this package does not provide that functionality since it's generally a
 // better idea to simply disconnect clients that are misbehaving over TCP.
 const (
-	// MainNet represents the main hx network.
+	// MainNet represents the main hc network.
 	MainNet CurrencyNet = 0x1125f51b
 
 	// RegTest represents the regression test network.

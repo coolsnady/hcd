@@ -10,14 +10,14 @@ import (
 
 	"github.com/coolsnady/hcd/blockchain/stake"
 	"github.com/coolsnady/hcd/chaincfg/chainhash"
-	dcrutil "github.com/coolsnady/hcutil"
+	"github.com/coolsnady/hcutil"
 )
 
 // TxDesc is a descriptor about a transaction in a transaction source along with
 // additional metadata.
 type TxDesc struct {
 	// Tx is the transaction associated with the entry.
-	Tx *dcrutil.Tx
+	Tx *hcutil.Tx
 
 	// Type is the type of the transaction associated with the entry.
 	Type stake.TxType

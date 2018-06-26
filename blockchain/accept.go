@@ -14,13 +14,13 @@ import (
 	"github.com/coolsnady/hcd/blockchain/stake"
 	"github.com/coolsnady/hcd/chaincfg/chainhash"
 	"github.com/coolsnady/hcd/txscript"
-	dcrutil "github.com/coolsnady/hcutil"
+	"github.com/coolsnady/hcutil"
 )
 
 // checkCoinbaseUniqueHeight checks to ensure that for all blocks height > 1
 // that the coinbase contains the height encoding to make coinbase hash collisions
 // impossible.
-func checkCoinbaseUniqueHeight(blockHeight int64, block *dcrutil.Block) error {
+func checkCoinbaseUniqueHeight(blockHeight int64, block *hcutil.Block) error {
 	// Coinbase TxOut[0] is always tax, TxOut[1] is always
 	// height + extranonce, so at least two outputs must
 	// exist.
@@ -63,7 +63,7 @@ func checkCoinbaseUniqueHeight(blockHeight int64, block *dcrutil.Block) error {
 }
 
 // IsFinalizedTransaction determines whether or not a transaction is finalized.
-func IsFinalizedTransaction(tx *dcrutil.Tx, blockHeight int64, blockTime time.Time) bool {
+func IsFinalizedTransaction(tx *hcutil.Tx, blockHeight int64, blockTime time.Time) bool {
 	// Lock time of zero means the transaction is finalized.
 	msgTx := tx.MsgTx()
 	lockTime := msgTx.LockTime
@@ -105,7 +105,7 @@ func IsFinalizedTransaction(tx *dcrutil.Tx, blockHeight int64, blockTime time.Ti
 //
 // The flags are also passed to checkBlockHeaderContext.  See its documentation
 // for how the flags modify its behavior.
-func (b *BlockChain) checkBlockContext(block *dcrutil.Block, prevNode *blockNode, flags BehaviorFlags) error {
+func (b *BlockChain) checkBlockContext(block *hcutil.Block, prevNode *blockNode, flags BehaviorFlags) error {
 	// The genesis block is valid by definition.
 	if prevNode == nil {
 		return nil
@@ -186,7 +186,7 @@ func (b *BlockChain) checkBlockContext(block *dcrutil.Block, prevNode *blockNode
 
 // ticketsSpentInBlock fetches a list of tickets that were spent in the
 // block.
-func ticketsSpentInBlock(bl *dcrutil.Block) []chainhash.Hash {
+func ticketsSpentInBlock(bl *hcutil.Block) []chainhash.Hash {
 	var tickets []chainhash.Hash
 	for _, stx := range bl.MsgBlock().STransactions {
 		if stake.DetermineTxType(stx) == stake.TxTypeSSGen {
@@ -199,7 +199,7 @@ func ticketsSpentInBlock(bl *dcrutil.Block) []chainhash.Hash {
 
 // ticketsRevokedInBlock fetches a list of tickets that were revoked in the
 // block.
-func ticketsRevokedInBlock(bl *dcrutil.Block) []chainhash.Hash {
+func ticketsRevokedInBlock(bl *hcutil.Block) []chainhash.Hash {
 	var tickets []chainhash.Hash
 	for _, stx := range bl.MsgBlock().STransactions {
 		if stake.DetermineTxType(stx) == stake.TxTypeSSRtx {
@@ -211,7 +211,7 @@ func ticketsRevokedInBlock(bl *dcrutil.Block) []chainhash.Hash {
 }
 
 // voteBitsInBlock returns a list of vote bits for the voters in this block.
-func voteBitsInBlock(bl *dcrutil.Block) []VoteVersionTuple {
+func voteBitsInBlock(bl *hcutil.Block) []VoteVersionTuple {
 	var voteBits []VoteVersionTuple
 	for _, stx := range bl.MsgBlock().STransactions {
 		if is, _ := stake.IsSSGen(stx); !is {
@@ -238,7 +238,7 @@ func voteBitsInBlock(bl *dcrutil.Block) []VoteVersionTuple {
 //    notification will be sent since the block is not being accepted.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (b *BlockChain) maybeAcceptBlock(block *dcrutil.Block, flags BehaviorFlags) (bool, error) {
+func (b *BlockChain) maybeAcceptBlock(block *hcutil.Block, flags BehaviorFlags) (bool, error) {
 	dryRun := flags&BFDryRun == BFDryRun
 
 	// Get a block node for the block previous to this one.  Will be nil

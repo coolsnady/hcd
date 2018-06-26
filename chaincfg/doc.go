@@ -25,7 +25,7 @@
 //          "fmt"
 //          "log"
 //
-//          dcrutil "github.com/coolsnady/hcutil"
+//          "github.com/coolsnady/hcutil"
 //          "github.com/coolsnady/hcd/chaincfg"
 //  )
 //
@@ -46,7 +46,7 @@
 //
 //          // Create and print new payment address, specific to the active network.
 //          pubKeyHash := make([]byte, 20)
-//          addr, err := dcrutil.NewAddressPubKeyHash(pubKeyHash, chainParams)
+//          addr, err := hcutil.NewAddressPubKeyHash(pubKeyHash, chainParams)
 //          if err != nil {
 //                  log.Fatal(err)
 //          }

@@ -20,7 +20,7 @@ import (
 	"github.com/coolsnady/hcd/chaincfg/chainhash"
 	"github.com/coolsnady/hcd/txscript"
 	"github.com/coolsnady/hcd/wire"
-	dcrutil "github.com/coolsnady/hcutil"
+	"github.com/coolsnady/hcutil"
 )
 
 // TxType indicates the type of tx (regular or stake type).
@@ -338,7 +338,7 @@ func TxSStxStakeOutputInfo(tx *wire.MsgTx) ([]bool, [][]byte, []int64, []int64,
 // AddrFromSStxPkScrCommitment extracts a P2SH or P2PKH address from a
 // ticket commitment pkScript.
 func AddrFromSStxPkScrCommitment(pkScript []byte,
-	params *chaincfg.Params) (dcrutil.Address, error) {
+	params *chaincfg.Params) (hcutil.Address, error) {
 	if len(pkScript) < SStxPKHMinOutSize {
 		return nil, stakeRuleError(ErrSStxBadCommitAmount, "short read "+
 			"of sstx commit pkscript")
@@ -354,11 +354,11 @@ func AddrFromSStxPkScrCommitment(pkScript []byte,
 	hashBytes := pkScript[2:22]
 
 	var err error
-	var addr dcrutil.Address
+	var addr hcutil.Address
 	if isP2SH {
-		addr, err = dcrutil.NewAddressScriptHashFromHash(hashBytes, params)
+		addr, err = hcutil.NewAddressScriptHashFromHash(hashBytes, params)
 	} else {
-		addr, err = dcrutil.NewAddressPubKeyHash(hashBytes, params,
+		addr, err = hcutil.NewAddressPubKeyHash(hashBytes, params,
 			chainec.ECTypeSecp256k1)
 	}
 
@@ -367,7 +367,7 @@ func AddrFromSStxPkScrCommitment(pkScript []byte,
 
 // AmountFromSStxPkScrCommitment extracts a commitment amount from a
 // ticket commitment pkScript.
-func AmountFromSStxPkScrCommitment(pkScript []byte) (dcrutil.Amount, error) {
+func AmountFromSStxPkScrCommitment(pkScript []byte) (hcutil.Amount, error) {
 	if len(pkScript) < SStxPKHMinOutSize {
 		return 0, stakeRuleError(ErrSStxBadCommitAmount, "short read "+
 			"of sstx commit pkscript")
@@ -379,7 +379,7 @@ func AmountFromSStxPkScrCommitment(pkScript []byte) (dcrutil.Amount, error) {
 	copy(amtEncoded, pkScript[22:30])
 	amtEncoded[7] &= ^uint8(1 << 7) // Clear bit for P2SH flag
 
-	return dcrutil.Amount(binary.LittleEndian.Uint64(amtEncoded)), nil
+	return hcutil.Amount(binary.LittleEndian.Uint64(amtEncoded)), nil
 }
 
 // TxSSGenStakeOutputInfo takes an SSGen tx as input and scans through its
@@ -1183,7 +1183,7 @@ func DetermineTxType(tx *wire.MsgTx) TxType {
 
 // SetTxTree analyzes the embedded MsgTx and sets the transaction tree
 // accordingly.
-func SetTxTree(tx *dcrutil.Tx) {
+func SetTxTree(tx *hcutil.Tx) {
 	txType := DetermineTxType(tx.MsgTx())
 
 	indicatedTree := wire.TxTreeRegular

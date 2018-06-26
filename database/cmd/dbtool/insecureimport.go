@@ -16,7 +16,7 @@ import (
 	"github.com/coolsnady/hcd/chaincfg/chainhash"
 	"github.com/coolsnady/hcd/database"
 	"github.com/coolsnady/hcd/wire"
-	dcrutil "github.com/coolsnady/hcutil"
+	"github.com/coolsnady/hcutil"
 )
 
 // importCmd defines the configuration options for the insecureimport command.
@@ -109,7 +109,7 @@ func (bi *blockImporter) readBlock() ([]byte, error) {
 // NOTE: This is not a safe import as it does not verify chain rules.
 func (bi *blockImporter) processBlock(serializedBlock []byte) (bool, error) {
 	// Deserialize the block which includes checks for malformed blocks.
-	block, err := dcrutil.NewBlockFromBytes(serializedBlock)
+	block, err := hcutil.NewBlockFromBytes(serializedBlock)
 	if err != nil {
 		return false, err
 	}

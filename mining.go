@@ -22,7 +22,7 @@ import (
 	"github.com/coolsnady/hcd/mining"
 	"github.com/coolsnady/hcd/txscript"
 	"github.com/coolsnady/hcd/wire"
-	dcrutil "github.com/coolsnady/hcutil"
+	"github.com/coolsnady/hcutil"
 )
 
 const (
@@ -54,7 +54,7 @@ const (
 // transaction to be prioritized and track dependencies on other transactions
 // which have not been mined into a block yet.
 type txPrioItem struct {
-	tx       *dcrutil.Tx
+	tx       *hcutil.Tx
 	txType   stake.TxType
 	fee      int64
 	priority float64
@@ -234,7 +234,7 @@ func newTxPriorityQueue(reserve int, lessFunc func(*txPriorityQueue, int,
 
 // containsTx is a helper function that checks to see if a list of transactions
 // contains any of the TxIns of some transaction.
-func containsTxIns(txs []*dcrutil.Tx, tx *dcrutil.Tx) bool {
+func containsTxIns(txs []*hcutil.Tx, tx *hcutil.Tx) bool {
 	for _, txToCheck := range txs {
 		for _, txIn := range tx.MsgTx().TxIn {
 			if txIn.PreviousOutPoint.Hash.IsEqual(txToCheck.Hash()) {
@@ -407,7 +407,7 @@ func hashInSlice(h chainhash.Hash, list []chainhash.Hash) bool {
 
 // txIndexFromTxList returns a transaction's index in a list, or -1 if it
 // can not be found.
-func txIndexFromTxList(hash chainhash.Hash, list []*dcrutil.Tx) int {
+func txIndexFromTxList(hash chainhash.Hash, list []*hcutil.Tx) int {
 	for i, tx := range list {
 		h := tx.Hash()
 		if hash == *h {
@@ -509,12 +509,12 @@ func UpdateExtraNonce(msgBlock *wire.MsgBlock, blockHeight int64,
 	}
 	msgBlock.Transactions[0].TxOut[1].PkScript = coinbaseOpReturn
 
-	// TODO(davec): A dcrutil.Block should use saved in the state to avoid
+	// TODO(davec): A hcutil.Block should use saved in the state to avoid
 	// recalculating all of the other transaction hashes.
 	// block.Transactions[0].InvalidateCache()
 
 	// Recalculate the merkle root with the updated extra nonce.
-	block := dcrutil.NewBlockDeepCopyCoinbase(msgBlock)
+	block := hcutil.NewBlockDeepCopyCoinbase(msgBlock)
 	merkles := blockchain.BuildMerkleTreeStore(block.Transactions())
 	msgBlock.Header.MerkleRoot = *merkles[len(merkles)-1]
 	return nil
@@ -530,9 +530,9 @@ func createCoinbaseTx(subsidyCache *blockchain.SubsidyCache,
 	coinbaseScript []byte,
 	opReturnPkScript []byte,
 	nextBlockHeight int64,
-	addr dcrutil.Address,
+	addr hcutil.Address,
 	voters uint16,
-	params *chaincfg.Params) (*dcrutil.Tx, error) {
+	params *chaincfg.Params) (*hcutil.Tx, error) {
 
 	tx := wire.NewMsgTx()
 	tx.AddTxIn(&wire.TxIn{
@@ -549,9 +549,9 @@ func createCoinbaseTx(subsidyCache *blockchain.SubsidyCache,
 	// Block one is a special block that might pay out tokens to a ledger.
 	if nextBlockHeight == 1 && len(params.BlockOneLedger) != 0 {
 		// Convert the addresses in the ledger into useable format.
-		addrs := make([]dcrutil.Address, len(params.BlockOneLedger))
+		addrs := make([]hcutil.Address, len(params.BlockOneLedger))
 		for i, payout := range params.BlockOneLedger {
-			addr, err := dcrutil.DecodeAddress(payout.Address)
+			addr, err := hcutil.DecodeAddress(payout.Address)
 			if err != nil {
 				return nil, err
 			}
@@ -572,7 +572,7 @@ func createCoinbaseTx(subsidyCache *blockchain.SubsidyCache,
 
 		tx.TxIn[0].ValueIn = params.BlockOneSubsidy()
 
-		return dcrutil.NewTx(tx), nil
+		return hcutil.NewTx(tx), nil
 	}
 
 	// Create a coinbase with correct block subsidy and extranonce.
@@ -635,13 +635,13 @@ func createCoinbaseTx(subsidyCache *blockchain.SubsidyCache,
 		PkScript: pksSubsidy,
 	})
 
-	return dcrutil.NewTx(tx), nil
+	return hcutil.NewTx(tx), nil
 }
 
 // spendTransaction updates the passed view by marking the inputs to the passed
 // transaction as spent.  It also adds all outputs in the passed transaction
 // which are not provably unspendable as available unspent transaction outputs.
-func spendTransaction(utxoView *blockchain.UtxoViewpoint, tx *dcrutil.Tx,
+func spendTransaction(utxoView *blockchain.UtxoViewpoint, tx *hcutil.Tx,
 	height int64) error {
 	for _, txIn := range tx.MsgTx().TxIn {
 		originHash := &txIn.PreviousOutPoint.Hash
@@ -659,7 +659,7 @@ func spendTransaction(utxoView *blockchain.UtxoViewpoint, tx *dcrutil.Tx,
 
 // logSkippedDeps logs any dependencies which are also skipped as a result of
 // skipping a transaction while generating a block template at the trace level.
-func logSkippedDeps(tx *dcrutil.Tx, deps *list.List) {
+func logSkippedDeps(tx *hcutil.Tx, deps *list.List) {
 	if deps == nil {
 		return
 	}
@@ -713,7 +713,7 @@ func medianAdjustedTime(chainState *chainState,
 // valid from the perspective of the mainchain (not necessarily
 // the mempool or block) before inserting into a tx tree.
 // If it fails the check, it returns false; otherwise true.
-func maybeInsertStakeTx(bm *blockManager, stx *dcrutil.Tx, treeValid bool) bool {
+func maybeInsertStakeTx(bm *blockManager, stx *hcutil.Tx, treeValid bool) bool {
 	missingInput := false
 
 	view, err := bm.chain.FetchUtxoView(stx, treeValid)
@@ -768,7 +768,7 @@ func deepCopyBlockTemplate(blockTemplate *BlockTemplate) *BlockTemplate {
 	// the extra nonce.
 	transactionsCopy := make([]*wire.MsgTx, len(blockTemplate.Block.Transactions))
 	coinbaseCopy :=
-		dcrutil.NewTxDeep(blockTemplate.Block.Transactions[0])
+		hcutil.NewTxDeep(blockTemplate.Block.Transactions[0])
 	for i, mtx := range blockTemplate.Block.Transactions {
 		if i == 0 {
 			transactionsCopy[i] = coinbaseCopy.MsgTx()
@@ -808,7 +808,7 @@ func deepCopyBlockTemplate(blockTemplate *BlockTemplate) *BlockTemplate {
 // Safe for concurrent access.
 func handleTooFewVoters(subsidyCache *blockchain.SubsidyCache,
 	nextHeight int64,
-	miningAddress dcrutil.Address,
+	miningAddress hcutil.Address,
 	bm *blockManager) (*BlockTemplate, error) {
 	timeSource := bm.server.timeSource
 	chainState := &bm.chainState
@@ -876,7 +876,7 @@ func handleTooFewVoters(subsidyCache *blockchain.SubsidyCache,
 				}
 
 				// Make sure the block validates.
-				block := dcrutil.NewBlockDeepCopyCoinbase(cptCopy.Block)
+				block := hcutil.NewBlockDeepCopyCoinbase(cptCopy.Block)
 				if err := blockchain.CheckWorklessBlockSanity(block,
 					bm.server.timeSource,
 					bm.server.chainParams); err != nil {
@@ -976,7 +976,7 @@ func handleTooFewVoters(subsidyCache *blockchain.SubsidyCache,
 
 				// Recalculate the merkle roots. Use a temporary 'immutable'
 				// block object as we're changing the header contents.
-				btBlockTemp := dcrutil.NewBlockDeepCopyCoinbase(btMsgBlock)
+				btBlockTemp := hcutil.NewBlockDeepCopyCoinbase(btMsgBlock)
 				merkles :=
 					blockchain.BuildMerkleTreeStore(btBlockTemp.Transactions())
 				merklesStake :=
@@ -985,7 +985,7 @@ func handleTooFewVoters(subsidyCache *blockchain.SubsidyCache,
 				btMsgBlock.Header.StakeRoot = *merklesStake[len(merklesStake)-1]
 
 				// Make sure the block validates.
-				btBlock := dcrutil.NewBlockDeepCopyCoinbase(btMsgBlock)
+				btBlock := hcutil.NewBlockDeepCopyCoinbase(btMsgBlock)
 				if err := blockchain.CheckWorklessBlockSanity(btBlock,
 					bm.server.timeSource,
 					bm.server.chainParams); err != nil {
@@ -1140,7 +1140,7 @@ func handleCreatedBlockTemplate(blockTemplate *BlockTemplate,
 //  This function returns nil, nil if there are not enough voters on any of
 //  the current top blocks to create a new block template.
 func NewBlockTemplate(policy *mining.Policy, server *server,
-	payToAddress dcrutil.Address) (*BlockTemplate, error) {
+	payToAddress hcutil.Address) (*BlockTemplate, error) {
 
 	// TODO: The mempool should be completely separated via the TxSource
 	// interface so this function is fully decoupled.
@@ -1278,7 +1278,7 @@ func NewBlockTemplate(policy *mining.Policy, server *server,
 	// generated block with reserved space.  Also create a utxo view to
 	// house all of the input transactions so multiple lookups can be
 	// avoided.
-	blockTxns := make([]*dcrutil.Tx, 0, len(sourceTxns))
+	blockTxns := make([]*hcutil.Tx, 0, len(sourceTxns))
 	blockUtxos := blockchain.NewUtxoViewpoint()
 
 	// dependers is used to track transactions which depend on another
@@ -1674,7 +1674,7 @@ mempoolLoop:
 	}
 
 	// Build tx list for stake tx.
-	blockTxnsStake := make([]*dcrutil.Tx, 0, len(blockTxns))
+	blockTxnsStake := make([]*hcutil.Tx, 0, len(blockTxns))
 
 	// Stake tx ordering in stake tree:
 	// 1. SSGen (votes).
@@ -1692,7 +1692,7 @@ mempoolLoop:
 		}
 
 		if isSSGen, _ := stake.IsSSGen(msgTx); isSSGen {
-			txCopy := dcrutil.NewTxDeepTxIns(msgTx)
+			txCopy := hcutil.NewTxDeepTxIns(msgTx)
 			if maybeInsertStakeTx(blockManager, txCopy, treeValid) {
 				vb := stake.SSGenVoteBits(txCopy.MsgTx())
 				voteBitsVoters = append(voteBitsVoters, vb)
@@ -1719,7 +1719,7 @@ mempoolLoop:
 		totalVotes := 0
 
 		for _, vb := range voteBitsVoters {
-			if dcrutil.IsFlagSet16(vb, dcrutil.BlockValid) {
+			if hcutil.IsFlagSet16(vb, hcutil.BlockValid) {
 				voteYea++
 			}
 			totalVotes++
@@ -1752,7 +1752,7 @@ mempoolLoop:
 			}
 			topBlockRegTx := topBlock.Transactions()
 
-			tempBlockTxns := make([]*dcrutil.Tx, 0, len(sourceTxns))
+			tempBlockTxns := make([]*hcutil.Tx, 0, len(sourceTxns))
 			for _, tx := range blockTxns {
 				if tx.Tree() == wire.TxTreeRegular {
 					// Go through all the inputs and check to see if this mempool
@@ -1769,11 +1769,11 @@ mempoolLoop:
 					}
 
 					if isValid {
-						txCopy := dcrutil.NewTxDeepTxIns(tx.MsgTx())
+						txCopy := hcutil.NewTxDeepTxIns(tx.MsgTx())
 						tempBlockTxns = append(tempBlockTxns, txCopy)
 					}
 				} else {
-					txCopy := dcrutil.NewTxDeepTxIns(tx.MsgTx())
+					txCopy := hcutil.NewTxDeepTxIns(tx.MsgTx())
 					tempBlockTxns = append(tempBlockTxns, txCopy)
 				}
 			}
@@ -1797,7 +1797,7 @@ mempoolLoop:
 
 			// Quick check for difficulty here.
 			if msgTx.TxOut[0].Value >= reqStakeDifficulty {
-				txCopy := dcrutil.NewTxDeepTxIns(msgTx)
+				txCopy := hcutil.NewTxDeepTxIns(msgTx)
 				if maybeInsertStakeTx(blockManager, txCopy, treeValid) {
 					blockTxnsStake = append(blockTxnsStake, txCopy)
 					freshStake++
@@ -1821,7 +1821,7 @@ mempoolLoop:
 		msgTx := tx.MsgTx()
 		isSSRtx, _ := stake.IsSSRtx(msgTx)
 		if tx.Tree() == wire.TxTreeStake && isSSRtx {
-			txCopy := dcrutil.NewTxDeepTxIns(msgTx)
+			txCopy := hcutil.NewTxDeepTxIns(msgTx)
 			if maybeInsertStakeTx(blockManager, txCopy, treeValid) {
 				blockTxnsStake = append(blockTxnsStake, txCopy)
 				revocations++
@@ -1881,7 +1881,7 @@ mempoolLoop:
 	txSigOpCountsMap[*coinbaseTx.Hash()] = numCoinbaseSigOps
 
 	// Build tx lists for regular tx.
-	blockTxnsRegular := make([]*dcrutil.Tx, 0, len(blockTxns)+1)
+	blockTxnsRegular := make([]*hcutil.Tx, 0, len(blockTxns)+1)
 
 	// Append coinbase.
 	blockTxnsRegular = append(blockTxnsRegular, coinbaseTx)
@@ -1994,7 +1994,7 @@ mempoolLoop:
 		}
 
 		// Copy the transaction and swap the pointer.
-		txCopy := dcrutil.NewTxDeepTxIns(tx.MsgTx())
+		txCopy := hcutil.NewTxDeepTxIns(tx.MsgTx())
 		blockTxnsRegular[i] = txCopy
 		tx = txCopy
 
@@ -2022,7 +2022,7 @@ mempoolLoop:
 		}
 
 		// Copy the transaction and swap the pointer.
-		txCopy := dcrutil.NewTxDeepTxIns(tx.MsgTx())
+		txCopy := hcutil.NewTxDeepTxIns(tx.MsgTx())
 		blockTxnsRegular[i] = txCopy
 		tx = txCopy
 
@@ -2103,7 +2103,7 @@ mempoolLoop:
 	// Finally, perform a full check on the created block against the chain
 	// consensus rules to ensure it properly connects to the current best
 	// chain with no issues.
-	block := dcrutil.NewBlockDeepCopyCoinbase(&msgBlock)
+	block := hcutil.NewBlockDeepCopyCoinbase(&msgBlock)
 
 	if err := blockchain.CheckWorklessBlockSanity(block,
 		server.timeSource,
@@ -2127,7 +2127,7 @@ mempoolLoop:
 		len(msgBlock.Transactions), len(msgBlock.STransactions),
 		totalFees, blockSigOps, blockSize,
 		blockchain.CompactToBig(msgBlock.Header.Bits),
-		dcrutil.Amount(msgBlock.Header.SBits).ToCoin())
+		hcutil.Amount(msgBlock.Header.SBits).ToCoin())
 
 	blockTemplate := &BlockTemplate{
 		Block:           &msgBlock,

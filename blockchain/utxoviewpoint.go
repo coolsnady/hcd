@@ -12,7 +12,7 @@ import (
 	"github.com/coolsnady/hcd/chaincfg/chainhash"
 	"github.com/coolsnady/hcd/database"
 	"github.com/coolsnady/hcd/txscript"
-	dcrutil "github.com/coolsnady/hcutil"
+	"github.com/coolsnady/hcutil"
 )
 
 // StakeViewpoint is the viewpoint of the blockchain depending on stake
@@ -326,7 +326,7 @@ func (view *UtxoViewpoint) LookupEntry(txHash *chainhash.Hash) *UtxoEntry {
 // unspendable to the view.  When the view already has entries for any of the
 // outputs, they are simply marked unspent.  All fields will be updated for
 // existing entries since it's possible it has changed during a reorg.
-func (view *UtxoViewpoint) AddTxOuts(tx *dcrutil.Tx, blockHeight int64,
+func (view *UtxoViewpoint) AddTxOuts(tx *hcutil.Tx, blockHeight int64,
 	blockIndex uint32) {
 	msgTx := tx.MsgTx()
 	// When there are not already any utxos associated with the transaction,
@@ -387,7 +387,7 @@ func (view *UtxoViewpoint) AddTxOuts(tx *dcrutil.Tx, blockHeight int64,
 // spent.  In addition, when the 'stxos' argument is not nil, it will be updated
 // to append an entry for each spent txout.  An error will be returned if the
 // view does not contain the required utxos.
-func (view *UtxoViewpoint) connectTransaction(tx *dcrutil.Tx, blockHeight int64,
+func (view *UtxoViewpoint) connectTransaction(tx *hcutil.Tx, blockHeight int64,
 	blockIndex uint32, stxos *[]spentTxOut) error {
 	msgTx := tx.MsgTx()
 	// Coinbase transactions don't have any inputs to spend.
@@ -461,10 +461,10 @@ func (view *UtxoViewpoint) connectTransaction(tx *dcrutil.Tx, blockHeight int64,
 // spend as spent, and setting the best hash for the view to the passed block.
 // In addition, when the 'stxos' argument is not nil, it will be updated to
 // append an entry for each spent txout.
-func (b *BlockChain) connectTransactions(view *UtxoViewpoint, block *dcrutil.Block,
-	parent *dcrutil.Block, stxos *[]spentTxOut) error {
-	regularTxTreeValid := dcrutil.IsFlagSet16(block.MsgBlock().Header.VoteBits,
-		dcrutil.BlockValid)
+func (b *BlockChain) connectTransactions(view *UtxoViewpoint, block *hcutil.Block,
+	parent *hcutil.Block, stxos *[]spentTxOut) error {
+	regularTxTreeValid := hcutil.IsFlagSet16(block.MsgBlock().Header.VoteBits,
+		hcutil.BlockValid)
 	thisNodeStakeViewpoint := ViewpointPrevInvalidStake
 	if regularTxTreeValid {
 		thisNodeStakeViewpoint = ViewpointPrevValidStake
@@ -478,7 +478,7 @@ func (b *BlockChain) connectTransactions(view *UtxoViewpoint, block *dcrutil.Blo
 		}
 		mBlock := block.MsgBlock()
 		votebits := mBlock.Header.VoteBits
-		regularTxTreeValid := dcrutil.IsFlagSet16(votebits, dcrutil.BlockValid)
+		regularTxTreeValid := hcutil.IsFlagSet16(votebits, hcutil.BlockValid)
 		if regularTxTreeValid {
 			for i, tx := range parent.Transactions() {
 				err := view.connectTransaction(tx, parent.Height(), uint32(i),
@@ -516,7 +516,7 @@ func (b *BlockChain) connectTransactions(view *UtxoViewpoint, block *dcrutil.Blo
 // This function will ONLY work correctly for a single transaction tree at a
 // time because of index tracking.
 func (b *BlockChain) disconnectTransactions(view *UtxoViewpoint,
-	block *dcrutil.Block, parent *dcrutil.Block, stxos []spentTxOut) error {
+	block *hcutil.Block, parent *hcutil.Block, stxos []spentTxOut) error {
 	// Sanity check the correct number of stxos are provided.
 	if len(stxos) != countSpentOutputs(block, parent) {
 		return AssertError(fmt.Sprintf("disconnectTransactions "+
@@ -528,8 +528,8 @@ func (b *BlockChain) disconnectTransactions(view *UtxoViewpoint,
 	// Loop backwards through all transactions so everything is unspent in
 	// reverse order.  This is necessary since transactions later in a block
 	// can spend from previous ones.
-	regularTxTreeValid := dcrutil.IsFlagSet16(block.MsgBlock().Header.VoteBits,
-		dcrutil.BlockValid)
+	regularTxTreeValid := hcutil.IsFlagSet16(block.MsgBlock().Header.VoteBits,
+		hcutil.BlockValid)
 	thisNodeStakeViewpoint := ViewpointPrevInvalidStake
 	if regularTxTreeValid {
 		thisNodeStakeViewpoint = ViewpointPrevValidStake
@@ -732,7 +732,7 @@ func (b *BlockChain) disconnectTransactions(view *UtxoViewpoint,
 // created by the passed slice of transactions, restoring all utxos the
 // transactions spent by using the provided spent txo information, and setting
 // the best hash for the view to the block before the passed block.
-func (view *UtxoViewpoint) disconnectTransactionSlice(transactions []*dcrutil.Tx,
+func (view *UtxoViewpoint) disconnectTransactionSlice(transactions []*hcutil.Tx,
 	height int64, stxosPtr *[]spentTxOut) (int, error) {
 	if stxosPtr == nil {
 		return 0, AssertError("passed pointer to non-existing stxos slice")
@@ -919,7 +919,7 @@ func (view *UtxoViewpoint) fetchUtxos(db database.DB, txSet map[chainhash.Hash]s
 // needed.  In particular, referenced entries that are earlier in the block are
 // added to the view and entries that are already in the view are not modified.
 func (view *UtxoViewpoint) fetchInputUtxos(db database.DB,
-	block, parent *dcrutil.Block) error {
+	block, parent *hcutil.Block) error {
 	viewpoint := view.StakeViewpoint()
 
 	// Build a map of in-flight transactions because some of the inputs in
@@ -1090,7 +1090,7 @@ func NewUtxoViewpoint() *UtxoViewpoint {
 // returned view can be examined for duplicate unspent transaction outputs.
 //
 // This function is safe for concurrent access however the returned view is NOT.
-func (b *BlockChain) FetchUtxoView(tx *dcrutil.Tx, treeValid bool) (*UtxoViewpoint,
+func (b *BlockChain) FetchUtxoView(tx *hcutil.Tx, treeValid bool) (*UtxoViewpoint,
 	error) {
 	b.chainLock.RLock()
 	defer b.chainLock.RUnlock()

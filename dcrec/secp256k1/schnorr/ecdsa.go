@@ -124,7 +124,7 @@ func schnorrSign(curve *secp256k1.KoblitzCurve, msg []byte, ps []byte, k []byte,
 		return nil, schnorrError(ErrSchnorrHashValue, str)
 	}
 
-	// s = k - hx
+	// s = k - hc
 	// TODO Speed this up a bunch by using field elements, not
 	// big ints. That we multiply the private scalar using big
 	// ints is also probably bad because we can only assume the

@@ -20,7 +20,7 @@ import (
 	"github.com/coolsnady/hcd/chaincfg/chainhash"
 	"github.com/coolsnady/hcd/database"
 	"github.com/coolsnady/hcd/wire"
-	dcrutil "github.com/coolsnady/hcutil"
+	"github.com/coolsnady/hcutil"
 )
 
 var (
@@ -103,7 +103,7 @@ func isDbBucketNotFoundErr(err error) bool {
 
 // serializeSizeForMinimalOutputs calculates the number of bytes needed to
 // serialize a transaction to its minimal outputs.
-func serializeSizeForMinimalOutputs(tx *dcrutil.Tx) int {
+func serializeSizeForMinimalOutputs(tx *hcutil.Tx) int {
 	sz := serializeSizeVLQ(uint64(len(tx.MsgTx().TxOut)))
 	for _, out := range tx.MsgTx().TxOut {
 		sz += serializeSizeVLQ(compressTxOutAmount(uint64(out.Value)))
@@ -118,7 +118,7 @@ func serializeSizeForMinimalOutputs(tx *dcrutil.Tx) int {
 // putTxToMinimalOutputs serializes a transaction to its minimal outputs.
 // It returns the amount of data written. The function will panic if it writes
 // beyond the bounds of the passed memory.
-func putTxToMinimalOutputs(target []byte, tx *dcrutil.Tx) int {
+func putTxToMinimalOutputs(target []byte, tx *hcutil.Tx) int {
 	offset := putVLQ(target, uint64(len(tx.MsgTx().TxOut)))
 	for _, out := range tx.MsgTx().TxOut {
 		offset += putVLQ(target[offset:], compressTxOutAmount(uint64(out.Value)))
@@ -537,15 +537,15 @@ func serializeSpendJournalEntry(stxos []spentTxOut) ([]byte, error) {
 // view MUST have the utxos referenced by all of the transactions available for
 // the passed block since that information is required to reconstruct the spent
 // txouts.
-func dbFetchSpendJournalEntry(dbTx database.Tx, block *dcrutil.Block,
-	parent *dcrutil.Block) ([]spentTxOut, error) {
+func dbFetchSpendJournalEntry(dbTx database.Tx, block *hcutil.Block,
+	parent *hcutil.Block) ([]spentTxOut, error) {
 	// Exclude the coinbase transaction since it can't spend anything.
 	spendBucket := dbTx.Metadata().Bucket(dbnamespace.SpendJournalBucketName)
 	serialized := spendBucket.Get(block.Hash()[:])
 
 	var blockTxns []*wire.MsgTx
-	regularTxTreeValid := dcrutil.IsFlagSet16(block.MsgBlock().Header.VoteBits,
-		dcrutil.BlockValid)
+	regularTxTreeValid := hcutil.IsFlagSet16(block.MsgBlock().Header.VoteBits,
+		hcutil.BlockValid)
 	if regularTxTreeValid {
 		blockTxns = append(blockTxns, parent.MsgBlock().Transactions[1:]...)
 	}
@@ -1299,7 +1299,7 @@ func dbPutBestState(dbTx database.Tx, snapshot *BestState,
 // the genesis block, so it must only be called on an uninitialized database.
 func (b *BlockChain) createChainState() error {
 	// Create a new node from the genesis block and set it as the best node.
-	genesisBlock := dcrutil.NewBlock(b.chainParams.GenesisBlock)
+	genesisBlock := hcutil.NewBlock(b.chainParams.GenesisBlock)
 	header := &genesisBlock.MsgBlock().Header
 	node := newBlockNode(header, nil, nil, nil)
 	node.inMainChain = true
@@ -1463,7 +1463,7 @@ func (b *BlockChain) initChainState() error {
 
 		// Create a new node and set it as the best node.  The preceding
 		// nodes will be loaded on demand as needed.
-		blk := dcrutil.NewBlock(&block)
+		blk := hcutil.NewBlock(&block)
 		header := &block.Header
 		node := newBlockNode(header, ticketsSpentInBlock(blk),
 			ticketsRevokedInBlock(blk), voteBitsInBlock(blk))
@@ -1572,8 +1572,8 @@ func (b *BlockChain) HeaderByHeight(height int64) (*wire.BlockHeader, error) {
 
 // dbFetchBlockByHash uses an existing database transaction to retrieve the raw
 // block for the provided hash, deserialize it, retrieve the appropriate height
-// from the index, and return a dcrutil.Block with the height set.
-func dbFetchBlockByHash(dbTx database.Tx, hash *chainhash.Hash) (*dcrutil.Block, error) {
+// from the index, and return a hcutil.Block with the height set.
+func dbFetchBlockByHash(dbTx database.Tx, hash *chainhash.Hash) (*hcutil.Block, error) {
 	// Check if the block is in the main chain.
 	if !dbMainChainHasBlock(dbTx, hash) {
 		str := fmt.Sprintf("block %s is not in the main chain", hash)
@@ -1587,7 +1587,7 @@ func dbFetchBlockByHash(dbTx database.Tx, hash *chainhash.Hash) (*dcrutil.Block,
 	}
 
 	// Create the encapsulated block and set the height appropriately.
-	block, err := dcrutil.NewBlockFromBytes(blockBytes)
+	block, err := hcutil.NewBlockFromBytes(blockBytes)
 	if err != nil {
 		return nil, err
 	}
@@ -1596,9 +1596,9 @@ func dbFetchBlockByHash(dbTx database.Tx, hash *chainhash.Hash) (*dcrutil.Block,
 }
 
 // dbFetchBlockByHeight uses an existing database transaction to retrieve the
-// raw block for the provided height, deserialize it, and return a dcrutil.Block
+// raw block for the provided height, deserialize it, and return a hcutil.Block
 // with the height set.
-func dbFetchBlockByHeight(dbTx database.Tx, height int64) (*dcrutil.Block, error) {
+func dbFetchBlockByHeight(dbTx database.Tx, height int64) (*hcutil.Block, error) {
 	// First find the hash associated with the provided height in the index.
 	hash, err := dbFetchHashByHeight(dbTx, height)
 	if err != nil {
@@ -1612,7 +1612,7 @@ func dbFetchBlockByHeight(dbTx database.Tx, height int64) (*dcrutil.Block, error
 	}
 
 	// Create the encapsulated block and set the height appropriately.
-	block, err := dcrutil.NewBlockFromBytes(blockBytes)
+	block, err := hcutil.NewBlockFromBytes(blockBytes)
 	if err != nil {
 		return nil, err
 	}
@@ -1621,7 +1621,7 @@ func dbFetchBlockByHeight(dbTx database.Tx, height int64) (*dcrutil.Block, error
 }
 
 // DBFetchBlockByHeight is the exported version of dbFetchBlockByHeight.
-func DBFetchBlockByHeight(dbTx database.Tx, height int64) (*dcrutil.Block, error) {
+func DBFetchBlockByHeight(dbTx database.Tx, height int64) (*hcutil.Block, error) {
 	return dbFetchBlockByHeight(dbTx, height)
 }
 
@@ -1681,8 +1681,8 @@ func (b *BlockChain) BlockHashByHeight(blockHeight int64) (*chainhash.Hash, erro
 // BlockByHeight returns the block at the given height in the main chain.
 //
 // This function is safe for concurrent access.
-func (b *BlockChain) BlockByHeight(blockHeight int64) (*dcrutil.Block, error) {
-	var block *dcrutil.Block
+func (b *BlockChain) BlockByHeight(blockHeight int64) (*hcutil.Block, error) {
+	var block *hcutil.Block
 	err := b.db.View(func(dbTx database.Tx) error {
 		var err error
 		block, err = dbFetchBlockByHeight(dbTx, blockHeight)
@@ -1695,7 +1695,7 @@ func (b *BlockChain) BlockByHeight(blockHeight int64) (*dcrutil.Block, error) {
 // the appropriate chain height set.
 //
 // This function is safe for concurrent access.
-func (b *BlockChain) BlockByHash(hash *chainhash.Hash) (*dcrutil.Block, error) {
+func (b *BlockChain) BlockByHash(hash *chainhash.Hash) (*hcutil.Block, error) {
 	b.chainLock.RLock()
 	defer b.chainLock.RUnlock()
 

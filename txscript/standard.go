@@ -12,7 +12,7 @@ import (
 	"github.com/coolsnady/hcd/chaincfg"
 	"github.com/coolsnady/hcd/chaincfg/chainec"
 	"github.com/coolsnady/hcd/chaincfg/chainhash"
-	dcrutil "github.com/coolsnady/hcutil"
+	"github.com/coolsnady/hcutil"
 	bs "github.com/coolsnady/hcd/crypto/bliss"
 )
 
@@ -744,7 +744,7 @@ func payToBlissPubKeyScript(serializedPubKey []byte) ([]byte, error) {
 // PayToSStx creates a new script to pay a transaction output to a script hash or
 // public key hash, but tags the output with OP_SSTX. For use in constructing
 // valid SStxs.
-func PayToSStx(addr dcrutil.Address) ([]byte, error) {
+func PayToSStx(addr hcutil.Address) ([]byte, error) {
 	blissData := []byte{byte(bliss)}
 
 	if addr == nil {
@@ -755,18 +755,18 @@ func PayToSStx(addr dcrutil.Address) ([]byte, error) {
 	// supported.
 	scriptType := PubKeyHashTy
 	switch addr := addr.(type) {
-	case *dcrutil.AddressPubKeyHash:
+	case *hcutil.AddressPubKeyHash:
 		if addr.DSA(addr.Net()) != chainec.ECTypeSecp256k1 {
 			return nil, ErrUnsupportedAddress
 		}
 		break
-	case *dcrutil.AddressBlissPubKey:
+	case *hcutil.AddressBlissPubKey:
 		if addr.DSA(addr.Net()) != bs.BSTypeBliss {
 			return nil, ErrUnsupportedAddress
 		}
 		scriptType = PubkeyHashAltTy
 		break
-	case *dcrutil.AddressScriptHash:
+	case *hcutil.AddressScriptHash:
 		scriptType = ScriptHashTy
 		break
 	default:
@@ -792,7 +792,7 @@ func PayToSStx(addr dcrutil.Address) ([]byte, error) {
 // PayToSStxChange creates a new script to pay a transaction output to a
 // public key hash, but tags the output with OP_SSTXCHANGE. For use in constructing
 // valid SStxs.
-func PayToSStxChange(addr dcrutil.Address) ([]byte, error) {
+func PayToSStxChange(addr hcutil.Address) ([]byte, error) {
 	blissData := []byte{byte(bliss)}
 
 	if addr == nil {
@@ -803,18 +803,18 @@ func PayToSStxChange(addr dcrutil.Address) ([]byte, error) {
 	// supported.
 	scriptType := PubKeyHashTy
 	switch addr := addr.(type) {
-	case *dcrutil.AddressPubKeyHash:
+	case *hcutil.AddressPubKeyHash:
 		if addr.DSA(addr.Net()) != chainec.ECTypeSecp256k1 {
 			return nil, ErrUnsupportedAddress
 		}
 		break
-	case *dcrutil.AddressBlissPubKey:
+	case *hcutil.AddressBlissPubKey:
 		if addr.DSA(addr.Net()) != bs.BSTypeBliss {
 			return nil, ErrUnsupportedAddress
 		}
 		scriptType = PubkeyHashAltTy
 		break
-	case *dcrutil.AddressScriptHash:
+	case *hcutil.AddressScriptHash:
 		scriptType = ScriptHashTy
 		break
 	default:
@@ -840,7 +840,7 @@ func PayToSStxChange(addr dcrutil.Address) ([]byte, error) {
 // PayToSSGen creates a new script to pay a transaction output to a public key
 // hash or script hash, but tags the output with OP_SSGEN. For use in constructing
 // valid SSGen txs.
-func PayToSSGen(addr dcrutil.Address) ([]byte, error) {
+func PayToSSGen(addr hcutil.Address) ([]byte, error) {
 	blissData := []byte{byte(bliss)}
 
 	if addr == nil {
@@ -851,18 +851,18 @@ func PayToSSGen(addr dcrutil.Address) ([]byte, error) {
 	// supported.
 	scriptType := PubKeyHashTy
 	switch addr := addr.(type) {
-	case *dcrutil.AddressPubKeyHash:
+	case *hcutil.AddressPubKeyHash:
 		if addr.DSA(addr.Net()) != chainec.ECTypeSecp256k1 {
 			return nil, ErrUnsupportedAddress
 		}
 		break
-	case *dcrutil.AddressBlissPubKey:
+	case *hcutil.AddressBlissPubKey:
 		if addr.DSA(addr.Net()) != bs.BSTypeBliss {
 			return nil, ErrUnsupportedAddress
 		}
 		scriptType = PubkeyHashAltTy
 		break
-	case *dcrutil.AddressScriptHash:
+	case *hcutil.AddressScriptHash:
 		scriptType = ScriptHashTy
 		break
 	default:
@@ -915,7 +915,7 @@ func PayToSSGenSHDirect(sh []byte) ([]byte, error) {
 // PayToSSRtx creates a new script to pay a transaction output to a
 // public key hash, but tags the output with OP_SSRTX. For use in constructing
 // valid SSRtx.
-func PayToSSRtx(addr dcrutil.Address) ([]byte, error) {
+func PayToSSRtx(addr hcutil.Address) ([]byte, error) {
 	blissData := []byte{byte(bliss)}
 
 	if addr == nil {
@@ -926,18 +926,18 @@ func PayToSSRtx(addr dcrutil.Address) ([]byte, error) {
 	// supported.
 	scriptType := PubKeyHashTy
 	switch addr := addr.(type) {
-	case *dcrutil.AddressPubKeyHash:
+	case *hcutil.AddressPubKeyHash:
 		if addr.DSA(addr.Net()) != chainec.ECTypeSecp256k1 {
 			return nil, ErrUnsupportedAddress
 		}
 		break
-	case *dcrutil.AddressBlissPubKey:
+	case *hcutil.AddressBlissPubKey:
 		if addr.DSA(addr.Net()) != bs.BSTypeBliss {
 			return nil, ErrUnsupportedAddress
 		}
 		scriptType = PubkeyHashAltTy
 		break
-	case *dcrutil.AddressScriptHash:
+	case *hcutil.AddressScriptHash:
 		scriptType = ScriptHashTy
 		break
 	default:
@@ -989,7 +989,7 @@ func PayToSSRtxSHDirect(sh []byte) ([]byte, error) {
 
 // GenerateSStxAddrPush generates an OP_RETURN push for SSGen payment addresses in
 // an SStx.
-func GenerateSStxAddrPush(addr dcrutil.Address, amount dcrutil.Amount,
+func GenerateSStxAddrPush(addr hcutil.Address, amount hcutil.Amount,
 	limits uint16) ([]byte, error) {
 	if addr == nil {
 		return nil, ErrUnsupportedAddress
@@ -999,18 +999,18 @@ func GenerateSStxAddrPush(addr dcrutil.Address, amount dcrutil.Amount,
 	// supported.
 	scriptType := PubKeyHashTy
 	switch addr := addr.(type) {
-	case *dcrutil.AddressPubKeyHash:
+	case *hcutil.AddressPubKeyHash:
 		if addr.DSA(addr.Net()) != chainec.ECTypeSecp256k1 {
 			return nil, ErrUnsupportedAddress
 		}
 		break
-	case *dcrutil.AddressBlissPubKey:
+	case *hcutil.AddressBlissPubKey:
 		if addr.DSA(addr.Net()) != bs.BSTypeBliss {
 			return nil, ErrUnsupportedAddress
 		}
 		scriptType = PubkeyHashAltTy
 		break
-	case *dcrutil.AddressScriptHash:
+	case *hcutil.AddressScriptHash:
 		scriptType = ScriptHashTy
 		break
 	default:
@@ -1091,9 +1091,9 @@ func GenerateProvablyPruneableOut(data []byte) ([]byte, error) {
 
 // PayToAddrScript creates a new script to pay a transaction output to a the
 // specified address.
-func PayToAddrScript(addr dcrutil.Address) ([]byte, error) {
+func PayToAddrScript(addr hcutil.Address) ([]byte, error) {
 	switch addr := addr.(type) {
-	case *dcrutil.AddressPubKeyHash:
+	case *hcutil.AddressPubKeyHash:
 		if addr == nil {
 			return nil, ErrUnsupportedAddress
 		}
@@ -1108,31 +1108,31 @@ func PayToAddrScript(addr dcrutil.Address) ([]byte, error) {
 			return payToPubKeyHashBlissScript(addr.ScriptAddress())
 		}
 
-	case *dcrutil.AddressScriptHash:
+	case *hcutil.AddressScriptHash:
 		if addr == nil {
 			return nil, ErrUnsupportedAddress
 		}
 		return payToScriptHashScript(addr.ScriptAddress())
 
-	case *dcrutil.AddressSecpPubKey:
+	case *hcutil.AddressSecpPubKey:
 		if addr == nil {
 			return nil, ErrUnsupportedAddress
 		}
 		return payToPubKeyScript(addr.ScriptAddress())
 
-	case *dcrutil.AddressEdwardsPubKey:
+	case *hcutil.AddressEdwardsPubKey:
 		if addr == nil {
 			return nil, ErrUnsupportedAddress
 		}
 		return payToEdwardsPubKeyScript(addr.ScriptAddress())
 
-	case *dcrutil.AddressSecSchnorrPubKey:
+	case *hcutil.AddressSecSchnorrPubKey:
 		if addr == nil {
 			return nil, ErrUnsupportedAddress
 		}
 		return payToSchnorrPubKeyScript(addr.ScriptAddress())
 
-	case *dcrutil.AddressBlissPubKey:
+	case *hcutil.AddressBlissPubKey:
 		if addr == nil {
 			return nil, ErrUnsupportedAddress
 		}
@@ -1146,7 +1146,7 @@ func PayToAddrScript(addr dcrutil.Address) ([]byte, error) {
 // nrequired of the keys in pubkeys are required to have signed the transaction
 // for success.  An ErrBadNumRequired will be returned if nrequired is larger
 // than the number of keys provided.
-func MultiSigScript(pubkeys []*dcrutil.AddressSecpPubKey, nrequired int) ([]byte,
+func MultiSigScript(pubkeys []*hcutil.AddressSecpPubKey, nrequired int) ([]byte,
 	error) {
 	if len(pubkeys) < nrequired {
 		return nil, ErrBadNumRequired
@@ -1202,12 +1202,12 @@ func GetMultisigMandN(script []byte) (uint8, uint8, error) {
 // 'standard' transaction script types.  Any data such as public keys which are
 // invalid are omitted from the results.
 func ExtractPkScriptAddrs(version uint16, pkScript []byte,
-	chainParams *chaincfg.Params) (ScriptClass, []dcrutil.Address, int, error) {
+	chainParams *chaincfg.Params) (ScriptClass, []hcutil.Address, int, error) {
 	if version != DefaultScriptVersion {
 		return NonStandardTy, nil, 0, fmt.Errorf("invalid script version")
 	}
 
-	var addrs []dcrutil.Address
+	var addrs []hcutil.Address
 	var requiredSigs int
 
 	// No valid addresses or required signatures if the script doesn't
@@ -1226,7 +1226,7 @@ func ExtractPkScriptAddrs(version uint16, pkScript []byte,
 		// Therefore the pubkey hash is the 3rd item on the stack.
 		// Skip the pubkey hash if it's invalid for some reason.
 		requiredSigs = 1
-		addr, err := dcrutil.NewAddressPubKeyHash(pops[2].data,
+		addr, err := hcutil.NewAddressPubKeyHash(pops[2].data,
 			chainParams, chainec.ECTypeSecp256k1)
 		if err == nil {
 			addrs = append(addrs, addr)
@@ -1239,7 +1239,7 @@ func ExtractPkScriptAddrs(version uint16, pkScript []byte,
 		// Skip the pubkey hash if it's invalid for some reason.
 		requiredSigs = 1
 		suite, _ := ExtractPkScriptAltSigType(pkScript)
-		addr, err := dcrutil.NewAddressPubKeyHash(pops[2].data,
+		addr, err := hcutil.NewAddressPubKeyHash(pops[2].data,
 			chainParams, suite)
 		if err == nil {
 			addrs = append(addrs, addr)
@@ -1253,7 +1253,7 @@ func ExtractPkScriptAddrs(version uint16, pkScript []byte,
 		requiredSigs = 1
 		pk, err := chainec.Secp256k1.ParsePubKey(pops[0].data)
 		if err == nil {
-			addr, err := dcrutil.NewAddressSecpPubKeyCompressed(pk, chainParams)
+			addr, err := hcutil.NewAddressSecpPubKeyCompressed(pk, chainParams)
 			if err == nil {
 				addrs = append(addrs, addr)
 			}
@@ -1266,17 +1266,17 @@ func ExtractPkScriptAddrs(version uint16, pkScript []byte,
 		// Skip the pubkey if it's invalid for some reason.
 		requiredSigs = 1
 		suite, _ := ExtractPkScriptAltSigType(pkScript)
-		var addr dcrutil.Address
+		var addr hcutil.Address
 		err := fmt.Errorf("invalid signature suite for alt sig")
 		switch suite {
 		case chainec.ECTypeEdwards:
-			addr, err = dcrutil.NewAddressEdwardsPubKey(pops[0].data,
+			addr, err = hcutil.NewAddressEdwardsPubKey(pops[0].data,
 				chainParams)
 		case chainec.ECTypeSecSchnorr:
-			addr, err = dcrutil.NewAddressSecSchnorrPubKey(pops[0].data,
+			addr, err = hcutil.NewAddressSecSchnorrPubKey(pops[0].data,
 				chainParams)
 		case bs.BSTypeBliss:
-			addr, err = dcrutil.NewAddressBlissPubKey(pops[0].data,
+			addr, err = hcutil.NewAddressBlissPubKey(pops[0].data,
 				chainParams)
 		}
 		if err == nil {
@@ -1286,7 +1286,7 @@ func ExtractPkScriptAddrs(version uint16, pkScript []byte,
 	case StakeSubmissionTy:
 		// A pay-to-stake-submission-hash script is of the form:
 		//  OP_SSTX ... P2PKH or P2SH
-		var localAddrs []dcrutil.Address
+		var localAddrs []hcutil.Address
 		_, localAddrs, requiredSigs, err =
 			ExtractPkScriptAddrs(version, getStakeOutSubscript(pkScript),
 				chainParams)
@@ -1297,7 +1297,7 @@ func ExtractPkScriptAddrs(version uint16, pkScript []byte,
 	case StakeGenTy:
 		// A pay-to-stake-generation-hash script is of the form:
 		//  OP_SSGEN  ... P2PKH or P2SH
-		var localAddrs []dcrutil.Address
+		var localAddrs []hcutil.Address
 		_, localAddrs, requiredSigs, err = ExtractPkScriptAddrs(version,
 			getStakeOutSubscript(pkScript), chainParams)
 		if err == nil {
@@ -1307,7 +1307,7 @@ func ExtractPkScriptAddrs(version uint16, pkScript []byte,
 	case StakeRevocationTy:
 		// A pay-to-stake-revocation-hash script is of the form:
 		//  OP_SSRTX  ... P2PKH or P2SH
-		var localAddrs []dcrutil.Address
+		var localAddrs []hcutil.Address
 		_, localAddrs, requiredSigs, err =
 			ExtractPkScriptAddrs(version, getStakeOutSubscript(pkScript),
 				chainParams)
@@ -1318,7 +1318,7 @@ func ExtractPkScriptAddrs(version uint16, pkScript []byte,
 	case StakeSubChangeTy:
 		// A pay-to-stake-submission-change-hash script is of the form:
 		// OP_SSTXCHANGE ... P2PKH or P2SH
-		var localAddrs []dcrutil.Address
+		var localAddrs []hcutil.Address
 		_, localAddrs, requiredSigs, err =
 			ExtractPkScriptAddrs(version, getStakeOutSubscript(pkScript),
 				chainParams)
@@ -1332,7 +1332,7 @@ func ExtractPkScriptAddrs(version uint16, pkScript []byte,
 		// Therefore the script hash is the 2nd item on the stack.
 		// Skip the script hash if it's invalid for some reason.
 		requiredSigs = 1
-		addr, err := dcrutil.NewAddressScriptHashFromHash(pops[1].data,
+		addr, err := hcutil.NewAddressScriptHashFromHash(pops[1].data,
 			chainParams)
 		if err == nil {
 			addrs = append(addrs, addr)
@@ -1348,11 +1348,11 @@ func ExtractPkScriptAddrs(version uint16, pkScript []byte,
 		numPubKeys := asSmallInt(pops[len(pops)-2].opcode)
 
 		// Extract the public keys while skipping any that are invalid.
-		addrs = make([]dcrutil.Address, 0, numPubKeys)
+		addrs = make([]hcutil.Address, 0, numPubKeys)
 		for i := 0; i < numPubKeys; i++ {
 			pubkey, err := chainec.Secp256k1.ParsePubKey(pops[i+1].data)
 			if err == nil {
-				addr, err := dcrutil.NewAddressSecpPubKeyCompressed(pubkey,
+				addr, err := hcutil.NewAddressSecpPubKeyCompressed(pubkey,
 					chainParams)
 				if err == nil {
 					addrs = append(addrs, addr)

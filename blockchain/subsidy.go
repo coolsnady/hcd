@@ -14,7 +14,7 @@ import (
 	"github.com/coolsnady/hcd/chaincfg"
 	"github.com/coolsnady/hcd/txscript"
 	"github.com/coolsnady/hcd/wire"
-	dcrutil "github.com/coolsnady/hcutil"
+	"github.com/coolsnady/hcutil"
 )
 
 // The number of values to precalculate on initialization of the subsidy
@@ -205,7 +205,7 @@ func CalcBlockTaxSubsidy(subsidyCache *SubsidyCache, height int64, voters uint16
 
 // BlockOneCoinbasePaysTokens checks to see if the first block coinbase pays
 // out to the network initial token ledger.
-func BlockOneCoinbasePaysTokens(tx *dcrutil.Tx,
+func BlockOneCoinbasePaysTokens(tx *hcutil.Tx,
 	params *chaincfg.Params) error {
 	// If no ledger is specified, just return true.
 	if len(params.BlockOneLedger) == 0 {
@@ -258,7 +258,7 @@ func BlockOneCoinbasePaysTokens(tx *dcrutil.Tx,
 			return ruleError(ErrBlockOneOutputs, errStr)
 		}
 
-		addrLedger, err := dcrutil.DecodeAddress(ledger[i].Address)
+		addrLedger, err := hcutil.DecodeAddress(ledger[i].Address)
 		if err != nil {
 			return err
 		}
@@ -286,7 +286,7 @@ func BlockOneCoinbasePaysTokens(tx *dcrutil.Tx,
 
 // CoinbasePaysTax checks to see if a given block's coinbase correctly pays
 // tax to the developer organization.
-func CoinbasePaysTax(subsidyCache *SubsidyCache, tx *dcrutil.Tx, height uint32,
+func CoinbasePaysTax(subsidyCache *SubsidyCache, tx *hcutil.Tx, height uint32,
 	voters uint16, params *chaincfg.Params) error {
 	// Taxes only apply from block 2 onwards.
 	if height <= 1 {
@@ -331,11 +331,11 @@ func CoinbasePaysTax(subsidyCache *SubsidyCache, tx *dcrutil.Tx, height uint32,
 // and its parent. The blocks passed to this function MUST be valid blocks
 // that have already been confirmed to abide by the consensus rules of the
 // network, or the function might panic.
-func CalculateAddedSubsidy(block, parent *dcrutil.Block) int64 {
+func CalculateAddedSubsidy(block, parent *hcutil.Block) int64 {
 	var subsidy int64
 
-	regularTxTreeValid := dcrutil.IsFlagSet16(block.MsgBlock().Header.VoteBits,
-		dcrutil.BlockValid)
+	regularTxTreeValid := hcutil.IsFlagSet16(block.MsgBlock().Header.VoteBits,
+		hcutil.BlockValid)
 	if regularTxTreeValid {
 		subsidy += parent.MsgBlock().Transactions[0].TxIn[0].ValueIn
 	}

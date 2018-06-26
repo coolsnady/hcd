@@ -11,7 +11,7 @@ import (
 
 	"github.com/coolsnady/hcd/chaincfg"
 	"github.com/coolsnady/hcd/wire"
-	dcrutil "github.com/coolsnady/hcutil"
+	"github.com/coolsnady/hcutil"
 )
 
 // mustLockTimeToSeq converts the passed relative lock time to a sequence number
@@ -48,7 +48,7 @@ func TestCalcSequenceLock(t *testing.T) {
 	// Create a utxo view with a fake utxo for the inputs used in the
 	// transactions created below.  This utxo is added such that it has an
 	// age of 4 blocks.
-	targetTx := dcrutil.NewTx(&wire.MsgTx{
+	targetTx := hcutil.NewTx(&wire.MsgTx{
 		TxOut: []*wire.TxOut{{
 			Value:    10,
 			Version:  0,
@@ -112,7 +112,7 @@ func TestCalcSequenceLock(t *testing.T) {
 
 	// Adding a utxo with a height of 0x7fffffff indicates that the output
 	// is currently unmined.
-	view.AddTxOuts(dcrutil.NewTx(unConfTx), 0x7fffffff, wire.NullBlockIndex)
+	view.AddTxOuts(hcutil.NewTx(unConfTx), 0x7fffffff, wire.NullBlockIndex)
 
 	tests := []struct {
 		name      string
@@ -367,7 +367,7 @@ func TestCalcSequenceLock(t *testing.T) {
 		for _, txIn := range test.inputs {
 			tx.AddTxIn(txIn)
 		}
-		utilTx := dcrutil.NewTx(&tx)
+		utilTx := hcutil.NewTx(&tx)
 
 		// Calculate the sequence lock for the test input data.  Since
 		// the exported function always has the agenda active, use the

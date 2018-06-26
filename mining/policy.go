@@ -5,7 +5,7 @@
 
 package mining
 
-import dcrutil "github.com/coolsnady/hcutil"
+import "github.com/coolsnady/hcutil"
 
 // Policy houses the policy (configuration parameters) which is used to control
 // the generation of block templates.  See the documentation for
@@ -26,5 +26,5 @@ type Policy struct {
 	// TxMinFreeFee is the minimum fee in Atoms/1000 bytes that is
 	// required for a transaction to be treated as free for mining purposes
 	// (block template generation).
-	TxMinFreeFee dcrutil.Amount
+	TxMinFreeFee hcutil.Amount
 }

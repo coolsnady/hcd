@@ -16,7 +16,7 @@ import (
 	"github.com/coolsnady/hcd/chaincfg/chainhash"
 	"github.com/coolsnady/hcd/database"
 	"github.com/coolsnady/hcd/wire"
-	dcrutil "github.com/coolsnady/hcutil"
+	"github.com/coolsnady/hcutil"
 )
 
 var (
@@ -72,7 +72,7 @@ func dbFetchIndexerTip(dbTx database.Tx, idxKey []byte) (*chainhash.Hash, int32,
 // given block using the provided indexer and updates the tip of the indexer
 // accordingly.  An error will be returned if the current tip for the indexer is
 // not the previous block for the passed block.
-func dbIndexConnectBlock(dbTx database.Tx, indexer Indexer, block, parent *dcrutil.Block, view *blockchain.UtxoViewpoint) error {
+func dbIndexConnectBlock(dbTx database.Tx, indexer Indexer, block, parent *hcutil.Block, view *blockchain.UtxoViewpoint) error {
 	// Assert that the block being connected properly connects to the
 	// current tip of the index.
 	idxKey := indexer.Key()
@@ -100,7 +100,7 @@ func dbIndexConnectBlock(dbTx database.Tx, indexer Indexer, block, parent *dcrut
 // given block using the provided indexer and updates the tip of the indexer
 // accordingly.  An error will be returned if the current tip for the indexer is
 // not the passed block.
-func dbIndexDisconnectBlock(dbTx database.Tx, indexer Indexer, block, parent *dcrutil.Block, view *blockchain.UtxoViewpoint) error {
+func dbIndexDisconnectBlock(dbTx database.Tx, indexer Indexer, block, parent *hcutil.Block, view *blockchain.UtxoViewpoint) error {
 	// Assert that the block being disconnected is the current tip of the
 	// index.
 	idxKey := indexer.Key()
@@ -268,7 +268,7 @@ func (m *Manager) Init(chain *blockchain.BlockChain) error {
 	// This is fairly unlikely, but it can happen if the chain is
 	// reorganized while the index is disabled.  This has to be done in
 	// reverse order because later indexes can depend on earlier ones.
-	var cachedBlock *dcrutil.Block
+	var cachedBlock *hcutil.Block
 	for i := len(m.enabledIndexes); i > 0; i-- {
 		indexer := m.enabledIndexes[i-1]
 
@@ -298,7 +298,7 @@ func (m *Manager) Init(chain *blockchain.BlockChain) error {
 				}
 
 				// Get the block, unless it's already cached.
-				var block *dcrutil.Block
+				var block *hcutil.Block
 				if cachedBlock == nil && height > 0 {
 					block, err = blockchain.DBFetchBlockByHeight(dbTx,
 						int64(height))
@@ -398,9 +398,9 @@ func (m *Manager) Init(chain *blockchain.BlockChain) error {
 	log.Infof("Catching up indexes from height %d to %d", lowestHeight,
 		bestHeight)
 
-	var cachedParent *dcrutil.Block
+	var cachedParent *hcutil.Block
 	for height := lowestHeight + 1; height <= bestHeight; height++ {
-		var block, parent *dcrutil.Block
+		var block, parent *hcutil.Block
 		err = m.db.Update(func(dbTx database.Tx) error {
 			// Get the parent of the block, unless it's already cached.
 			if cachedParent == nil && height > 0 {
@@ -506,9 +506,9 @@ func dbFetchTx(dbTx database.Tx, hash *chainhash.Hash) (*wire.MsgTx, error) {
 // transactions in the block.  This is sometimes needed when catching indexes up
 // because many of the txouts could actually already be spent however the
 // associated scripts are still required to index them.
-func makeUtxoView(dbTx database.Tx, block, parent *dcrutil.Block) (*blockchain.UtxoViewpoint, error) {
+func makeUtxoView(dbTx database.Tx, block, parent *hcutil.Block) (*blockchain.UtxoViewpoint, error) {
 	view := blockchain.NewUtxoViewpoint()
-	var parentRegularTxs []*dcrutil.Tx
+	var parentRegularTxs []*hcutil.Tx
 	if approvesParent(block) {
 		parentRegularTxs = parent.Transactions()
 	}
@@ -535,7 +535,7 @@ func makeUtxoView(dbTx database.Tx, block, parent *dcrutil.Block) (*blockchain.U
 				return nil, err
 			}
 
-			view.AddTxOuts(dcrutil.NewTx(originTx),
+			view.AddTxOuts(hcutil.NewTx(originTx),
 				int64(wire.NullBlockHeight),
 				wire.NullBlockIndex)
 		}
@@ -563,7 +563,7 @@ func makeUtxoView(dbTx database.Tx, block, parent *dcrutil.Block) (*blockchain.U
 				return nil, err
 			}
 
-			view.AddTxOuts(dcrutil.NewTx(originTx), int64(wire.NullBlockHeight),
+			view.AddTxOuts(hcutil.NewTx(originTx), int64(wire.NullBlockHeight),
 				wire.NullBlockIndex)
 		}
 	}
@@ -576,7 +576,7 @@ func makeUtxoView(dbTx database.Tx, block, parent *dcrutil.Block) (*blockchain.U
 // checks, and invokes each indexer.
 //
 // This is part of the blockchain.IndexManager interface.
-func (m *Manager) ConnectBlock(dbTx database.Tx, block, parent *dcrutil.Block, view *blockchain.UtxoViewpoint) error {
+func (m *Manager) ConnectBlock(dbTx database.Tx, block, parent *hcutil.Block, view *blockchain.UtxoViewpoint) error {
 	// Call each of the currently active optional indexes with the block
 	// being connected so they can update accordingly.
 	for _, index := range m.enabledIndexes {
@@ -594,7 +594,7 @@ func (m *Manager) ConnectBlock(dbTx database.Tx, block, parent *dcrutil.Block, v
 // the index entries associated with the block.
 //
 // This is part of the blockchain.IndexManager interface.
-func (m *Manager) DisconnectBlock(dbTx database.Tx, block, parent *dcrutil.Block, view *blockchain.UtxoViewpoint) error {
+func (m *Manager) DisconnectBlock(dbTx database.Tx, block, parent *hcutil.Block, view *blockchain.UtxoViewpoint) error {
 	// Call each of the currently active optional indexes with the block
 	// being disconnected so they can update accordingly.
 	for _, index := range m.enabledIndexes {

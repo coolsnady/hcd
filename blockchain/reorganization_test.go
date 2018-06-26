@@ -16,7 +16,7 @@ import (
 	"github.com/coolsnady/hcd/blockchain"
 	"github.com/coolsnady/hcd/chaincfg"
 	"github.com/coolsnady/hcd/chaincfg/chainhash"
-	dcrutil "github.com/coolsnady/hcutil"
+	"github.com/coolsnady/hcutil"
 )
 
 // reorgTestLong does a single, large reorganization.
@@ -31,7 +31,7 @@ func reorgTestLong(t *testing.T, params *chaincfg.Params) {
 
 	// The genesis block should fail to connect since it's already
 	// inserted.
-	err = chain.CheckConnectBlock(dcrutil.NewBlock(params.GenesisBlock))
+	err = chain.CheckConnectBlock(hcutil.NewBlock(params.GenesisBlock))
 	if err == nil {
 		t.Errorf("CheckConnectBlock: Did not receive expected error")
 	}
@@ -61,7 +61,7 @@ func reorgTestLong(t *testing.T, params *chaincfg.Params) {
 	// Load up the short chain
 	finalIdx1 := 179
 	for i := 1; i < finalIdx1+1; i++ {
-		bl, err := dcrutil.NewBlockFromBytes(blockChain[int64(i)])
+		bl, err := hcutil.NewBlockFromBytes(blockChain[int64(i)])
 		if err != nil {
 			t.Fatalf("NewBlockFromBytes error: %v", err.Error())
 		}
@@ -99,7 +99,7 @@ func reorgTestLong(t *testing.T, params *chaincfg.Params) {
 	forkPoint := 131
 	finalIdx2 := 180
 	for i := forkPoint; i < finalIdx2+1; i++ {
-		bl, err := dcrutil.NewBlockFromBytes(blockChain[int64(i)])
+		bl, err := hcutil.NewBlockFromBytes(blockChain[int64(i)])
 		if err != nil {
 			t.Fatalf("NewBlockFromBytes error: %v", err.Error())
 		}
@@ -144,7 +144,7 @@ func reorgTestShort(t *testing.T, params *chaincfg.Params) {
 
 	// The genesis block should fail to connect since it's already
 	// inserted.
-	err = chain.CheckConnectBlock(dcrutil.NewBlock(params.GenesisBlock))
+	err = chain.CheckConnectBlock(hcutil.NewBlock(params.GenesisBlock))
 	if err == nil {
 		t.Errorf("CheckConnectBlock: Did not receive expected error")
 	}
@@ -199,7 +199,7 @@ func reorgTestShort(t *testing.T, params *chaincfg.Params) {
 	finalIdx2 := 180
 
 	for i := 1; i < forkPoint+1; i++ {
-		bl, err := dcrutil.NewBlockFromBytes(blockChain1[int64(i)])
+		bl, err := hcutil.NewBlockFromBytes(blockChain1[int64(i)])
 		if err != nil {
 			t.Fatalf("NewBlockFromBytes error: %v", err.Error())
 		}
@@ -215,7 +215,7 @@ func reorgTestShort(t *testing.T, params *chaincfg.Params) {
 	orphaned := blockChain1
 	for i := forkPoint; i < finalIdx2; i++ {
 		for j := 0; j < 2; j++ {
-			bl, err := dcrutil.NewBlockFromBytes(dominant[int64(i+j)])
+			bl, err := hcutil.NewBlockFromBytes(dominant[int64(i+j)])
 			if err != nil {
 				t.Fatalf("NewBlockFromBytes error: %v", err.Error())
 			}
@@ -262,7 +262,7 @@ func reorgTestForced(t *testing.T, params *chaincfg.Params) {
 
 	// The genesis block should fail to connect since it's already
 	// inserted.
-	err = chain.CheckConnectBlock(dcrutil.NewBlock(params.GenesisBlock))
+	err = chain.CheckConnectBlock(hcutil.NewBlock(params.GenesisBlock))
 	if err == nil {
 		t.Errorf("CheckConnectBlock: Did not receive expected error")
 	}
@@ -290,7 +290,7 @@ func reorgTestForced(t *testing.T, params *chaincfg.Params) {
 	finalIdx1 := 131
 	var oldBestHash *chainhash.Hash
 	for i := 1; i < finalIdx1+1; i++ {
-		bl, err := dcrutil.NewBlockFromBytes(blockChain[int64(i)])
+		bl, err := hcutil.NewBlockFromBytes(blockChain[int64(i)])
 		if err != nil {
 			t.Fatalf("NewBlockFromBytes error: %v", err.Error())
 		}
@@ -326,7 +326,7 @@ func reorgTestForced(t *testing.T, params *chaincfg.Params) {
 	}
 
 	forkPoint := int64(131)
-	forkBl, err := dcrutil.NewBlockFromBytes(blockChain[forkPoint])
+	forkBl, err := hcutil.NewBlockFromBytes(blockChain[forkPoint])
 	if err != nil {
 		t.Fatalf("NewBlockFromBytes error: %v", err.Error())
 	}

@@ -10,7 +10,7 @@ package database
 
 import (
 	"github.com/coolsnady/hcd/chaincfg/chainhash"
-	dcrutil "github.com/coolsnady/hcutil"
+	"github.com/coolsnady/hcutil"
 )
 
 // Cursor represents a cursor over key/value pairs and nested buckets of a
@@ -228,7 +228,7 @@ type Tx interface {
 	//   - ErrTxClosed if the transaction has already been closed
 	//
 	// Other errors are possible depending on the implementation.
-	StoreBlock(block *dcrutil.Block) error
+	StoreBlock(block *hcutil.Block) error
 
 	// HasBlock returns whether or not a block with the given hash exists
 	// in the database.

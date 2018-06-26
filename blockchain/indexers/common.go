@@ -13,7 +13,7 @@ import (
 
 	"github.com/coolsnady/hcd/blockchain"
 	"github.com/coolsnady/hcd/database"
-	dcrutil "github.com/coolsnady/hcutil"
+	"github.com/coolsnady/hcutil"
 )
 
 var (
@@ -48,11 +48,11 @@ type Indexer interface {
 
 	// ConnectBlock is invoked when the index manager is notified that a new
 	// block has been connected to the main chain.
-	ConnectBlock(dbTx database.Tx, block, parent *dcrutil.Block, view *blockchain.UtxoViewpoint) error
+	ConnectBlock(dbTx database.Tx, block, parent *hcutil.Block, view *blockchain.UtxoViewpoint) error
 
 	// DisconnectBlock is invoked when the index manager is notified that a
 	// block has been disconnected from the main chain.
-	DisconnectBlock(dbTx database.Tx, block, parent *dcrutil.Block, view *blockchain.UtxoViewpoint) error
+	DisconnectBlock(dbTx database.Tx, block, parent *hcutil.Block, view *blockchain.UtxoViewpoint) error
 }
 
 // AssertError identifies an error that indicates an internal code consistency
@@ -93,7 +93,7 @@ type internalBucket interface {
 // approvesParent returns whether or not the vote bits in the header of the
 // passed block indicate the regular transaction tree of the parent block should
 // be considered valid.
-func approvesParent(block *dcrutil.Block) bool {
-	return dcrutil.IsFlagSet16(block.MsgBlock().Header.VoteBits,
-		dcrutil.BlockValid)
+func approvesParent(block *hcutil.Block) bool {
+	return hcutil.IsFlagSet16(block.MsgBlock().Header.VoteBits,
+		hcutil.BlockValid)
 }

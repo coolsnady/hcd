@@ -15,7 +15,7 @@ import (
 	"github.com/coolsnady/hcd/chaincfg"
 	"github.com/coolsnady/hcd/database"
 	_ "github.com/coolsnady/hcd/database/ffldb"
-	dcrutil "github.com/coolsnady/hcutil"
+	"github.com/coolsnady/hcutil"
 )
 
 // This example demonstrates how to create a new chain instance and use
@@ -59,7 +59,7 @@ func ExampleBlockChain_ProcessBlock() {
 	// Process a block.  For this example, we are going to intentionally
 	// cause an error by trying to process the genesis block which already
 	// exists.
-	genesisBlock := dcrutil.NewBlock(chaincfg.MainNetParams.GenesisBlock)
+	genesisBlock := hcutil.NewBlock(chaincfg.MainNetParams.GenesisBlock)
 	isMainChain, isOrphan, err := chain.ProcessBlock(genesisBlock,
 		blockchain.BFNone)
 	if err != nil {

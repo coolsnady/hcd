@@ -13,7 +13,7 @@ import (
 	"github.com/coolsnady/hcd/database"
 	"github.com/coolsnady/hcd/txscript"
 	"github.com/coolsnady/hcd/wire"
-	dcrutil "github.com/coolsnady/hcutil"
+	"github.com/coolsnady/hcutil"
 )
 
 var (
@@ -142,7 +142,7 @@ func (idx *ExistsAddrIndex) existsAddress(bucket database.Bucket, k [addrKeySize
 
 // ExistsAddress is the concurrency safe, exported function that returns
 // whether or not an address has been seen before.
-func (idx *ExistsAddrIndex) ExistsAddress(addr dcrutil.Address) (bool, error) {
+func (idx *ExistsAddrIndex) ExistsAddress(addr hcutil.Address) (bool, error) {
 	k, err := addrToKey(addr, idx.chainParams)
 	if err != nil {
 		return false, err
@@ -172,7 +172,7 @@ func (idx *ExistsAddrIndex) ExistsAddress(addr dcrutil.Address) (bool, error) {
 
 // ExistsAddresses is the concurrency safe, exported function that returns
 // whether or not each address in a slice of addresses has been seen before.
-func (idx *ExistsAddrIndex) ExistsAddresses(addrs []dcrutil.Address) ([]bool, error) {
+func (idx *ExistsAddrIndex) ExistsAddresses(addrs []hcutil.Address) ([]bool, error) {
 	exists := make([]bool, len(addrs))
 	addrKeys := make([][addrKeySize]byte, len(addrs))
 	for i := range addrKeys {
@@ -213,8 +213,8 @@ func (idx *ExistsAddrIndex) ExistsAddresses(addrs []dcrutil.Address) ([]bool, er
 // the transactions in the block involve.
 //
 // This is part of the Indexer interface.
-func (idx *ExistsAddrIndex) ConnectBlock(dbTx database.Tx, block, parent *dcrutil.Block, view *blockchain.UtxoViewpoint) error {
-	var parentTxs []*dcrutil.Tx
+func (idx *ExistsAddrIndex) ConnectBlock(dbTx database.Tx, block, parent *hcutil.Block, view *blockchain.UtxoViewpoint) error {
+	var parentTxs []*hcutil.Tx
 	if approvesParent(block) && block.Height() > 1 {
 		parentTxs = parent.Transactions()
 	}
@@ -324,7 +324,7 @@ func (idx *ExistsAddrIndex) ConnectBlock(dbTx database.Tx, block, parent *dcruti
 // never removes addresses.
 //
 // This is part of the Indexer interface.
-func (idx *ExistsAddrIndex) DisconnectBlock(dbTx database.Tx, block, parent *dcrutil.Block, view *blockchain.UtxoViewpoint) error {
+func (idx *ExistsAddrIndex) DisconnectBlock(dbTx database.Tx, block, parent *hcutil.Block, view *blockchain.UtxoViewpoint) error {
 	return nil
 }
 

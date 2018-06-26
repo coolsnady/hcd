@@ -16,7 +16,7 @@ import (
 	"github.com/coolsnady/hcd/blockchain"
 	"github.com/coolsnady/hcd/chaincfg"
 	"github.com/coolsnady/hcd/chaincfg/chainhash"
-	dcrutil "github.com/coolsnady/hcutil"
+	"github.com/coolsnady/hcutil"
 )
 
 // cloneParams returns a deep copy of the provided parameters so the caller is
@@ -89,7 +89,7 @@ func TestBlockchainFunctions(t *testing.T) {
 
 	// Insert blocks 1 to 168 and perform various tests.
 	for i := 1; i <= 168; i++ {
-		bl, err := dcrutil.NewBlockFromBytes(blockChain[int64(i)])
+		bl, err := hcutil.NewBlockFromBytes(blockChain[int64(i)])
 		if err != nil {
 			t.Errorf("NewBlockFromBytes error: %v", err.Error())
 		}
@@ -104,13 +104,13 @@ func TestBlockchainFunctions(t *testing.T) {
 	if err != nil {
 		t.Errorf("Failed to get ticket pool value: %v", err)
 	}
-	expectedVal := dcrutil.Amount(3495091704)
+	expectedVal := hcutil.Amount(3495091704)
 	if val != expectedVal {
 		t.Errorf("Failed to get correct result for ticket pool value; "+
 			"want %v, got %v", expectedVal, val)
 	}
 
-	a, _ := dcrutil.DecodeAddress("SsbKpMkPnadDcZFFZqRPY8nvdFagrktKuzB")
+	a, _ := hcutil.DecodeAddress("SsbKpMkPnadDcZFFZqRPY8nvdFagrktKuzB")
 	hs, err := chain.TicketsWithAddress(a)
 	if err != nil {
 		t.Errorf("Failed to do TicketsWithAddress: %v", err)

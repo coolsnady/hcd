@@ -24,7 +24,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/decred/dcrutil"
+	"github.com/coolsnady/hcutil"
 	"github.com/decred/hcd/chaincfg"
 )
 

@@ -9,7 +9,7 @@ import (
 	"github.com/coolsnady/hcd/chaincfg/chainhash"
 	"github.com/coolsnady/hcd/database"
 	"github.com/coolsnady/hcd/txscript"
-	dcrutil "github.com/coolsnady/hcutil"
+	"github.com/coolsnady/hcutil"
 )
 
 // NextLotteryData returns the next tickets eligible for spending as SSGen
@@ -110,7 +110,7 @@ func (b *BlockChain) MissedTickets() ([]chainhash.Hash, error) {
 // corresponding to the given address.
 //
 // This function is safe for concurrent access.
-func (b *BlockChain) TicketsWithAddress(address dcrutil.Address) ([]chainhash.Hash, error) {
+func (b *BlockChain) TicketsWithAddress(address hcutil.Address) ([]chainhash.Hash, error) {
 	b.chainLock.RLock()
 	sn := b.bestNode.stakeNode
 	b.chainLock.RUnlock()
@@ -224,7 +224,7 @@ func (b *BlockChain) CheckExpiredTickets(hashes []chainhash.Hash) []bool {
 // This function is safe for concurrent access.  All live tickets are at least
 // 256 blocks deep on mainnet, so the UTXO set should generally always have
 // the asked for transactions.
-func (b *BlockChain) TicketPoolValue() (dcrutil.Amount, error) {
+func (b *BlockChain) TicketPoolValue() (hcutil.Amount, error) {
 	b.chainLock.RLock()
 	sn := b.bestNode.stakeNode
 	b.chainLock.RUnlock()
@@ -244,5 +244,5 @@ func (b *BlockChain) TicketPoolValue() (dcrutil.Amount, error) {
 	if err != nil {
 		return 0, err
 	}
-	return dcrutil.Amount(amt), nil
+	return hcutil.Amount(amt), nil
 }

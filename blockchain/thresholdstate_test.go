@@ -13,7 +13,7 @@ import (
 	"github.com/coolsnady/hcd/blockchain"
 	"github.com/coolsnady/hcd/blockchain/chaingen"
 	"github.com/coolsnady/hcd/chaincfg"
-	dcrutil "github.com/coolsnady/hcutil"
+	"github.com/coolsnady/hcutil"
 )
 
 const (
@@ -163,7 +163,7 @@ func TestThresholdState(t *testing.T) {
 	accepted := func() {
 		msgBlock := g.Tip()
 		blockHeight := msgBlock.Header.Height
-		block := dcrutil.NewBlock(msgBlock)
+		block := hcutil.NewBlock(msgBlock)
 		t.Logf("Testing block %s (hash %s, height %d)",
 			g.TipName(), block.Hash(), blockHeight)
 

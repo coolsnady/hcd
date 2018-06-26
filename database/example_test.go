@@ -15,7 +15,7 @@ import (
 	"github.com/coolsnady/hcd/database"
 	_ "github.com/coolsnady/hcd/database/ffldb"
 	"github.com/coolsnady/hcd/wire"
-	dcrutil "github.com/coolsnady/hcutil"
+	"github.com/coolsnady/hcutil"
 )
 
 // This example demonstrates creating a new database.
@@ -137,7 +137,7 @@ func Example_blockStorageAndRetrieval() {
 	// and example.
 	err = db.Update(func(tx database.Tx) error {
 		genesisBlock := chaincfg.MainNetParams.GenesisBlock
-		return tx.StoreBlock(dcrutil.NewBlock(genesisBlock))
+		return tx.StoreBlock(hcutil.NewBlock(genesisBlock))
 	})
 	if err != nil {
 		fmt.Println(err)
