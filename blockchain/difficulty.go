@@ -1,5 +1,5 @@
 // Copyright (c) 2013-2016 The btcsuite developers
-// Copyright (c) 2015-2017 The Decred developers
+// Copyright (c) 2015-2017 The Hcd developers
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
@@ -139,7 +139,7 @@ func BigToCompact(n *big.Int) uint32 {
 	return compact
 }
 
-// CalcWork calculates a work value from difficulty bits.  Decred increases
+// CalcWork calculates a work value from difficulty bits.  Hcd increases
 // the difficulty for generating a block by decreasing the value which the
 // generated hash must be less than.  This difficulty target is stored in each
 // block header using a compact representation as described in the documentation

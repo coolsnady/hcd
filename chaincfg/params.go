@@ -1,5 +1,5 @@
 // Copyright (c) 2014-2016 The btcsuite developers
-// Copyright (c) 2015-2017 The Decred developers
+// Copyright (c) 2015-2017 The Hcd developers
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
@@ -24,15 +24,15 @@ var (
 	// the overhead of creating it multiple times.
 	bigOne = big.NewInt(1)
 
-	// mainPowLimit is the highest proof of work value a Decred block can
+	// mainPowLimit is the highest proof of work value a Hcd block can
 	// have for the main network.  It is the value 2^224 - 1.
 	mainPowLimit = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 224), bigOne)
 
-	// testNetPowLimit is the highest proof of work value a Decred block
+	// testNetPowLimit is the highest proof of work value a Hcd block
 	// can have for the test network.  It is the value 2^232 - 1.
 	testNetPowLimit = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 232), bigOne)
 
-	// simNetPowLimit is the highest proof of work value a Decred block
+	// simNetPowLimit is the highest proof of work value a Hcd block
 	// can have for the simulation test network.  It is the value 2^255 - 1.
 	simNetPowLimit = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
 
@@ -186,8 +186,8 @@ type TokenPayout struct {
 	Amount  int64
 }
 
-// Params defines a Decred network by its parameters.  These parameters may be
-// used by Decred applications to differentiate networks as well as addresses
+// Params defines a Hcd network by its parameters.  These parameters may be
+// used by Hcd applications to differentiate networks as well as addresses
 // and keys for one network from those intended for use on another network.
 type Params struct {
 	// Name defines a human-readable identifier for the network.
@@ -365,12 +365,12 @@ type Params struct {
 	// stake ticket.
 	MinimumStakeDiff int64
 
-	// Ticket pool sizes for Decred PoS. This denotes the number of possible
+	// Ticket pool sizes for Hcd PoS. This denotes the number of possible
 	// buckets/number of different ticket numbers. It is also the number of
 	// possible winner numbers there are.
 	TicketPoolSize uint16
 
-	// Average number of tickets per block for Decred PoS.
+	// Average number of tickets per block for Hcd PoS.
 	TicketsPerBlock uint16
 
 	// Number of blocks for tickets to mature (spendable at TicketMaturity+1).
@@ -446,7 +446,7 @@ type Params struct {
 	BlockOneLedger []*TokenPayout
 }
 
-// MainNetParams defines the network parameters for the main Decred network.
+// MainNetParams defines the network parameters for the main Hcd network.
 var MainNetParams = Params{
 	Name:        "mainnet",
 	Net:         wire.MainNet,
@@ -522,7 +522,7 @@ var MainNetParams = Params{
 	// address generation.
 	HDCoinType: 20,
 
-	// Decred PoS parameters
+	// Hcd PoS parameters
 	MinimumStakeDiff:        2 * 1e8, // 2 Coin
 	TicketPoolSize:          8192,
 	TicketsPerBlock:         5,
@@ -542,7 +542,7 @@ var MainNetParams = Params{
 	StakeMajorityMultiplier: 3,
 	StakeMajorityDivisor:    4,
 
-	// Decred organization related parameters
+	// Hcd organization related parameters
 	// Organization address is Dcur2mcGjmENx4DhNqDctW5wJCVyT3Qeqkx
 	OrganizationPkScript:        hexDecode("a914f5916158e3e2c4551c1796708db8367207ed13bb87"),
 	OrganizationPkScriptVersion: 0,
@@ -629,7 +629,7 @@ var TestNet2Params = Params{
 	// address generation.
 	HDCoinType: 11,
 
-	// Decred PoS parameters
+	// Hcd PoS parameters
 	MinimumStakeDiff:        20000000, // 0.2 Coin
 	TicketPoolSize:          1024,
 	TicketsPerBlock:         5,
@@ -649,14 +649,14 @@ var TestNet2Params = Params{
 	StakeMajorityMultiplier: 3,
 	StakeMajorityDivisor:    4,
 
-	// Decred organization related parameters.
+	// Hcd organization related parameters.
 	// Organization address is TcYvmPS6xs41gJExBaeUzT55epgwtHzjMAC
 	OrganizationPkScript:        hexDecode("5221031377eb7eb294ba8d0c81bb64a047c9b36561f3899507679b38cfcbf59e016f9421036806c694f4d5d617259b5fabaf9ad84c20c2bf57b1a171fb6048215d6d71e13e52ae"),
 	OrganizationPkScriptVersion: 0,
 	BlockOneLedger:              BlockOneLedgerTestNet2,
 }
 
-// SimNetParams defines the network parameters for the simulation test Decred
+// SimNetParams defines the network parameters for the simulation test Hcd
 // network.  This network is similar to the normal test network except it is
 // intended for private use within a group of individuals doing simulation
 // testing.  The functionality is intended to differ in that the only nodes
@@ -769,7 +769,7 @@ var SimNetParams = Params{
 	// address generation.
 	HDCoinType: 115, // ASCII for s
 
-	// Decred PoS parameters
+	// Hcd PoS parameters
 	MinimumStakeDiff:        20000,
 	TicketPoolSize:          64,
 	TicketsPerBlock:         5,
@@ -789,7 +789,7 @@ var SimNetParams = Params{
 	StakeMajorityMultiplier: 3,
 	StakeMajorityDivisor:    4,
 
-	// Decred organization related parameters
+	// Hcd organization related parameters
 	//
 	// "Dev org" address is a 3-of-3 P2SH going to wallet:
 	// aardvark adroitness aardvark adroitness
@@ -825,7 +825,7 @@ var SimNetParams = Params{
 }
 
 var (
-	// ErrDuplicateNet describes an error where the parameters for a Decred
+	// ErrDuplicateNet describes an error where the parameters for a Hcd
 	// network could not be set due to the network already being a standard
 	// network or previously-registered into this package.
 	ErrDuplicateNet = errors.New("duplicate Hx network")
@@ -846,7 +846,7 @@ var (
 	hdPrivToPubKeyIDs = make(map[[4]byte][]byte)
 )
 
-// Register registers the network parameters for a Decred network.  This may
+// Register registers the network parameters for a Hcd network.  This may
 // error with ErrDuplicateNet if the network is already registered (either
 // due to a previous Register call, or the network being one of the default
 // networks).

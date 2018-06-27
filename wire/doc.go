@@ -1,5 +1,5 @@
 // Copyright (c) 2013-2016 The btcsuite developers
-// Copyright (c) 2015-2017 The Decred developers
+// Copyright (c) 2015-2017 The Hcd developers
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
@@ -15,7 +15,7 @@ supported decred messages to and from the wire.  This package does not deal
 with the specifics of message handling such as what to do when a message is
 received.  This provides the caller with a high level of flexibility.
 
-Decred Message Overview
+Hcd Message Overview
 
 The decred protocol consists of exchanging messages between peers.  Each
 message is preceded by a header which identifies information about it such as
@@ -78,7 +78,7 @@ latest protocol version this package supports and is typically the value to use
 for all outbound connections before a potentially lower protocol version is
 negotiated.
 
-Decred Network
+Hcd Network
 
 The decred network is a magic number which is used to identify the start of a
 message and which decred network the message applies to.  This package provides

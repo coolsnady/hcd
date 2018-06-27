@@ -1,5 +1,5 @@
 // Copyright (c) 2013-2016 The btcsuite developers
-// Copyright (c) 2015-2017 The Decred developers
+// Copyright (c) 2015-2017 The Hcd developers
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
@@ -15,7 +15,7 @@ import (
 )
 
 // MessageHeaderSize is the number of bytes in a decred message header.
-// Decred network (magic) 4 bytes + command 12 bytes + payload length 4 bytes +
+// Hcd network (magic) 4 bytes + command 12 bytes + payload length 4 bytes +
 // checksum 4 bytes.
 const MessageHeaderSize = 24
 

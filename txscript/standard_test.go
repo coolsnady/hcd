@@ -1,5 +1,5 @@
 // Copyright (c) 2013-2015 The btcsuite developers
-// Copyright (c) 2015-2016 The Decred developers
+// Copyright (c) 2015-2016 The Hcd developers
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
@@ -732,7 +732,7 @@ func TestMultiSigScript(t *testing.T) {
 			txscript.ErrBadNumRequired,
 		},
 		{
-			// By default compressed pubkeys are used in Decred.
+			// By default compressed pubkeys are used in Hcd.
 			[]*hcutil.AddressSecpPubKey{
 				p2pkUncompressedMain.(*hcutil.AddressSecpPubKey),
 			},

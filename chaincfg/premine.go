@@ -1,5 +1,5 @@
 // Copyright (c) 2014 The btcsuite developers
-// Copyright (c) 2015-2016 The Decred developers
+// Copyright (c) 2015-2016 The Hcd developers
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
@@ -44,7 +44,7 @@ var BlockOneLedgerTestNet2 = []*TokenPayout{
 }
 
 // BlockOneLedgerSimNet is the block one output ledger for the simulation
-// network. See under "Decred organization related parameters" in params.go
+// network. See under "Hcd organization related parameters" in params.go
 // for information on how to spend these outputs.
 var BlockOneLedgerSimNet = []*TokenPayout{
 	{"Sshw6S86G2bV6W32cbc7EhtFy8f93rU6pae", 100000 * 1e8},

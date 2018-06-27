@@ -1,5 +1,5 @@
 // Copyright (c) 2013-2016 The btcsuite developers
-// Copyright (c) 2015-2017 The Decred developers
+// Copyright (c) 2015-2017 The Hcd developers
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
@@ -190,7 +190,7 @@ func newBestState(node *blockNode, blockSize, numTxns, totalTxns uint64, medianT
 	}
 }
 
-// BlockChain provides functions for working with the Decred block chain.
+// BlockChain provides functions for working with the Hcd block chain.
 // It includes functionality such as rejecting duplicate blocks, ensuring blocks
 // follow all rules, orphan handling, checkpoint handling, and best chain
 // selection with reorganization.

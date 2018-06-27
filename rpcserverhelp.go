@@ -1,5 +1,5 @@
 // Copyright (c) 2015 The btcsuite developers
-// Copyright (c) 2015-2016 The Decred developers
+// Copyright (c) 2015-2016 The Hcd developers
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
@@ -666,7 +666,7 @@ var helpDescsEnUS = map[string]string{
 		"Transactions pulled from the mempool will have the 'confirmations' field set to 0.\n" +
 		"Usage of this RPC requires the optional --addrindex flag to be activated, otherwise all responses will simply return with an error stating the address index has not yet been built.\n" +
 		"Similarly, until the address index has caught up with the current best height, all requests will return an error response in order to avoid serving stale data.",
-	"searchrawtransactions-address":     "The Decred address to search for",
+	"searchrawtransactions-address":     "The Hcd address to search for",
 	"searchrawtransactions-verbose":     "Specifies the transaction is returned as a JSON object instead of hex-encoded string",
 	"searchrawtransactions--condition0": "verbose=0",
 	"searchrawtransactions--condition1": "verbose=1",
@@ -709,7 +709,7 @@ var helpDescsEnUS = map[string]string{
 
 	// ValidateAddressCmd help.
 	"validateaddress--synopsis": "Verify an address is valid.",
-	"validateaddress-address":   "Decred address to validate",
+	"validateaddress-address":   "Hcd address to validate",
 
 	// VerifyChainCmd help.
 	"verifychain--synopsis": "Verifies the block chain database.\n" +
@@ -781,7 +781,7 @@ var helpDescsEnUS = map[string]string{
 	"rescan--synopsis":   "Rescan blocks for transactions matching the loaded transaction filter.",
 	"rescan-blockhashes": "Concatenated block hashes to rescan.  Each next block must be a child of the previous.",
 
-	// -------- Decred-specific help --------
+	// -------- Hcd-specific help --------
 
 	// EstimateFee help.
 	"estimatefee--synopsis": "Returns the estimated fee in hc/kb.",

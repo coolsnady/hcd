@@ -1,5 +1,5 @@
 // Copyright (c) 2013-2014 The btcsuite developers
-// Copyright (c) 2015-2016 The Decred developers
+// Copyright (c) 2015-2016 The Hcd developers
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
@@ -27,7 +27,7 @@ caller a high level of flexibility in how they want to react to certain events
 such as orphan blocks which need their parents requested and newly connected
 main chain blocks which might result in wallet updates.
 
-Decred Chain Processing Overview
+Hcd Chain Processing Overview
 
 Before a block is allowed into the block chain, it must go through an intensive
 series of validation rules.  The following list serves as a general outline of
