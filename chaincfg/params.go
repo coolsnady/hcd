@@ -520,7 +520,7 @@ var MainNetParams = Params{
 
 	// BIP44 coin type used in the hierarchical deterministic path for
 	// address generation.
-	HDCoinType: 20,
+	HDCoinType: uint32(171),
 
 	// Decred PoS parameters
 	MinimumStakeDiff:        2 * 1e8, // 2 Coin
@@ -556,7 +556,10 @@ var TestNet2Params = Params{
 	Name:        "testnet2",
 	Net:         wire.TestNet2,
 	DefaultPort: "12008",
-	DNSSeeds:    []string{},
+	DNSSeeds:    []string{
+		"47.75.110.87",
+		"47.75.130.154",
+	},
 
 	// Chain parameters
 	GenesisBlock:             &testNet2GenesisBlock,
@@ -627,7 +630,7 @@ var TestNet2Params = Params{
 
 	// BIP44 coin type used in the hierarchical deterministic path for
 	// address generation.
-	HDCoinType: 11,
+	HDCoinType: uint32(171),
 
 	// Decred PoS parameters
 	MinimumStakeDiff:        20000000, // 0.2 Coin
@@ -767,7 +770,7 @@ var SimNetParams = Params{
 
 	// BIP44 coin type used in the hierarchical deterministic path for
 	// address generation.
-	HDCoinType: 115, // ASCII for s
+	HDCoinType: uint32(171), // ASCII for s
 
 	// Decred PoS parameters
 	MinimumStakeDiff:        20000,
