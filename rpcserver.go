@@ -1240,6 +1240,7 @@ func createVinList(mtx *wire.MsgTx) []dcrjson.Vin {
 		vinEntry.Vout = txIn.PreviousOutPoint.Index
 		vinEntry.Tree = txIn.PreviousOutPoint.Tree
 		vinEntry.Sequence = txIn.Sequence
+		vinEntry.Stakebase = hex.EncodeToString(txIn.SignatureScript)
 		vinEntry.AmountIn = hcutil.Amount(txIn.ValueIn).ToCoin()
 		vinEntry.BlockHeight = txIn.BlockHeight
 		vinEntry.BlockIndex = txIn.BlockIndex
