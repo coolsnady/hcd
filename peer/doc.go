@@ -1,10 +1,10 @@
 // Copyright (c) 2015-2016 The btcsuite developers
-// Copyright (c) 2016 The Decred developers
+// Copyright (c) 2016 The Hcd developers
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
 /*
-Package peer provides a common base for creating and managing Decred network
+Package peer provides a common base for creating and managing Hcd network
 peers.
 
 Overview
@@ -29,7 +29,7 @@ A quick overview of the major features peer provides are as follows:
      incoming connections so they have flexibility to establish connections as
      they see fit (proxies, etc)
    - User agent name and version
-   - Decred network
+   - Hcd network
    - Service support signalling (full nodes, bloom filters, etc)
    - Maximum supported protocol version
    - Ability to register callbacks for handling decred protocol messages

@@ -1,5 +1,5 @@
 // Copyright (c) 2013-2014 The btcsuite developers
-// Copyright (c) 2015-2016 The Decred developers
+// Copyright (c) 2015-2016 The Hcd developers
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
@@ -78,7 +78,7 @@ func ParseSignature(curve *TwistedEdwardsCurve, sigStr []byte) (*Signature,
 	return parseSig(curve, sigStr, false)
 }
 
-// ParseDERSignature offers a legacy function for plugging into Decred, which
+// ParseDERSignature offers a legacy function for plugging into Hcd, which
 // is based off btcec.
 func ParseDERSignature(curve *TwistedEdwardsCurve, sigStr []byte) (*Signature,
 	error) {

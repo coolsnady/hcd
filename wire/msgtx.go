@@ -1,5 +1,5 @@
 // Copyright (c) 2013-2016 The btcsuite developers
-// Copyright (c) 2015-2017 The Decred developers
+// Copyright (c) 2015-2017 The Hcd developers
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
@@ -42,7 +42,7 @@ const (
 	NullBlockIndex uint32 = 0xffffffff
 
 	// DefaultPkScriptVersion is the default pkScript version, referring to
-	// extended Decred script.
+	// extended Hcd script.
 	DefaultPkScriptVersion uint16 = 0x0000
 
 	// TxTreeUnknown is the value returned for a transaction tree that is
@@ -579,7 +579,7 @@ func writeTxScriptsToMsgTx(msg *MsgTx, totalScriptSize uint64, serType TxSeriali
 	// of runtime overhead that would otherwise be needed to keep track of
 	// millions of small allocations.
 	//
-	// Closures around writing the TxIn and TxOut scripts are used in Decred
+	// Closures around writing the TxIn and TxOut scripts are used in Hcd
 	// because, depending on the serialization type desired, only input or
 	// output scripts may be required.
 	var offset uint64
@@ -972,7 +972,7 @@ func (msg *MsgTx) BtcDecode(r io.Reader, pver uint32) error {
 // Deserialize decodes a transaction from r into the receiver using a format
 // that is suitable for long-term storage such as a database while respecting
 // the Version field in the transaction.  This function differs from BtcDecode
-// in that BtcDecode decodes from the Decred wire protocol as it was sent
+// in that BtcDecode decodes from the Hcd wire protocol as it was sent
 // across the network.  The wire encoding can technically differ depending on
 // the protocol version and doesn't even really need to match the format of a
 // stored transaction at all.  As of the time this comment was written, the
@@ -1083,7 +1083,7 @@ func (msg *MsgTx) encodeWitnessValueSigning(w io.Writer, pver uint32) error {
 	return nil
 }
 
-// BtcEncode encodes the receiver to w using the Decred protocol encoding.
+// BtcEncode encodes the receiver to w using the Hcd protocol encoding.
 // This is part of the Message interface implementation.
 // See Serialize for encoding transactions to be stored to disk, such as in a
 // database, as opposed to encoding transactions for the wire.

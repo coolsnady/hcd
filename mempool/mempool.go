@@ -1,5 +1,5 @@
 // Copyright (c) 2013-2016 The btcsuite developers
-// Copyright (c) 2015-2017 The Decred developers
+// Copyright (c) 2015-2017 The Hcd developers
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
@@ -750,7 +750,7 @@ func (mp *TxPool) FetchTransaction(txHash *chainhash.Hash, includeRecentBlock bo
 		return txDesc.Tx, nil
 	}
 
-	// For Decred, the latest block is considered "unconfirmed"
+	// For Hcd, the latest block is considered "unconfirmed"
 	// for the regular transaction tree. Search that if the
 	// user indicates too, as well.
 	if includeRecentBlock {

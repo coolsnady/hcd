@@ -1,5 +1,5 @@
 // Copyright (c) 2013-2016 The btcsuite developers
-// Copyright (c) 2015-2017 The Decred developers
+// Copyright (c) 2015-2017 The Hcd developers
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
@@ -179,7 +179,7 @@ func CheckTransactionSanity(tx *wire.MsgTx, params *chaincfg.Params) error {
 		}
 
 		// Two's complement int64 overflow guarantees that any overflow
-		// is detected and reported.  This is impossible for Decred,
+		// is detected and reported.  This is impossible for Hcd,
 		// but perhaps possible if an alt increases the total money
 		// supply.
 		totalAtom += atom
@@ -803,7 +803,7 @@ func (b *BlockChain) checkBlockHeaderContext(header *wire.BlockHeader, prevNode 
 // For more details, see https://en.bitcoin.it/wiki/BIP_0030 and
 // http://r6.ca/blog/20120206T005236Z.html.
 //
-// Decred: Check the stake transactions to make sure they don't have this txid
+// Hcd: Check the stake transactions to make sure they don't have this txid
 // too.
 func (b *BlockChain) checkDupTxs(txSet []*hcutil.Tx, view *UtxoViewpoint) error {
 	if !chaincfg.CheckForDuplicateHashes {
@@ -1263,7 +1263,7 @@ func CheckTransactionInputs(subsidyCache *SubsidyCache, tx *hcutil.Tx, txHeight 
 	}
 
 	// -------------------------------------------------------------------
-	// Decred stake transaction testing.
+	// Hcd stake transaction testing.
 	// -------------------------------------------------------------------
 
 	// SSTX --------------------------------------------------------------
@@ -1624,7 +1624,7 @@ func CheckTransactionInputs(subsidyCache *SubsidyCache, tx *hcutil.Tx, txHeight 
 	}
 
 	// -------------------------------------------------------------------
-	// Decred general transaction testing (and a few stake exceptions).
+	// Hcd general transaction testing (and a few stake exceptions).
 	// -------------------------------------------------------------------
 	for idx, txIn := range msgTx.TxIn {
 		// Inputs won't exist for stakebase tx, so ignore them.

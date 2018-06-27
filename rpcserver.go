@@ -1,5 +1,5 @@
 // Copyright (c) 2013-2016 The btcsuite developers
-// Copyright (c) 2015-2017 The Decred developers
+// Copyright (c) 2015-2017 The Hcd developers
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
@@ -2651,7 +2651,7 @@ func (state *gbtWorkState) blockTemplateResult(bm *blockManager, useCoinbaseValu
 			// Check bounds and throw an error if OOB. This should
 			// be looked into further, probably it's the result of
 			// a race.
-			// Decred TODO
+			// Hcd TODO
 			allTxCount := len(msgBlock.Transactions) +
 				len(msgBlock.STransactions)
 			if allTxCount != len(template.Fees) ||
@@ -2934,7 +2934,7 @@ func handleGetBlockTemplateRequest(s *rpcServer, request *dcrjson.TemplateReques
 	if !cfg.SimNet && s.server.ConnectedCount() == 0 {
 		return nil, &dcrjson.RPCError{
 			Code:    dcrjson.ErrRPCClientNotConnected,
-			Message: "Decred is not connected",
+			Message: "Hcd is not connected",
 		}
 	}
 
@@ -2943,7 +2943,7 @@ func handleGetBlockTemplateRequest(s *rpcServer, request *dcrjson.TemplateReques
 	if currentHeight != 0 && !s.server.blockManager.IsCurrent() {
 		return nil, &dcrjson.RPCError{
 			Code:    dcrjson.ErrRPCClientInInitialDownload,
-			Message: "Decred is downloading blocks...",
+			Message: "Hcd is downloading blocks...",
 		}
 	}
 
@@ -2975,7 +2975,7 @@ func handleGetBlockTemplateRequest(s *rpcServer, request *dcrjson.TemplateReques
 // chainErrToGBTErrString converts an error returned from chain to a string
 // which matches the reasons and format described in BIP0022 for rejection
 // reasons.
-// TODO Decred pop in the new errors from blockchain cj
+// TODO Hcd pop in the new errors from blockchain cj
 func chainErrToGBTErrString(err error) string {
 	// When the passed error is not a RuleError, just return a generic
 	// rejected string with the error text.
@@ -4381,7 +4381,7 @@ func handleGetWork(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (in
 	if !cfg.SimNet && s.server.ConnectedCount() == 0 {
 		return nil, &dcrjson.RPCError{
 			Code:    dcrjson.ErrRPCClientNotConnected,
-			Message: "Decred is not connected",
+			Message: "Hcd is not connected",
 		}
 	}
 
@@ -4390,7 +4390,7 @@ func handleGetWork(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (in
 	if currentHeight != 0 && !s.server.blockManager.IsCurrent() {
 		return nil, &dcrjson.RPCError{
 			Code:    dcrjson.ErrRPCClientInInitialDownload,
-			Message: "Decred is downloading blocks...",
+			Message: "Hcd is downloading blocks...",
 		}
 	}
 
@@ -5740,7 +5740,7 @@ func handleVerifyMessage(s *rpcServer, cmd interface{}, closeChan <-chan struct{
 	// Validate the signature - this just shows that it was valid at all.
 	// we will compare it with the key next.
 	var buf bytes.Buffer
-	wire.WriteVarString(&buf, 0, "Decred Signed Message:\n")
+	wire.WriteVarString(&buf, 0, "Hcd Signed Message:\n")
 	wire.WriteVarString(&buf, 0, c.Message)
 	expectedMessageHash := chainhash.HashB(buf.Bytes())
 	pk, wasCompressed, err := chainec.Secp256k1.RecoverCompact(sig,

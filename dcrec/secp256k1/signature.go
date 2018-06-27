@@ -1,5 +1,5 @@
 // Copyright (c) 2013-2014 The btcsuite developers
-// Copyright (c) 2015-2016 The Decred developers
+// Copyright (c) 2015-2016 The Hcd developers
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
@@ -49,7 +49,7 @@ func NewSignature(r, s *big.Int) *Signature {
 
 // Serialize returns the ECDSA signature in the more strict DER format.  Note
 // that the serialized bytes returned do not include the appended hash type
-// used in Decred signature scripts.
+// used in Hcd signature scripts.
 //
 // encoding/asn1 is broken so we hand roll this output:
 //

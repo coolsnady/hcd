@@ -1,5 +1,5 @@
 // Copyright (c) 2014-2016 The btcsuite developers
-// Copyright (c) 2015-2016 The Decred developers
+// Copyright (c) 2015-2016 The Hcd developers
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
@@ -312,7 +312,7 @@ out:
 		m.submitBlockLock.Lock()
 		time.Sleep(100 * time.Millisecond)
 
-		// Hacks to make hc work with Decred PoC (simnet only)
+		// Hacks to make hc work with Hcd PoC (simnet only)
 		// TODO Remove before production.
 		if cfg.SimNet {
 			_, curHeight := m.server.blockManager.chainState.Best()

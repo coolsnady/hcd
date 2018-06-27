@@ -5,7 +5,7 @@ connmgr
 [![ISC License](http://img.shields.io/badge/license-ISC-blue.svg)](http://copyfree.org)
 [![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/decred/hcd/connmgr)
 
-Package connmgr implements a generic Decred network connection manager.
+Package connmgr implements a generic Hcd network connection manager.
 
 ## Overview
 

@@ -1,5 +1,5 @@
 [Unit]
-Description=Decred Full Node
+Description=Hcd Full Node
 
 [Service]
 Type=simple

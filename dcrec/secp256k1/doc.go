@@ -1,12 +1,12 @@
 // Copyright (c) 2013-2014 The btcsuite developers
-// Copyright (c) 2015-2016 The Decred developers
+// Copyright (c) 2015-2016 The Hcd developers
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
 /*
 Package secp256k1 implements support for the elliptic curves needed for decred.
 
-Decred uses elliptic curve cryptography using koblitz curves
+Hcd uses elliptic curve cryptography using koblitz curves
 (specifically secp256k1) for cryptographic functions.  See
 http://www.secg.org/collateral/sec2_final.pdf for details on the
 standard.

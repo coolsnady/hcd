@@ -1,5 +1,5 @@
 // Copyright (c) 2013-2015 The btcsuite developers
-// Copyright (c) 2015-2016 The Decred developers
+// Copyright (c) 2015-2016 The Hcd developers
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
@@ -172,7 +172,7 @@ func p2pkSignatureScriptAlt(tx *wire.MsgTx, idx int, subScript []byte,
 // legal to not be able to sign any of the outputs, no error is returned.
 func signMultiSig(tx *wire.MsgTx, idx int, subScript []byte, hashType SigHashType,
 	addresses []hcutil.Address, nRequired int, kdb KeyDB) ([]byte, bool) {
-	// No need to add dummy in Decred.
+	// No need to add dummy in Hcd.
 	builder := NewScriptBuilder()
 	signed := 0
 	for _, addr := range addresses {
@@ -492,7 +492,7 @@ sigLoop:
 		// MultiSigTy, so we just need to hash the full thing.
 		hash, err := calcSignatureHash(pkPops, hashType, tx, idx, nil)
 		if err != nil {
-			// Decred -- is this the right handling for SIGHASH_SINGLE error ?
+			// Hcd -- is this the right handling for SIGHASH_SINGLE error ?
 			// TODO make sure this doesn't break anything.
 			continue
 		}

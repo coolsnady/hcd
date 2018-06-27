@@ -6,12 +6,12 @@ chaincfg
 [![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/decred/hcd/chaincfg)
 
 Package chaincfg defines chain configuration parameters for the three standard
-Decred networks and provides the ability for callers to define their own custom
-Decred networks.
+Hcd networks and provides the ability for callers to define their own custom
+Hcd networks.
 
 Although this package was primarily written for hcd, it has intentionally been
 designed so it can be used as a standalone package for any projects needing to
-use parameters for the standard Decred networks or for projects needing to
+use parameters for the standard Hcd networks or for projects needing to
 define their own network.
 
 ## Sample Use
@@ -28,7 +28,7 @@ import (
 	"github.com/decred/hcd/chaincfg"
 )
 
-var testnet = flag.Bool("testnet", false, "operate on the testnet Decred network")
+var testnet = flag.Bool("testnet", false, "operate on the testnet Hcd network")
 
 // By default (without -testnet), use mainnet.
 var chainParams = &chaincfg.MainNetParams

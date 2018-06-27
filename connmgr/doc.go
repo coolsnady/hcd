@@ -1,10 +1,10 @@
 // Copyright (c) 2016 The btcsuite developers
-// Copyright (c) 2017 The Decred developers
+// Copyright (c) 2017 The Hcd developers
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
 /*
-Package connmgr implements a generic Decred network connection manager.
+Package connmgr implements a generic Hcd network connection manager.
 
 Connection Manager Overview
 
