@@ -268,6 +268,7 @@ type ScriptSig struct {
 // same structure.
 type Vin struct {
 	Coinbase    string     `json:"coinbase"`
+	Stakebase   string     `json:"stakebase"`
 	Txid        string     `json:"txid"`
 	Vout        uint32     `json:"vout"`
 	Tree        int8       `json:"tree"`
@@ -281,6 +282,11 @@ type Vin struct {
 // IsCoinBase returns a bool to show if a Vin is a Coinbase one or not.
 func (v *Vin) IsCoinBase() bool {
 	return len(v.Coinbase) > 0
+}
+
+// IsStakebase returns a bool to show if a Vin is a StakeBase one or not.
+func (v *Vin) IsStakeBase() bool {
+	return len(v.Stakebase) > 0
 }
 
 // MarshalJSON provides a custom Marshal method for Vin.
