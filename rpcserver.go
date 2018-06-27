@@ -5807,7 +5807,7 @@ func handleVerifyBlissMessage(s *rpcServer, cmd interface{}, closeChan <-chan st
 // handleVersion implements the version command.
 func handleVersion(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	result := map[string]dcrjson.VersionResult{
-		"dcrdjsonrpcapi": {
+		"hcdjsonrpcapi": {
 			VersionString: jsonrpcSemverString,
 			Major:         jsonrpcSemverMajor,
 			Minor:         jsonrpcSemverMinor,
