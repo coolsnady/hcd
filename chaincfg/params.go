@@ -557,8 +557,6 @@ var TestNet2Params = Params{
 	Net:         wire.TestNet2,
 	DefaultPort: "12008",
 	DNSSeeds:    []string{
-		"47.75.110.87",
-		"47.75.130.154",
 	},
 
 	// Chain parameters
