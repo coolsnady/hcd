@@ -363,10 +363,14 @@ out:
 		// with false when conditions that trigger a stale block, so
 		// a new block template can be generated.  When the return is
 		// true a solution was found, so submit the solved block.
+		minrLog.Tracef("start to solve block")
 		if m.solveBlock(template.Block, ticker, quit) {
+			minrLog.Tracef("solve block success")
 			block := hcutil.NewBlock(template.Block)
 			m.submitBlock(block)
 			m.minedOnParents[template.Block.Header.PrevBlock]++
+		} else {
+			minrLog.Tracef("solve block fail")
 		}
 	}
 
