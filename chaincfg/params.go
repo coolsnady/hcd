@@ -451,7 +451,11 @@ var MainNetParams = Params{
 	Name:        "mainnet",
 	Net:         wire.MainNet,
 	DefaultPort: "14008",
-	DNSSeeds:    []string{},
+	DNSSeeds:    []string{
+		"mainnet1.h.cash",
+		"mainnet2.h.cash",
+		"mainnet3.h.cash",
+	},
 
 	// Chain parameters
 	GenesisBlock:             &genesisBlock,
@@ -557,6 +561,10 @@ var TestNet2Params = Params{
 	Net:         wire.TestNet2,
 	DefaultPort: "12008",
 	DNSSeeds:    []string{
+		"testnet1.h.cash",
+		"testnet2.h.cash",
+		"testnet3.h.cash",
+	//"192.168.11.135",
 	},
 
 	// Chain parameters
@@ -829,7 +837,7 @@ var (
 	// ErrDuplicateNet describes an error where the parameters for a Hcd
 	// network could not be set due to the network already being a standard
 	// network or previously-registered into this package.
-	ErrDuplicateNet = errors.New("duplicate Hx network")
+	ErrDuplicateNet = errors.New("duplicate Hc network")
 
 	// ErrUnknownHDKeyID describes an error where the provided id which
 	// is intended to identify the network for a hierarchical deterministic
