@@ -5787,7 +5787,7 @@ func handleVerifyBlissMessage(s *rpcServer, cmd interface{}, closeChan <-chan st
 	}
 
 	var buf bytes.Buffer
-	wire.WriteVarString(&buf, 0, "Hx Signed Message:\n")
+	wire.WriteVarString(&buf, 0, "Hc Signed Message:\n")
 	wire.WriteVarString(&buf, 0, icmd.Message)
 	messageHash := chainhash.HashB(buf.Bytes())
 

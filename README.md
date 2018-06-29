@@ -26,16 +26,16 @@ $ git pull
 $ go install $(glide nv)
 ```
 
-hcd is a Hx full node implementation written in Go (golang).
+hcd is a Hc full node implementation written in Go (golang).
 
-This acts as a chain daemon for the Hx cryptocurrency.
-hcd maintains the entire past transactional ledger of Hx and allows
- relaying of quantum resistant transactions to other Hx nodes across the world.
+This acts as a chain daemon for the Hc cryptocurrency.
+hcd maintains the entire past transactional ledger of Hc and allows
+ relaying of quantum resistant transactions to other Hc nodes across the world.
 
 Note: To send or receive funds and join Proof-of-Stake mining, you will also need
 [hcwallet](https://github.com/coolsnady/hcwallet).
 
-Hx is forked from [decred](https://github.com/decred/hcd) and [btcd](https://github.com/btcsuite/btcd) which are full node implementations written in Go. Both projects are ongoing and under active development. Since hcd is synced and will merge with upstream commits from hcd and btcd, it will get the benefit of both hcd and btcd's ongoing upgrades to staking, voting, peer and connection handling, database optimization and other blockchain related technology improvements. Advances made by hcd can also be pulled back upstream to hcd and btcd including quantum resistant signature schemes and more.
+Hc is forked from [decred](https://github.com/decred/hcd) and [btcd](https://github.com/btcsuite/btcd) which are full node implementations written in Go. Both projects are ongoing and under active development. Since hcd is synced and will merge with upstream commits from hcd and btcd, it will get the benefit of both hcd and btcd's ongoing upgrades to staking, voting, peer and connection handling, database optimization and other blockchain related technology improvements. Advances made by hcd can also be pulled back upstream to hcd and btcd including quantum resistant signature schemes and more.
 
 ## Current State
 This project is currently under active development and is in a Beta state. The default branch of hcd is currently testnet1. Please make sure to use --testnet flag when running hcd and report any issues by using the integrated issue tracker. Do not yet use this software yet as a store of value!

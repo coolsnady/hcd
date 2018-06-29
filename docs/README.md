@@ -18,7 +18,7 @@
 5. [Developer Resources](#DeveloperResources)
     1. [Code Contribution Guidelines](#ContributionGuidelines)
     2. [JSON-RPC Reference](#JSONRPCReference)
-    3. [The Hx-related Go Packages](#GoPackages)
+    3. [The Hc-related Go Packages](#GoPackages)
 
 <a name="About" />
 
@@ -181,28 +181,28 @@ information.
     * [RPC Examples](https://github.com/coolsnady/hcd/tree/master/docs/json_rpc_api.md#ExampleCode)
 <a name="GoPackages" />
 
-* The Hx-related Go Packages:
+* The Hc-related Go Packages:
     * [hcrpcclient](https://github.com/coolsnady/hcrpcclient) - Implements a
-	  robust and easy to use Websocket-enabled Hx JSON-RPC client
+	  robust and easy to use Websocket-enabled Hc JSON-RPC client
     * [dcrjson](https://github.com/coolsnady/dcrjson) - Provides an extensive API
 	  for the underlying JSON-RPC command and return values
     * [wire](https://github.com/coolsnady/hcd/tree/master/wire) - Implements the
-	  Hx wire protocol
+	  Hc wire protocol
     * [peer](https://github.com/coolsnady/hcd/tree/master/peer) -
-	  Provides a common base for creating and managing Hx network peers.
+	  Provides a common base for creating and managing Hc network peers.
     * [blockchain](https://github.com/coolsnady/hcd/tree/master/blockchain) -
-	  Implements Hx block handling and chain selection rules
+	  Implements Hc block handling and chain selection rules
     * [txscript](https://github.com/coolsnady/hcd/tree/master/txscript) -
-	  Implements the Hx transaction scripting language
+	  Implements the Hc transaction scripting language
     * [dcrec](https://github.com/coolsnady/hcd/tree/master/dcrec) - Implements
 	  support for the elliptic curve cryptographic functions needed for the
-	  Hx scripts
+	  Hc scripts
     * [database](https://github.com/coolsnady/hcd/tree/master/database) -
-	  Provides a database interface for the Hx block chain
-    * [hcutil](https://github.com/coolsnady/hcutil) - Provides Hx-specific
+	  Provides a database interface for the Hc block chain
+    * [hcutil](https://github.com/coolsnady/hcutil) - Provides Hc-specific
 	  convenience functions and types
     * [chainhash](https://github.com/coolsnady/hcd/tree/master/chaincfg/chainhash) -
 	  Provides a generic hash type and associated functions that allows the
 	  specific hash algorithm to be abstracted.
     * [connmgr](https://github.com/coolsnady/hcd/tree/master/connmgr) -
-      Package connmgr implements a generic Hx network connection manager.
+      Package connmgr implements a generic Hc network connection manager.
