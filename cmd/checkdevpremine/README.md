@@ -59,14 +59,14 @@ Mixing tools in order to check all of the transactions in the latest block using
 [jq](https://stedolan.github.io/jq/) to extract the transaction hashes and feed
 them to `checkdevpremine` via stdin along with `--quiet` to suppress output:
 ```bash
-$ dcrctl getbestblockhash | dcrctl getblock - | jq -c .tx | checkdevpremine --quiet -; echo $?
+$ hcctl getbestblockhash | hcctl getblock - | jq -c .tx | checkdevpremine --quiet -; echo $?
 0
 ```
 
 ## Installation and Updating
 
 ```bash
-$ go get -u github.com/decred/hcd/cmd/checkdevpremine
+$ go get -u github.com/coolsnady/hcd/cmd/checkdevpremine
 ```
 
 ## License

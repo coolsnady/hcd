@@ -1,11 +1,9 @@
 rpctest
 =======
 
-[![Build Status](http://img.shields.io/travis/decred/hcd.svg)]
-(https://travis-ci.org/decred/hcd) [![ISC License]
-(http://img.shields.io/badge/license-ISC-blue.svg)](http://copyfree.org)
+[![ISC License](http://img.shields.io/badge/license-ISC-blue.svg)](http://copyfree.org)
 [![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)]
-(http://godoc.org/github.com/decred/hcd/rpctest)
+(http://godoc.org/github.com/coolsnady/hcd/rpctest)
 
 Package rpctest provides a hcd-specific RPC testing harness crafting and
 executing integration tests by driving a `hcd` instance via the `RPC`
@@ -22,7 +20,7 @@ systems/integration tests.
 ## Installation and Updating
 
 ```bash
-$ go get -u github.com/decred/hcd/rpctest
+$ go get -u github.com/coolsnady/hcd/rpctest
 ```
 
 ## License

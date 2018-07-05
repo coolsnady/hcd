@@ -1,5 +1,5 @@
 hcd
-cmd/dcrctl/dcrctl
+cmd/hcctl/hcctl
 cmd/promptsecret/promptsecret
 *~
 *.pyc

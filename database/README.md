@@ -1,9 +1,8 @@
 database
 ========
 
-[![Build Status](http://img.shields.io/travis/decred/hcd.svg)](https://travis-ci.org/decred/hcd)
 [![ISC License](http://img.shields.io/badge/license-ISC-blue.svg)](http://copyfree.org)
-[![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/decred/hcd/database)
+[![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/coolsnady/hcd/database)
 
 Package database provides a block and metadata storage database.
 
@@ -13,8 +12,8 @@ one entity can have the database open at a time (for most database backends),
 and that entity will be hcd.
 
 When a client wants programmatic access to the data provided by hcd, they'll
-likely want to use the [hcrpcclient](https://github.com/decred/hcrpcclient)
-package which makes use of the [JSON-RPC API](https://github.com/decred/hcd/tree/master/docs/json_rpc_api.md).
+likely want to use the [hcrpcclient](https://github.com/coolsnady/hcrpcclient)
+package which makes use of the [JSON-RPC API](https://github.com/coolsnady/hcd/tree/master/docs/json_rpc_api.md).
 
 However, this package could be extremely useful for any applications requiring
 Hcd block storage capabilities.
@@ -37,16 +36,16 @@ storage, and strict checksums in key areas to ensure data integrity.
 ## Installation
 
 ```bash
-$ go get github.com/decred/hcd/database2
+$ go get github.com/coolsnady/hcd/database2
 ```
 
 ## Examples
 
-* [Basic Usage Example](http://godoc.org/github.com/decred/hcd/database2#example-package--BasicUsage)  
+* [Basic Usage Example](http://godoc.org/github.com/coolsnady/hcd/database2#example-package--BasicUsage)  
   Demonstrates creating a new database and using a managed read-write
   transaction to store and retrieve metadata.
 
-* [Block Storage and Retrieval Example](http://godoc.org/github.com/decred/hcd/database2#example-package--BlockStorageAndRetrieval)  
+* [Block Storage and Retrieval Example](http://godoc.org/github.com/coolsnady/hcd/database2#example-package--BlockStorageAndRetrieval)  
   Demonstrates creating a new database, using a managed read-write transaction
   to store a block, and then using a managed read-only transaction to fetch the
   block.

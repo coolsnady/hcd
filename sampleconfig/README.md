@@ -1,9 +1,8 @@
 sampleconfig
 ============
 
-[![Build Status](http://img.shields.io/travis/decred/hcd.svg)](https://travis-ci.org/decred/hcd)
 [![ISC License](http://img.shields.io/badge/license-ISC-blue.svg)](http://copyfree.org)
-[![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/decred/hcd/sampleconfig)
+[![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/coolsnady/hcd/sampleconfig)
 
 Package sampleconfig provides a single constant that contains the contents of
 the sample configuration file for hcd.  This is provided for tools that perform
@@ -14,7 +13,7 @@ samples of other configuration options.
 ## Installation and Updating
 
 ```bash
-$ go get -u github.com/decred/hcd/sampleconfig
+$ go get -u github.com/coolsnady/hcd/sampleconfig
 ```
 
 ## License

@@ -1,5 +1,6 @@
 // Copyright (c) 2013-2015 The btcsuite developers
-// Copyright (c) 2015-2016 The Hcd developers
+// Copyright (c) 2015-2017 The Decred developers
+// Copyright (c) 2018-2020 The Hcd developers
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
@@ -29,9 +30,9 @@ const (
 
 var (
 	dcrdHomeDir            = hcutil.AppDataDir("hcd", false)
-	dcrctlHomeDir          = hcutil.AppDataDir("hcctl", false)
+	hcctlHomeDir           = hcutil.AppDataDir("hcctl", false)
 	dcrwalletHomeDir       = hcutil.AppDataDir("hcwallet", false)
-	defaultConfigFile      = filepath.Join(dcrctlHomeDir, "hcctl.conf")
+	defaultConfigFile      = filepath.Join(hcctlHomeDir, "hcctl.conf")
 	defaultRPCServer       = "localhost"
 	defaultWalletRPCServer = "localhost"
 	defaultRPCCertFile     = filepath.Join(dcrdHomeDir, "rpc.cert")
@@ -151,7 +152,7 @@ func normalizeAddress(addr string, useTestNet, useSimNet, useWallet bool) string
 func cleanAndExpandPath(path string) string {
 	// Expand initial ~ to OS specific home directory.
 	if strings.HasPrefix(path, "~") {
-		homeDir := filepath.Dir(dcrctlHomeDir)
+		homeDir := filepath.Dir(hcctlHomeDir)
 		path = strings.Replace(path, "~", homeDir, 1)
 	}
 

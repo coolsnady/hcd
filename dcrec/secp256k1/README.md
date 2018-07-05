@@ -1,9 +1,8 @@
 secp256k1
 =====
 
-[![Build Status](http://img.shields.io/travis/decred/hcd.svg)](https://travis-ci.org/decred/hcd)
 [![ISC License](http://img.shields.io/badge/license-ISC-blue.svg)](http://copyfree.org)
-[![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/decred/hcd/dcrec/secp256k1)
+[![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/coolsnady/hcd/dcrec/secp256k1)
 
 Package dcrec implements elliptic curve cryptography needed for working with
 Hcd (secp256k1 only for now). It is designed so that it may be used with the
@@ -20,24 +19,24 @@ use secp256k1 elliptic curve cryptography.
 ## Installation and Updating
 
 ```bash
-$ go get -u github.com/decred/hcd/dcrec
+$ go get -u github.com/coolsnady/hcd/dcrec
 ```
 
 ## Examples
 
-* [Sign Message](http://godoc.org/github.com/decred/hcd/dcrec#example-package--SignMessage)  
+* [Sign Message](http://godoc.org/github.com/coolsnady/hcd/dcrec#example-package--SignMessage)  
   Demonstrates signing a message with a secp256k1 private key that is first
   parsed form raw bytes and serializing the generated signature.
 
-* [Verify Signature](http://godoc.org/github.com/decred/hcd/dcrec#example-package--VerifySignature)  
+* [Verify Signature](http://godoc.org/github.com/coolsnady/hcd/dcrec#example-package--VerifySignature)  
   Demonstrates verifying a secp256k1 signature against a public key that is
   first parsed from raw bytes.  The signature is also parsed from raw bytes.
 
-* [Encryption](http://godoc.org/github.com/decred/hcd/dcrec#example-package--EncryptMessage)  
+* [Encryption](http://godoc.org/github.com/coolsnady/hcd/dcrec#example-package--EncryptMessage)  
   Demonstrates encrypting a message for a public key that is first parsed from
   raw bytes, then decrypting it using the corresponding private key.
 
-* [Decryption](http://godoc.org/github.com/decred/dcrdy/dcrec#example-package--DecryptMessage)  
+* [Decryption](https://godoc.org/github.com/coolsnady/hcd/dcrec#example-package--DecryptMessage)  
   Demonstrates decrypting a message using a private key that is first parsed
   from raw bytes.
 

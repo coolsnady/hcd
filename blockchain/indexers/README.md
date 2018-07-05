@@ -1,9 +1,8 @@
 indexers
 ========
 
-[![Build Status](https://travis-ci.org/decred/hcd.png?branch=master)](https://travis-ci.org/decred/hcd)
 [![ISC License](http://img.shields.io/badge/license-ISC-blue.svg)](http://copyfree.org)
-[![GoDoc](https://godoc.org/github.com/decred/hcd/blockchain/indexers?status.png)](http://godoc.org/github.com/decred/hcd/blockchain/indexers)
+[![GoDoc](https://godoc.org/github.com/coolsnady/hcd/blockchain/indexers?status.png)](http://godoc.org/github.com/coolsnady/hcd/blockchain/indexers)
 
 Package indexers implements optional block chain indexes.
 
@@ -27,7 +26,7 @@ via an RPC interface.
 ## Installation
 
 ```bash
-$ go get -u github.com/decred/hcd/blockchain/indexers
+$ go get -u github.com/coolsnady/hcd/blockchain/indexers
 ```
 
 ## License

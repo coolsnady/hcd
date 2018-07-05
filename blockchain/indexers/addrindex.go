@@ -1,5 +1,6 @@
 // Copyright (c) 2016 The btcsuite developers
-// Copyright (c) 2016-2017 The Hcd developers
+// Copyright (c) 2016-2017 The Decred developers
+// Copyright (c) 2018-2020 The Hcd developers
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
@@ -15,11 +16,11 @@ import (
 	"github.com/coolsnady/hcd/chaincfg"
 	"github.com/coolsnady/hcd/chaincfg/chainec"
 	"github.com/coolsnady/hcd/chaincfg/chainhash"
+	"github.com/coolsnady/hcd/crypto/bliss"
 	"github.com/coolsnady/hcd/database"
 	"github.com/coolsnady/hcd/txscript"
 	"github.com/coolsnady/hcd/wire"
 	"github.com/coolsnady/hcutil"
-	"github.com/coolsnady/hcd/crypto/bliss"
 )
 
 const (
@@ -68,7 +69,6 @@ const (
 	// the hash of a pubkey address might be the same as that of a script
 	// hash.
 	addrKeyTypeScriptHash = 3
-
 
 	// addrKeyTypePubKeyHashBliss is the address type in an address key which
 	// represents both a bliss pay-to-pubkey-hash and a bliss pay-to-pubkey address.

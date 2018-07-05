@@ -1,11 +1,9 @@
 chaingen
 ========
 
-[![Build Status](https://travis-ci.org/decred/hcd.png?branch=master)]
-(https://travis-ci.org/decred/hcd) [![ISC License]
-(http://img.shields.io/badge/license-ISC-blue.svg)](http://copyfree.org)
+[![ISC License](http://img.shields.io/badge/license-ISC-blue.svg)](http://copyfree.org)
 [![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)]
-(http://godoc.org/github.com/decred/hcd/blockchain/chaingen)
+(http://godoc.org/github.com/coolsnady/hcd/blockchain/chaingen)
 
 Package chaingen provides facilities for generating a full chain of blocks.
 
@@ -28,7 +26,7 @@ functions.
 ## Examples
 
 * [Basic Usage Example]
-  (http://godoc.org/github.com/decred/hcd/blockchain/chaingen#example-package--BasicUsage)  
+  (http://godoc.org/github.com/coolsnady/hcd/blockchain/chaingen#example-package--BasicUsage)  
   Demonstrates creating a new generator instance and using it to generate the
   required premine block and enough blocks to have mature coinbase outputs to
   work with along with asserting the generator state along the way.
@@ -36,7 +34,7 @@ functions.
 ## Installation
 
 ```bash
-$ go get -u github.com/decred/hcd/blockchain/chaingen
+$ go get -u github.com/coolsnady/hcd/blockchain/chaingen
 ```
 
 ## License

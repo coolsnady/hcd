@@ -1,9 +1,8 @@
 chaincfg
 ========
 
-[![Build Status](http://img.shields.io/travis/decred/hcd.svg)](https://travis-ci.org/decred/hcd)
 [![ISC License](http://img.shields.io/badge/license-ISC-blue.svg)](http://copyfree.org)
-[![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/decred/hcd/chaincfg)
+[![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/coolsnady/hcd/chaincfg)
 
 Package chaincfg defines chain configuration parameters for the three standard
 Hcd networks and provides the ability for callers to define their own custom
@@ -25,7 +24,7 @@ import (
 	"log"
 
 	"github.com/coolsnady/hcutil"
-	"github.com/decred/hcd/chaincfg"
+	"github.com/coolsnady/hcd/chaincfg"
 )
 
 var testnet = flag.Bool("testnet", false, "operate on the testnet Hcd network")
@@ -56,7 +55,7 @@ func main() {
 ## Installation and Updating
 
 ```bash
-$ go get -u github.com/decred/hcd/chaincfg
+$ go get -u github.com/coolsnady/hcd/chaincfg
 ```
 
 ## License

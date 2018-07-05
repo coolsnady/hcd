@@ -1,5 +1,6 @@
 // Copyright (c) 2013-2016 The btcsuite developers
-// Copyright (c) 2016-2017 The Hcd developers
+// Copyright (c) 2016-2017 The Decred developers
+// Copyright (c) 2018-2020 The Hcd developers
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
@@ -23,10 +24,10 @@ import (
 // TestCalcMinRequiredTxRelayFee tests the calcMinRequiredTxRelayFee API.
 func TestCalcMinRequiredTxRelayFee(t *testing.T) {
 	tests := []struct {
-		name     string         // test description.
-		size     int64          // Transaction size in bytes.
+		name     string        // test description.
+		size     int64         // Transaction size in bytes.
 		relayFee hcutil.Amount // minimum relay transaction fee.
-		want     int64          // Expected fee.
+		want     int64         // Expected fee.
 	}{
 		{
 			// Ensure combination of size and fee that are less than
