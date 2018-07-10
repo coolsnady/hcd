@@ -468,11 +468,11 @@ var MainNetParams = Params{
 	GenerateSupported:        false,
 	MaximumBlockSizes:        []int{393216},
 	MaxTxSize:                393216,
-	TargetTimePerBlock:       time.Minute * 2.5,
+	TargetTimePerBlock:       time.Second * 150,
 	WorkDiffAlpha:            1,
 	WorkDiffWindowSize:       144,
 	WorkDiffWindows:          20,
-	TargetTimespan:           time.Minute * 2.5 * 144, // TimePerBlock * WindowSize
+	TargetTimespan:           time.Minute * 360, // TimePerBlock * WindowSize
 	RetargetAdjustmentFactor: 4,
 
 	// Subsidy parameters.
