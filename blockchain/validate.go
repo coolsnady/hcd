@@ -1306,6 +1306,7 @@ func CheckTransactionInputs(subsidyCache *SubsidyCache, tx *hcutil.Tx, txHeight 
 			}
 
 			if !(class == txscript.PubKeyHashTy ||
+				class == txscript.PubkeyHashAltTy ||
 				class == txscript.ScriptHashTy) {
 				errStr := fmt.Sprintf("SStx input using tx %v"+
 					", txout %v referenced a txout that "+

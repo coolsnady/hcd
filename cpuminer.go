@@ -134,6 +134,10 @@ func (m *CPUMiner) submitBlock(block *hcutil.Block) bool {
 	m.submitBlockLock.Lock()
 	defer m.submitBlockLock.Unlock()
 
+	if block.Height() == 141{
+		minrLog.Tracef("height == 141")
+	}
+
 	// Process this block using the same rules as blocks coming from other
 	// nodes. This will in turn relay it to the network like normal.
 	isOrphan, err := m.server.blockManager.ProcessBlock(block, blockchain.BFNone)
@@ -311,7 +315,7 @@ out:
 		// this would otherwise end up building a new block template on
 		// a block that is in the process of becoming stale.
 		m.submitBlockLock.Lock()
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(500 * time.Millisecond)
 
 		// Hacks to make hc work with Hcd PoC (simnet only)
 		// TODO Remove before production.
@@ -320,8 +324,8 @@ out:
 
 			if curHeight == 1 {
 				time.Sleep(5500 * time.Millisecond) // let wallet reconn
-			} else if curHeight > 100 && curHeight < 201 { // slow down to i
-				time.Sleep(10 * time.Millisecond) // 2500
+			} else if curHeight > 142 && curHeight < 201 { // slow down to i
+				time.Sleep(50 * time.Millisecond) // 2500
 			} else { // burn through the first pile of blocks
 				time.Sleep(10 * time.Millisecond)
 			}
@@ -353,9 +357,7 @@ out:
 		if cfg.SimNet {
 			if m.minedOnParents[template.Block.Header.PrevBlock] >=
 				maxSimnetToMine {
-				minrLog.Tracef("too many blocks mined on parent, stopping " +
-					"until there are enough votes on these to make a new " +
-					"block")
+				minrLog.Tracef("too many blocks mined on parent, stopping until there are enough votes on these to make a new block")
 				continue
 			}
 		}

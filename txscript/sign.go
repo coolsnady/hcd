@@ -57,6 +57,12 @@ func RawTxInSignatureAlt(tx *wire.MsgTx, idx int, subScript []byte,
 
 	var sig chainec.Signature
 	switch sigType {
+	case secp256k1:
+		r, s, err := chainec.Secp256k1.Sign(key, hash)
+		if err != nil {
+			return nil, fmt.Errorf("cannot sign tx input: %s", err)
+		}
+		sig = chainec.Secp256k1.NewSignature(r, s)
 	case edwards:
 		r, s, err := chainec.Edwards.Sign(key, hash)
 		if err != nil {
@@ -132,6 +138,8 @@ func SignatureScriptAlt(tx *wire.MsgTx, idx int, subscript []byte,
 	switch sigTypes(sigType) {
 	case edwards:
 		pub = chainec.Edwards.NewPublicKey(pubx, puby)
+	case secp256k1:
+		pub = chainec.Secp256k1.NewPublicKey(pubx, puby)
 	case secSchnorr:
 		pub = chainec.SecSchnorr.NewPublicKey(pubx, puby)
 	case bliss:
@@ -213,6 +221,25 @@ func handleStakeOutSign(chainParams *chaincfg.Params, tx *wire.MsgTx, idx int,
 		}
 		txscript, err := SignatureScript(tx, idx, subScript, hashType,
 			key, compressed)
+		if err != nil {
+			return nil, class, nil, 0, err
+		}
+		return txscript, class, addresses, nrequired, nil
+	case PubkeyHashAltTy:
+		key, compressed, err := kdb.GetKey(addresses[0])
+		if err != nil {
+			return nil, class, nil, 0, err
+		}
+		keyType :=  key.GetType()
+		var txscript []byte
+		if keyType == chainec.ECTypeSecp256k1 {
+			txscript, err = SignatureScriptAlt(tx, idx, subScript, hashType, key, compressed, chainec.ECTypeSecp256k1)
+		} else if keyType == bs.BSTypeBliss {
+			txscript, err = SignatureScriptAlt(tx, idx, subScript, hashType, key, compressed, bs.BSTypeBliss)
+		} else{
+			return nil, class, nil, 0, fmt.Errorf("not support type")
+		}
+	
 		if err != nil {
 			return nil, class, nil, 0, err
 		}

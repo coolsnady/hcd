@@ -72,7 +72,8 @@ const (
 
 	// SStxPKHMaxOutSize is the maximum size of of an OP_RETURN commitment output
 	// for an SStx tx.
-	SStxPKHMaxOutSize = 77
+	// 897 bytes P2SH/P2PKH +2+ 8 byte amount + 4 byte fee range limits
+	SStxPKHMaxOutSize = 911
 
 	// SSGenBlockReferenceOutSize is the size of a block reference OP_RETURN
 	// output for an SSGen tx.
@@ -88,7 +89,7 @@ const (
 
 	// MaxSingleBytePushLength is the largest maximum push for an
 	// SStx commitment or VoteBits push.
-	MaxSingleBytePushLength = 75
+	MaxSingleBytePushLength = 77
 
 	// SSGenVoteBitsExtendedMaxSize is the maximum size for a VoteBitsExtended
 	// push in an SSGen.
@@ -414,7 +415,8 @@ func TxSSGenStakeOutputInfo(tx *wire.MsgTx, params *chaincfg.Params) ([]bool,
 			if err != nil {
 				return nil, nil, nil, err
 			}
-			if !(subClass == txscript.PubKeyHashTy ||
+			if !(subClass == txscript.PubkeyHashAltTy ||
+				subClass == txscript.PubKeyHashTy ||
 				subClass == txscript.ScriptHashTy) {
 				return nil, nil, nil, fmt.Errorf("bad script type")
 			}
@@ -501,7 +503,8 @@ func TxSSRtxStakeOutputInfo(tx *wire.MsgTx, params *chaincfg.Params) ([]bool,
 		if err != nil {
 			return nil, nil, nil, err
 		}
-		if !(subClass == txscript.PubKeyHashTy ||
+		if !(subClass == txscript.PubkeyHashAltTy ||
+			subClass == txscript.PubKeyHashTy ||
 			subClass == txscript.ScriptHashTy) {
 			return nil, nil, nil, fmt.Errorf("bad script type")
 		}
@@ -852,8 +855,7 @@ func IsSStx(tx *wire.MsgTx) (bool, error) {
 		if outTxIndex%2 == 0 {
 			if txscript.GetScriptClass(scrVersion, rawScript) !=
 				txscript.StakeSubChangeTy {
-				str := fmt.Sprintf("SStx output at output index %d was not "+
-					"an sstx change output", outTxIndex)
+				str := fmt.Sprintf("SStx output at output index %d was not an sstx change output", outTxIndex)
 				return false, stakeRuleError(ErrSStxInvalidOutputs, str)
 			}
 			continue
@@ -863,8 +865,7 @@ func IsSStx(tx *wire.MsgTx) (bool, error) {
 		// NullDataTy output.
 		if txscript.GetScriptClass(scrVersion, rawScript) !=
 			txscript.NullDataTy {
-			str := fmt.Sprintf("SStx output at output index %d was not "+
-				"a NullData (OP_RETURN) push", outTxIndex)
+			str := fmt.Sprintf("SStx output at output index %d was not a NullData (OP_RETURN) push", outTxIndex)
 			return false, stakeRuleError(ErrSStxInvalidOutputs, str)
 		}
 

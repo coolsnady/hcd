@@ -453,9 +453,9 @@ var MainNetParams = Params{
 	Net:         wire.MainNet,
 	DefaultPort: "14008",
 	DNSSeeds:    []string{
-		"mainnet1.h.cash",
-		"mainnet2.h.cash",
-		"mainnet3.h.cash",
+		// "mainnet1.h.cash",
+		// "mainnet2.h.cash",
+		// "mainnet3.h.cash",
 	},
 
 	// Chain parameters
@@ -562,9 +562,9 @@ var TestNet2Params = Params{
 	Net:         wire.TestNet2,
 	DefaultPort: "12008",
 	DNSSeeds:    []string{
-		"testnet1.h.cash",
-		"testnet2.h.cash",
-		"testnet3.h.cash",
+		// "testnet1.h.cash",
+		// "testnet2.h.cash",
+		// "testnet3.h.cash",
 	//"192.168.11.135",
 	},
 

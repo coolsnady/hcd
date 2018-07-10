@@ -1216,7 +1216,6 @@ func NewBlockTemplate(policy *mining.Policy, server *server,
 		if err != nil {
 			return nil, miningRuleError(ErrFailedToGetGeneration, err.Error())
 		}
-
 		// Get the list of blocks that we can actually build on top of. If we're
 		// not currently on the block that has the most votes, switch to that
 		// block.
@@ -1967,12 +1966,10 @@ mempoolLoop:
 	// Return nil if we don't yet have enough voters; sometimes it takes a
 	// bit for the mempool to sync with the votes map and we end up down
 	// here despite having the relevant votes available in the votes map.
-	minimumVotesRequired :=
-		int((server.chainParams.TicketsPerBlock / 2) + 1)
+	minimumVotesRequired := int((server.chainParams.TicketsPerBlock / 2) + 1)
 	if nextBlockHeight >= stakeValidationHeight &&
 		voters < minimumVotesRequired {
-		minrLog.Warnf("incongruent number of voters in mempool " +
-			"vs mempool.voters; not enough voters found")
+		minrLog.Warnf("incongruent number of voters in mempool vs mempool.voters; not enough voters found")
 		return handleTooFewVoters(subsidyCache, nextBlockHeight, payToAddress,
 			server.blockManager)
 	}

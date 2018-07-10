@@ -1018,7 +1018,10 @@ func handleCreateRawSSGenTx(s *rpcServer, cmd interface{}, closeChan <-chan stru
 	}
 	blockVBOut := wire.NewTxOut(0, blockVBScript)
 	mtx.AddTxOut(blockVBOut)
-
+	alType, err := txscript.ExtractPkScriptAltSigType(minimalOutputs[2].PkScript)
+	if err !=nil {
+		alType = 0
+	}
 	// Add all the SSGen-tagged transaction outputs to the transaction
 	// after performing some validity checks.
 	for i, ssgenPkh := range ssgenPkhs {
@@ -1035,14 +1038,14 @@ func handleCreateRawSSGenTx(s *rpcServer, cmd interface{}, closeChan <-chan stru
 		var ssgenOut []byte
 		switch ssgenPayTypes[i] {
 		case false: // P2PKH
-			ssgenOut, err = txscript.PayToSSGenPKHDirect(ssgenPkh)
+			ssgenOut, err = txscript.PayToSSGenPKHDirect(ssgenPkh,alType)
 			if err != nil {
 				return nil,
 					rpcInvalidError("Could not generate "+
 						"PKH script: %v", err)
 			}
 		case true: // P2SH
-			ssgenOut, err = txscript.PayToSSGenSHDirect(ssgenPkh)
+			ssgenOut, err = txscript.PayToSSGenSHDirect(ssgenPkh,alType)
 			if err != nil {
 				return nil,
 					rpcInvalidError("Could not generate "+
@@ -1146,6 +1149,10 @@ func handleCreateRawSSRtx(s *rpcServer, cmd interface{}, closeChan <-chan struct
 	// Add all the SSRtx-tagged transaction outputs to the transaction after
 	// performing some validity checks.
 	feeApplied := false
+	alType, err := txscript.ExtractPkScriptAltSigType(minimalOutputs[2].PkScript)
+	if err !=nil {
+		alType =0
+	}
 	for i, ssrtxPkh := range ssrtxPkhs {
 		// Ensure amount is in the valid range for monetary amounts.
 		if sstxAmts[i] <= 0 || sstxAmts[i] > hcutil.MaxAmount {
@@ -1158,13 +1165,13 @@ func handleCreateRawSSRtx(s *rpcServer, cmd interface{}, closeChan <-chan struct
 		var ssrtxOutScript []byte
 		switch ssrtxPayTypes[i] {
 		case false: // P2PKH
-			ssrtxOutScript, err = txscript.PayToSSRtxPKHDirect(ssrtxPkh)
+			ssrtxOutScript, err = txscript.PayToSSRtxPKHDirect(ssrtxPkh,alType)
 			if err != nil {
 				return nil, rpcInvalidError("Could not "+
 					"generate PKH script: %v", err)
 			}
 		case true: // P2SH
-			ssrtxOutScript, err = txscript.PayToSSRtxSHDirect(ssrtxPkh)
+			ssrtxOutScript, err = txscript.PayToSSRtxSHDirect(ssrtxPkh,alType)
 			if err != nil {
 				return nil, rpcInvalidError("Could not "+
 					"generate SHD script: %v", err)
@@ -4570,7 +4577,13 @@ type retrievedTx struct {
 func fetchInputTxos(s *rpcServer, tx *wire.MsgTx) (map[wire.OutPoint]wire.TxOut, error) {
 	mp := s.server.txMemPool
 	originOutputs := make(map[wire.OutPoint]wire.TxOut)
+	voteTx, _:= stake.IsSSGen(tx)
 	for txInIndex, txIn := range tx.TxIn {
+		// vote tx have null input for vin[0],
+		// skip since it resolvces to an invalid transaction
+		if voteTx && txInIndex == 0 {
+			continue
+		}
 		// Attempt to fetch and use the referenced transaction from the
 		// memory pool.
 		origin := &txIn.PreviousOutPoint
@@ -4651,7 +4664,7 @@ func createVinListPrevOut(s *rpcServer, mtx *wire.MsgTx, chainParams *chaincfg.P
 		return vinList, nil
 	}
 
-	// Use a dynamically sized list to accomodate the address filter.
+	// Use a dynamically sized list to accommodate the address filter.
 	vinList := make([]dcrjson.VinPrevOut, 0, len(mtx.TxIn))
 
 	// Lookup all of the referenced transaction outputs needed to populate
@@ -4665,7 +4678,24 @@ func createVinListPrevOut(s *rpcServer, mtx *wire.MsgTx, chainParams *chaincfg.P
 		}
 	}
 
-	for _, txIn := range mtx.TxIn {
+	// Stakebase transactions (votes) have two inputs: a null stake base
+	// followed by an input consuming a ticket's stakesubmission.
+	isSSGen,_ := stake.IsSSGen(mtx)
+
+	for i, txIn := range mtx.TxIn {
+		// Handle only the null input of a stakebase differently.
+		if isSSGen && i == 0 {
+			amountIn := hcutil.Amount(txIn.ValueIn).ToCoin()
+			vinEntry := dcrjson.VinPrevOut{
+				Stakebase: hex.EncodeToString(txIn.SignatureScript),
+				AmountIn:  &amountIn,
+				Sequence:  txIn.Sequence,
+			}
+			vinList = append(vinList, vinEntry)
+			// No previous outpoints to check against the address filter.
+			continue
+		}
+
 		// The disassembled string will contain [error] inline if the
 		// script doesn't fully parse, so ignore the error here.
 		disbuf, _ := txscript.DisasmString(txIn.SignatureScript)
@@ -5142,7 +5172,6 @@ func handleStop(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (inter
 // handleSubmitBlock implements the submitblock command.
 func handleSubmitBlock(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	c := cmd.(*dcrjson.SubmitBlockCmd)
-
 	// Deserialize the submitted block.
 	hexStr := c.HexBlock
 	if len(hexStr)%2 != 0 {
