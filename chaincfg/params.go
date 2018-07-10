@@ -468,18 +468,18 @@ var MainNetParams = Params{
 	GenerateSupported:        false,
 	MaximumBlockSizes:        []int{393216},
 	MaxTxSize:                393216,
-	TargetTimePerBlock:       time.Minute * 5,
+	TargetTimePerBlock:       time.Minute * 2.5,
 	WorkDiffAlpha:            1,
 	WorkDiffWindowSize:       144,
 	WorkDiffWindows:          20,
-	TargetTimespan:           time.Minute * 5 * 144, // TimePerBlock * WindowSize
+	TargetTimespan:           time.Minute * 2.5 * 144, // TimePerBlock * WindowSize
 	RetargetAdjustmentFactor: 4,
 
 	// Subsidy parameters.
-	BaseSubsidy:              6368783988, // ~84m = Premine + Total subsidy
-	MulSubsidy:               100,
-	DivSubsidy:               101,
-	SubsidyReductionInterval: 6144,
+	BaseSubsidy:              640000000, // ~84m = Premine + Total subsidy
+	MulSubsidy:               999,
+	DivSubsidy:               1000,
+	SubsidyReductionInterval: 12288,
 	WorkRewardProportion:     6,
 	StakeRewardProportion:    3,
 	BlockTaxProportion:       1,

@@ -96,11 +96,18 @@ func (s *SubsidyCache) CalcBlockSubsidy(height int64) int64 {
 		cachedValue *= s.params.MulSubsidy
 		cachedValue /= s.params.DivSubsidy
 
+		temp := int64(640000000) 
+		for i := uint64(0); i < iteration; i++ {
+			temp *= s.params.MulSubsidy
+			temp /= s.params.DivSubsidy
+		}
+		temp = temp * (-5948) /10000000
+
 		s.subsidyCacheLock.Lock()
-		s.subsidyCache[iteration] = cachedValue
+		s.subsidyCache[iteration] = cachedValue + temp
 		s.subsidyCacheLock.Unlock()
 
-		return cachedValue
+		return cachedValue + temp
 	}
 
 	// Calculate the subsidy from scratch and store in the
@@ -111,6 +118,7 @@ func (s *SubsidyCache) CalcBlockSubsidy(height int64) int64 {
 		subsidy *= s.params.MulSubsidy
 		subsidy /= s.params.DivSubsidy
 	}
+	subsidy = subsidy - subsidy * 5948 * int64(iteration) /10000000
 
 	s.subsidyCacheLock.Lock()
 	s.subsidyCache[iteration] = subsidy
