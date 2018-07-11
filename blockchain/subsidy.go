@@ -96,7 +96,7 @@ func (s *SubsidyCache) CalcBlockSubsidy(height int64) int64 {
 		cachedValue *= s.params.MulSubsidy
 		cachedValue /= s.params.DivSubsidy
 
-		temp := int64(640000000) 
+		temp := s.params.BaseSubsidy
 		for i := uint64(0); i < iteration; i++ {
 			temp *= s.params.MulSubsidy
 			temp /= s.params.DivSubsidy
