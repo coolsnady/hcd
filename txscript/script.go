@@ -136,7 +136,7 @@ func parseAltScriptTemplate(script []byte, opcodes *[256]opcode) ([]parsedOpcode
 		instr := script[i]
 
 		// TODO for read
-		if i == 24 && script[i] < (OP_1) && script[i] <= (OP_16){  //OP_O
+		if i == 24 && script[i] < (OP_1) && script[i] == (OP_0){  //OP_O
 			instr = instr + 80
 		}
 		op := &opcodes[instr]
