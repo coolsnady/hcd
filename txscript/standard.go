@@ -1022,14 +1022,16 @@ func GenerateSStxAddrPush(addr hcutil.Address, amount hcutil.Amount,
 	if addr == nil {
 		return nil, ErrUnsupportedAddress
 	}
-
+	
 	// Only pay to pubkey hash and pay to script hash are
 	// supported.
+	sigType := []byte{byte(0)}
 	scriptType := PubKeyHashTy
 	switch addr := addr.(type) {
 	case *hcutil.AddressPubKeyHash:
 		chainecType :=  addr.DSA(addr.Net())
-		if !(chainecType == chainec.ECTypeSecp256k1 || chainecType == bs.BSTypeBliss) {
+		sigType = []byte{byte(chainecType)}
+		if !(chainecType ==  chainec.ECTypeSecp256k1 || chainecType == bs.BSTypeBliss) {
 			return nil, ErrUnsupportedAddress
 		}
 		break
@@ -1057,10 +1059,12 @@ func GenerateSStxAddrPush(addr hcutil.Address, amount hcutil.Amount,
 	}
 
 	limitsBuffer := make([]byte, 2)
+	
 	binary.LittleEndian.PutUint16(limitsBuffer, limits)
 
 	// Concatenate the prefix, pubkeyhash, and amount.
-	addrOut := append(hash, amountBuffer...)
+	addrOut := append(hash, sigType...)
+	addrOut = append(addrOut, amountBuffer...)
 	addrOut = append(addrOut, limitsBuffer...)
 	return NewScriptBuilder().AddOp(OP_RETURN).AddData(addrOut).Script()
 }
