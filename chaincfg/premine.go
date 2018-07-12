@@ -25,7 +25,7 @@ var BlockOneLedgerMainNet = []*TokenPayout{
 // BlockOneLedgerTestNet is the block one output ledger for the test
 // network.
 var BlockOneLedgerTestNet = []*TokenPayout{
-	{"TsmWaPM77WSyA3aiQ2Q1KnwGDVWvEkhipBc", 100000 * 1e8},
+	{"TsgvVRcX9TUPis9xmpknn23a33iDDDfmXPW", 10000000 * 1e8},
 }
 
 // BlockOneLedgerTestNet2 is the block one output ledger for the 2nd test
