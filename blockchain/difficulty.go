@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"math/big"
 	"time"
+	"math"
 
 	"github.com/coolsnady/hcd/chaincfg"
 	"github.com/coolsnady/hcd/chaincfg/chainhash"
@@ -505,15 +506,26 @@ func estimateSupply(params *chaincfg.Params, height int64) int64 {
 	// reduction interval and multiplying it the number of blocks in the
 	// interval then adding the subsidy produced by number of blocks in the
 	// current interval.
+	//A(n) = (a1+(n-1)d)q^(n-1)
+	//S(n) = a1(1-q^n)/(1-q) + d[q(1-q^(n-1))/((1-q)^2) - (n-1)q^n/(1-q)]
+	//A(n) = A(n-1) *q + d*q^(n-1)
+
+	var temp float64 = 0.0
+	var q float64 = float64(params.MulSubsidy)/float64(params.DivSubsidy)
 	supply := params.BlockOneSubsidy()
 	reductions := int64(height) / params.SubsidyReductionInterval
 	subsidy := params.BaseSubsidy
+	
 	for i := int64(0); i < reductions; i++ {
 		supply += params.SubsidyReductionInterval * subsidy
 
 		subsidy *= params.MulSubsidy
 		subsidy /= params.DivSubsidy
+
+		temp = float64(-5948 * params.SubsidyReductionInterval * params.BaseSubsidy) * math.Pow(q, float64(i+1))/10000000.0
+		subsidy += int64(temp)
 	}
+
 	supply += (1 + int64(height)%params.SubsidyReductionInterval) * subsidy
 
 	// Blocks 0 and 1 have special subsidy amounts that have already been
