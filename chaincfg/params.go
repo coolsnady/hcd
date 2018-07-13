@@ -586,9 +586,9 @@ var TestNet2Params = Params{
 	RetargetAdjustmentFactor: 4,
 
 	// Subsidy parameters.
-	BaseSubsidy:              6368783988,
-	MulSubsidy:               100,
-	DivSubsidy:               101,
+	BaseSubsidy:              640000000, // ~84m = Premine + Total subsidy
+	MulSubsidy:               999,
+	DivSubsidy:               1000,
 	SubsidyReductionInterval: 2048,
 	WorkRewardProportion:     6,
 	StakeRewardProportion:    3,
@@ -697,9 +697,9 @@ var SimNetParams = Params{
 	RetargetAdjustmentFactor: 4,
 
 	// Subsidy parameters.
-	BaseSubsidy:              50000000000,
-	MulSubsidy:               100,
-	DivSubsidy:               101,
+	BaseSubsidy:              640000000, // ~84m = Premine + Total subsidy
+	MulSubsidy:               999,
+	DivSubsidy:               1000,
 	SubsidyReductionInterval: 128,
 	WorkRewardProportion:     6,
 	StakeRewardProportion:    3,
