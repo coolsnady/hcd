@@ -516,7 +516,7 @@ func estimateSupply(params *chaincfg.Params, height int64) int64 {
 	reductions := int64(height) / params.SubsidyReductionInterval
 	subsidy := params.BaseSubsidy
 	
-	for i := int64(0); i < reductions; i++ {
+	for i := int64(0); i < reductions && i<1681; i++ {
 		supply += params.SubsidyReductionInterval * subsidy
 
 		subsidy *= params.MulSubsidy
@@ -524,6 +524,11 @@ func estimateSupply(params *chaincfg.Params, height int64) int64 {
 
 		temp = float64(-5948 * params.SubsidyReductionInterval * params.BaseSubsidy) * math.Pow(q, float64(i+1))/10000000.0
 		subsidy += int64(temp)
+	}
+	for i:=int64(1681); i< reductions; i++{
+		supply += params.SubsidyReductionInterval * subsidy
+		temp = float64(100000000) * math.Pow(0.1, float64(i-1680))
+		subsidy = int64(temp)
 	}
 
 	supply += (1 + int64(height)%params.SubsidyReductionInterval) * subsidy
