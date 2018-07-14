@@ -251,13 +251,22 @@ func UniqueOpReturnScript() []byte {
 // using the blockchain code since the intent is to be able to generate known
 // good tests which exercise that code, so it wouldn't make sense to use the
 // same code to generate them.
+//A(n) = (a1+(n-1)d)q^(n-1)
+//S(n) = a1(1-q^n)/(1-q) + d[q(1-q^(n-1))/((1-q)^2) - (n-1)q^n/(1-q)]
+//A(n) = A(n-1) *q + d*q^(n-1)
+	
 func (g *Generator) calcFullSubsidy(blockHeight uint32) hcutil.Amount {
 	iterations := int64(blockHeight) / g.params.SubsidyReductionInterval
 	subsidy := g.params.BaseSubsidy
-	for i := int64(0); i < iterations; i++ {
-		subsidy *= g.params.MulSubsidy
-		subsidy /= g.params.DivSubsidy
+	var q float64 = float64(g.params.MulSubsidy)/float64(g.params.DivSubsidy)
+	var temp float64 = 0.0
+	
+	if iterations < 1682 {
+		temp = float64(g.params.BaseSubsidy) * (1.0 - float64(iterations) * 5948.0 / 10000000.0) * math.Pow(q,float64(iterations))
+	}else{//after 99 years
+		temp = 100000000.0/float64(g.params.SubsidyReductionInterval) * math.Pow(0.1, float64(float64(iterations)-1681.0))
 	}
+	subsidy = int64(temp)
 	return hcutil.Amount(subsidy)
 }
 

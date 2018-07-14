@@ -16,6 +16,7 @@ import (
 	"github.com/coolsnady/hcd/txscript"
 	"github.com/coolsnady/hcd/wire"
 	"github.com/coolsnady/hcutil"
+	"math"
 )
 
 // The number of values to precalculate on initialization of the subsidy
@@ -89,41 +90,43 @@ func (s *SubsidyCache) CalcBlockSubsidy(height int64) int64 {
 	// Is the previous one in the cache? If so, calculate
 	// the subsidy from the previous known value and store
 	// it in the database and the cache.
+	//A(n) = (a1+(n-1)d)q^(n-1)
+	//S(n) = a1(1-q^n)/(1-q) + d[q(1-q^(n-1))/((1-q)^2) - (n-1)q^n/(1-q)]
+	//A(n) = A(n-1) *q + d*q^(n-1)
+
 	s.subsidyCacheLock.RLock()
 	cachedValue, existsInCache = s.subsidyCache[iteration-1]
 	s.subsidyCacheLock.RUnlock()
+	var q float64 = float64(s.params.MulSubsidy)/float64(s.params.DivSubsidy)
+	var temp float64 = 0.0
 	if existsInCache {
-		cachedValue *= s.params.MulSubsidy
-		cachedValue /= s.params.DivSubsidy
+		if iteration < 1682{
+			cachedValue *= s.params.MulSubsidy
+			cachedValue /= s.params.DivSubsidy
 
-		temp := s.params.BaseSubsidy
-		for i := uint64(0); i < iteration; i++ {
-			temp *= s.params.MulSubsidy
-			temp /= s.params.DivSubsidy
+			temp = float64(-5948 * s.params.BaseSubsidy) * math.Pow(q, float64(iteration))/10000000.0
+			cachedValue += int64(temp)
+		}else{//after 99 years
+			cachedValue = int64(100000000.0/float64(s.params.SubsidyReductionInterval) * math.Pow(0.1, float64(float64(iteration)-1681.0)))
 		}
-		temp = temp * (-5948) /10000000
-
 		s.subsidyCacheLock.Lock()
-		s.subsidyCache[iteration] = cachedValue + temp
+		s.subsidyCache[iteration] = cachedValue
 		s.subsidyCacheLock.Unlock()
-
-		return cachedValue + temp
+		return cachedValue
 	}
 
 	// Calculate the subsidy from scratch and store in the
 	// cache. TODO If there's an older item in the cache,
 	// calculate it from that to save time.
-	subsidy := s.params.BaseSubsidy
-	for i := uint64(0); i < iteration; i++ {
-		subsidy *= s.params.MulSubsidy
-		subsidy /= s.params.DivSubsidy
+	if iteration < 1682 {
+		temp = float64(s.params.BaseSubsidy) * (1.0 - float64(iteration) * 5948.0 / 10000000.0) * math.Pow(q,float64(iteration))
+	}else{//after 99 years
+		temp = 100000000.0/float64(s.params.SubsidyReductionInterval) * math.Pow(0.1, float64(float64(iteration)-1681.0))
 	}
-	subsidy = subsidy - subsidy * 5948 * int64(iteration) /10000000
-
+	subsidy := int64(temp)
 	s.subsidyCacheLock.Lock()
 	s.subsidyCache[iteration] = subsidy
 	s.subsidyCacheLock.Unlock()
-
 	return subsidy
 }
 
