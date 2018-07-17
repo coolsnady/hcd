@@ -767,7 +767,7 @@ var SimNetParams = Params{
 	PubKeyHashAddrID:     [2]byte{0x0e, 0x91}, // starts with Ss
 	PKHEdwardsAddrID:     [2]byte{0x0e, 0x71}, // starts with Se
 	PKHSchnorrAddrID:     [2]byte{0x0e, 0x53}, // starts with SS
-	PKHBlissAddrID:       [2]byte{0x0e, 0x68}, // starts with Sb
+	PKHBlissAddrID:       [2]byte{0x0e, 0x69}, // starts with Sb
 	ScriptHashAddrID:     [2]byte{0x0e, 0x6c}, // starts with Sc
 	PrivateKeyID:         [2]byte{0x23, 0x07}, // starts with Ps
 
