@@ -219,6 +219,8 @@ const (
 	ECTypeSecp256k1  int = iota // 0
 	ECTypeEdwards               // 1
 	ECTypeSecSchnorr            // 2
+	_							// 3
+	ECTypeBliss					// 4
 )
 
 // Secp256k1 is the secp256k1 curve and ECDSA system used in Bitcoin.
