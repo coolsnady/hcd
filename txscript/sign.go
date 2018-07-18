@@ -189,7 +189,8 @@ func signMultiSig(tx *wire.MsgTx, idx int, subScript []byte, hashType SigHashTyp
 		if err != nil {
 			continue
 		}
-		sig, err := RawTxInSignature(tx, idx, subScript, hashType, key)
+		keyType := key.GetType()
+		sig, err := RawTxInSignatureAlt(tx, idx, subScript, hashType, key, sigTypes(keyType))
 		if err != nil {
 			continue
 		}

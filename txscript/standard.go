@@ -189,7 +189,7 @@ func isMultiSig(pops []parsedOpcode) bool {
 
 	for _, pop := range pops[1 : l-2] {
 		// Valid pubkeys are either 33 or 65 bytes.
-		if len(pop.data) != 33 && len(pop.data) != 65 {
+		if len(pop.data) != 33 && len(pop.data) != 65 && len(pop.data) != 897 {
 			return false
 		}
 	}
@@ -1022,14 +1022,16 @@ func GenerateSStxAddrPush(addr hcutil.Address, amount hcutil.Amount,
 	if addr == nil {
 		return nil, ErrUnsupportedAddress
 	}
-
+	
 	// Only pay to pubkey hash and pay to script hash are
 	// supported.
+	sigType := []byte{byte(0)}
 	scriptType := PubKeyHashTy
 	switch addr := addr.(type) {
 	case *hcutil.AddressPubKeyHash:
 		chainecType :=  addr.DSA(addr.Net())
-		if !(chainecType == chainec.ECTypeSecp256k1 || chainecType == bs.BSTypeBliss) {
+		sigType = []byte{byte(chainecType)}
+		if !(chainecType ==  chainec.ECTypeSecp256k1 || chainecType == bs.BSTypeBliss) {
 			return nil, ErrUnsupportedAddress
 		}
 		break
@@ -1060,7 +1062,8 @@ func GenerateSStxAddrPush(addr hcutil.Address, amount hcutil.Amount,
 	binary.LittleEndian.PutUint16(limitsBuffer, limits)
 
 	// Concatenate the prefix, pubkeyhash, and amount.
-	addrOut := append(hash, amountBuffer...)
+	addrOut := append(hash, sigType...)
+	addrOut = append(addrOut, amountBuffer...)
 	addrOut = append(addrOut, limitsBuffer...)
 	return NewScriptBuilder().AddOp(OP_RETURN).AddData(addrOut).Script()
 }
@@ -1167,7 +1170,7 @@ func PayToAddrScript(addr hcutil.Address) ([]byte, error) {
 // nrequired of the keys in pubkeys are required to have signed the transaction
 // for success.  An ErrBadNumRequired will be returned if nrequired is larger
 // than the number of keys provided.
-func MultiSigScript(pubkeys []*hcutil.AddressSecpPubKey, nrequired int) ([]byte,
+func MultiSigScript(pubkeys []hcutil.Address, nrequired int) ([]byte,
 	error) {
 	if len(pubkeys) < nrequired {
 		return nil, ErrBadNumRequired
@@ -1371,12 +1374,23 @@ func ExtractPkScriptAddrs(version uint16, pkScript []byte,
 		// Extract the public keys while skipping any that are invalid.
 		addrs = make([]hcutil.Address, 0, numPubKeys)
 		for i := 0; i < numPubKeys; i++ {
-			pubkey, err := chainec.Secp256k1.ParsePubKey(pops[i+1].data)
-			if err == nil {
-				addr, err := hcutil.NewAddressSecpPubKeyCompressed(pubkey,
-					chainParams)
+			if len(pops[i+1].data) == 897 {//for bliss
+				pubkey, err := bs.Bliss.ParsePubKey(pops[i+1].data)
 				if err == nil {
-					addrs = append(addrs, addr)
+					addr, err := hcutil.NewAddressBlissPubKeyCompressed(pubkey,
+						chainParams)
+					if err == nil {
+						addrs = append(addrs, addr)
+					}
+				}
+			}else{
+				pubkey, err := chainec.Secp256k1.ParsePubKey(pops[i+1].data)
+				if err == nil {
+					addr, err := hcutil.NewAddressSecpPubKeyCompressed(pubkey,
+						chainParams)
+					if err == nil {
+						addrs = append(addrs, addr)
+					}
 				}
 			}
 		}

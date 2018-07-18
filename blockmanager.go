@@ -472,7 +472,6 @@ func (b *blockManager) updateChainState(newestHash *chainhash.Hash,
 
 	b.chainState.Lock()
 	defer b.chainState.Unlock()
-
 	b.chainState.newestHash = newestHash
 	b.chainState.newestHeight = newestHeight
 	b.chainState.pastMedianTime = b.chain.BestSnapshot().MedianTime
@@ -1137,8 +1136,8 @@ func (b *blockManager) handleBlockMsg(bmsg *blockMsg) {
 			if !beenNotified && r != nil &&
 				int64(bmsg.block.MsgBlock().Header.Height) >
 					b.server.chainParams.LatestCheckpointHeight() {
+			
 				r.ntfnMgr.NotifyWinningTickets(winningTicketsNtfn)
-
 				b.lotteryDataBroadcastMutex.Lock()
 				b.lotteryDataBroadcast[*blockHash] = struct{}{}
 				b.lotteryDataBroadcastMutex.Unlock()

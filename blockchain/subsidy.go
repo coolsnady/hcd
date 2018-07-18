@@ -123,7 +123,6 @@ func (s *SubsidyCache) CalcBlockSubsidy(height int64) int64 {
 	s.subsidyCacheLock.Lock()
 	s.subsidyCache[iteration] = subsidy
 	s.subsidyCacheLock.Unlock()
-
 	return subsidy
 }
 

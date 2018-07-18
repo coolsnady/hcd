@@ -354,6 +354,9 @@ func NewRevokeTicketsCmd() *RevokeTicketsCmd {
 	return &RevokeTicketsCmd{}
 }
 
+type GetStraightPubKeyCmd struct {
+	SrcAddress string
+}
 // SendToMultiSigCmd is a type handling custom marshaling and
 // unmarshaling of sendtomultisig JSON RPC commands.
 type SendToMultiSigCmd struct {
@@ -567,6 +570,7 @@ func init() {
 	MustRegisterCmd("redeemmultisigouts", (*RedeemMultiSigOutsCmd)(nil), flags)
 	MustRegisterCmd("rescanwallet", (*RescanWalletCmd)(nil), flags)
 	MustRegisterCmd("revoketickets", (*RevokeTicketsCmd)(nil), flags)
+	MustRegisterCmd("getstraightpubkey", (*GetStraightPubKeyCmd)(nil), flags)
 	MustRegisterCmd("sendtomultisig", (*SendToMultiSigCmd)(nil), flags)
 	MustRegisterCmd("sendtosstx", (*SendToSStxCmd)(nil), flags)
 	MustRegisterCmd("sendtossgen", (*SendToSSGenCmd)(nil), flags)

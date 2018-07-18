@@ -953,7 +953,7 @@ func handleCreateRawSSGenTx(s *rpcServer, cmd interface{}, closeChan <-chan stru
 	// Store the sstx pubkeyhashes and amounts as found in the transaction
 	// outputs.
 	minimalOutputs := blockchain.ConvertUtxosToMinimalOutputs(ticketUtx)
-	ssgenPayTypes, ssgenPkhs, sstxAmts, _, _, _ :=
+	ssgenPayTypes, ssgenPkhs, sstxAmts, _, _, _, sigTypes :=
 		stake.SStxStakeOutputInfo(minimalOutputs)
 
 	// Get the current reward.
@@ -1018,10 +1018,6 @@ func handleCreateRawSSGenTx(s *rpcServer, cmd interface{}, closeChan <-chan stru
 	}
 	blockVBOut := wire.NewTxOut(0, blockVBScript)
 	mtx.AddTxOut(blockVBOut)
-	alType, err := txscript.ExtractPkScriptAltSigType(minimalOutputs[2].PkScript)
-	if err !=nil {
-		alType = 0
-	}
 	// Add all the SSGen-tagged transaction outputs to the transaction
 	// after performing some validity checks.
 	for i, ssgenPkh := range ssgenPkhs {
@@ -1038,14 +1034,14 @@ func handleCreateRawSSGenTx(s *rpcServer, cmd interface{}, closeChan <-chan stru
 		var ssgenOut []byte
 		switch ssgenPayTypes[i] {
 		case false: // P2PKH
-			ssgenOut, err = txscript.PayToSSGenPKHDirect(ssgenPkh,alType)
+			ssgenOut, err = txscript.PayToSSGenPKHDirect(ssgenPkh,int(sigTypes[i]))
 			if err != nil {
 				return nil,
 					rpcInvalidError("Could not generate "+
 						"PKH script: %v", err)
 			}
 		case true: // P2SH
-			ssgenOut, err = txscript.PayToSSGenSHDirect(ssgenPkh,alType)
+			ssgenOut, err = txscript.PayToSSGenSHDirect(ssgenPkh,int(sigTypes[i]))
 			if err != nil {
 				return nil,
 					rpcInvalidError("Could not generate "+
@@ -1113,7 +1109,7 @@ func handleCreateRawSSRtx(s *rpcServer, cmd interface{}, closeChan <-chan struct
 	// Store the sstx pubkeyhashes and amounts as found in the transaction
 	// outputs.
 	minimalOutputs := blockchain.ConvertUtxosToMinimalOutputs(ticketUtx)
-	ssrtxPayTypes, ssrtxPkhs, sstxAmts, _, _, _ :=
+	ssrtxPayTypes, ssrtxPkhs, sstxAmts, _, _, _, sigTypes :=
 		stake.SStxStakeOutputInfo(minimalOutputs)
 
 	// 2. Add all transaction inputs to a new transaction after performing
@@ -1149,10 +1145,6 @@ func handleCreateRawSSRtx(s *rpcServer, cmd interface{}, closeChan <-chan struct
 	// Add all the SSRtx-tagged transaction outputs to the transaction after
 	// performing some validity checks.
 	feeApplied := false
-	alType, err := txscript.ExtractPkScriptAltSigType(minimalOutputs[2].PkScript)
-	if err !=nil {
-		alType =0
-	}
 	for i, ssrtxPkh := range ssrtxPkhs {
 		// Ensure amount is in the valid range for monetary amounts.
 		if sstxAmts[i] <= 0 || sstxAmts[i] > hcutil.MaxAmount {
@@ -1165,13 +1157,13 @@ func handleCreateRawSSRtx(s *rpcServer, cmd interface{}, closeChan <-chan struct
 		var ssrtxOutScript []byte
 		switch ssrtxPayTypes[i] {
 		case false: // P2PKH
-			ssrtxOutScript, err = txscript.PayToSSRtxPKHDirect(ssrtxPkh,alType)
+			ssrtxOutScript, err = txscript.PayToSSRtxPKHDirect(ssrtxPkh,int(sigTypes[i]))
 			if err != nil {
 				return nil, rpcInvalidError("Could not "+
 					"generate PKH script: %v", err)
 			}
 		case true: // P2SH
-			ssrtxOutScript, err = txscript.PayToSSRtxSHDirect(ssrtxPkh,alType)
+			ssrtxOutScript, err = txscript.PayToSSRtxSHDirect(ssrtxPkh,int(sigTypes[i]))
 			if err != nil {
 				return nil, rpcInvalidError("Could not "+
 					"generate SHD script: %v", err)

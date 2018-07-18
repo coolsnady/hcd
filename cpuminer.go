@@ -134,10 +134,6 @@ func (m *CPUMiner) submitBlock(block *hcutil.Block) bool {
 	m.submitBlockLock.Lock()
 	defer m.submitBlockLock.Unlock()
 
-	if block.Height() == 141{
-		minrLog.Tracef("height == 141")
-	}
-
 	// Process this block using the same rules as blocks coming from other
 	// nodes. This will in turn relay it to the network like normal.
 	isOrphan, err := m.server.blockManager.ProcessBlock(block, blockchain.BFNone)
@@ -321,7 +317,6 @@ out:
 		// TODO Remove before production.
 		if cfg.SimNet {
 			_, curHeight := m.server.blockManager.chainState.Best()
-
 			if curHeight == 1 {
 				time.Sleep(5500 * time.Millisecond) // let wallet reconn
 			} else if curHeight > 142 && curHeight < 201 { // slow down to i

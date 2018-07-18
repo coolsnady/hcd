@@ -1206,7 +1206,7 @@ func NewBlockTemplate(policy *mining.Policy, server *server,
 			"blockchain (got %v:%v, want %v,%v",
 			prevHash, nextBlockHeight-1, chainBest.Hash, chainBest.Height)
 	}
-
+		
 	// Calculate the stake enabled height.
 	stakeValidationHeight := server.chainParams.StakeValidationHeight
 

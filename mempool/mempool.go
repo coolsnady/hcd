@@ -1,5 +1,5 @@
 // Copyright (c) 2013-2016 The btcsuite developers
-// Copyright (c) 2015-2017 The Decred developers 
+// Copyright (c) 2015-2017 The Decred developers
 // Copyright (c) 2018-2020 The Hcd developers
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
@@ -45,7 +45,7 @@ const (
 
 	// maxRelayFeeMultiplier is the factor that we disallow fees / kB above the
 	// minimum tx fee.  At the current default minimum relay fee of 0.001
-	// DCR/kB, this results in a maximum allowed high fee of 1 DCR/kB.
+	// HC/kB, this results in a maximum allowed high fee of 1 HC/kB.
 	maxRelayFeeMultiplier = 1000
 
 	// maxSSGensDoubleSpends is the maximum number of SSGen double spends
@@ -1107,8 +1107,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *hcutil.Tx, isNew, rateLimit, allowH
 		currentPriority := CalcPriority(msgTx, utxoView,
 			nextBlockHeight)
 		if currentPriority <= MinHighPriority {
-			str := fmt.Sprintf("transaction %v has insufficient "+
-				"priority (%g <= %g)", txHash,
+			str := fmt.Sprintf("transaction %v has insufficient priority (%g <= %g)", txHash,
 				currentPriority, MinHighPriority)
 			return nil, txRuleError(wire.RejectInsufficientFee, str)
 		}
@@ -1435,8 +1434,8 @@ func (mp *TxPool) ProcessTransaction(tx *hcutil.Tx, allowOrphan, rateLimit, allo
 		// inputs is assumed to mean they are already spent
 		// which is not really always the case.
 		str := fmt.Sprintf("orphan transaction %v references "+
-			"outputs of unknown or fully-spent "+
-			"transaction %v", tx.Hash(), missingParents[0])
+			"outputs of unknown or fully-spent transaction %v", 
+			tx.Hash(), missingParents[0])
 		return nil, txRuleError(wire.RejectDuplicate, str)
 	}
 
