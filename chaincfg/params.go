@@ -453,9 +453,9 @@ var MainNetParams = Params{
 	Net:         wire.MainNet,
 	DefaultPort: "14008",
 	DNSSeeds:    []string{
-		"mainnet1.h.cash",
-		"mainnet2.h.cash",
-		"mainnet3.h.cash",
+		// "mainnet1.h.cash",
+		// "mainnet2.h.cash",
+		// "mainnet3.h.cash",
 	},
 
 	// Chain parameters
@@ -468,18 +468,18 @@ var MainNetParams = Params{
 	GenerateSupported:        false,
 	MaximumBlockSizes:        []int{393216},
 	MaxTxSize:                393216,
-	TargetTimePerBlock:       time.Minute * 5,
+	TargetTimePerBlock:       time.Second * 150,
 	WorkDiffAlpha:            1,
 	WorkDiffWindowSize:       144,
 	WorkDiffWindows:          20,
-	TargetTimespan:           time.Minute * 5 * 144, // TimePerBlock * WindowSize
+	TargetTimespan:           time.Minute * 360, // TimePerBlock * WindowSize
 	RetargetAdjustmentFactor: 4,
 
 	// Subsidy parameters.
-	BaseSubsidy:              6368783988, // ~84m = Premine + Total subsidy
-	MulSubsidy:               100,
-	DivSubsidy:               101,
-	SubsidyReductionInterval: 6144,
+	BaseSubsidy:              640000000, // ~84m = Premine + Total subsidy
+	MulSubsidy:               999,
+	DivSubsidy:               1000,
+	SubsidyReductionInterval: 12288,
 	WorkRewardProportion:     6,
 	StakeRewardProportion:    3,
 	BlockTaxProportion:       1,
@@ -562,9 +562,9 @@ var TestNet2Params = Params{
 	Net:         wire.TestNet2,
 	DefaultPort: "12008",
 	DNSSeeds:    []string{
-		"testnet1.h.cash",
-		"testnet2.h.cash",
-		"testnet3.h.cash",
+		 "testnet1.h.cash",
+		 "testnet2.h.cash",
+		 "testnet3.h.cash",
 	//"192.168.11.135",
 	},
 
@@ -586,9 +586,9 @@ var TestNet2Params = Params{
 	RetargetAdjustmentFactor: 4,
 
 	// Subsidy parameters.
-	BaseSubsidy:              6368783988,
-	MulSubsidy:               100,
-	DivSubsidy:               101,
+	BaseSubsidy:              640000000, // ~84m = Premine + Total subsidy
+	MulSubsidy:               999,
+	DivSubsidy:               1000,
 	SubsidyReductionInterval: 2048,
 	WorkRewardProportion:     6,
 	StakeRewardProportion:    3,
@@ -697,9 +697,9 @@ var SimNetParams = Params{
 	RetargetAdjustmentFactor: 4,
 
 	// Subsidy parameters.
-	BaseSubsidy:              50000000000,
-	MulSubsidy:               100,
-	DivSubsidy:               101,
+	BaseSubsidy:              640000000, // ~84m = Premine + Total subsidy
+	MulSubsidy:               999,
+	DivSubsidy:               1000,
 	SubsidyReductionInterval: 128,
 	WorkRewardProportion:     6,
 	StakeRewardProportion:    3,

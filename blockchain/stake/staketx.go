@@ -72,7 +72,8 @@ const (
 
 	// SStxPKHMaxOutSize is the maximum size of of an OP_RETURN commitment output
 	// for an SStx tx.
-	SStxPKHMaxOutSize = 77
+	// 897 bytes P2SH/P2PKH +2+ 8 byte amount + 4 byte fee range limits
+	SStxPKHMaxOutSize = 911
 
 	// SSGenBlockReferenceOutSize is the size of a block reference OP_RETURN
 	// output for an SSGen tx.
@@ -88,7 +89,7 @@ const (
 
 	// MaxSingleBytePushLength is the largest maximum push for an
 	// SStx commitment or VoteBits push.
-	MaxSingleBytePushLength = 75
+	MaxSingleBytePushLength = 77
 
 	// SSGenVoteBitsExtendedMaxSize is the maximum size for a VoteBitsExtended
 	// push in an SSGen.
@@ -270,10 +271,11 @@ func ConvertToMinimalOutputs(tx *wire.MsgTx) []*MinimalOutput {
 // returning the pubkeyhashs and amounts for any NullDataTy's (future
 // commitments to stake generation rewards).
 func SStxStakeOutputInfo(outs []*MinimalOutput) ([]bool, [][]byte, []int64,
-	[]int64, [][]bool, [][]uint16) {
+	[]int64, [][]bool, [][]uint16,[]byte) {
 	expectedInLen := len(outs) / 2
 	isP2SH := make([]bool, expectedInLen)
 	addresses := make([][]byte, expectedInLen)
+	addrSigType := make([]byte, expectedInLen)
 	amounts := make([]int64, expectedInLen)
 	changeAmounts := make([]int64, expectedInLen)
 	allSpendRules := make([][]bool, expectedInLen)
@@ -288,8 +290,9 @@ func SStxStakeOutputInfo(outs []*MinimalOutput) ([]bool, [][]byte, []int64,
 		if (idx > 0) && (idx%2 != 0) {
 			// The MSB (sign), not used ever normally, encodes whether
 			// or not it is a P2PKH or P2SH for the input.
+			addrSigType[idx/2] = out.PkScript[22:23][0]
 			amtEncoded := make([]byte, 8, 8)
-			copy(amtEncoded, out.PkScript[22:30])
+			copy(amtEncoded, out.PkScript[23:31])
 			isP2SH[idx/2] = !(amtEncoded[7]&(1<<7) == 0) // MSB set?
 			amtEncoded[7] &= ^uint8(1 << 7)              // Clear bit
 
@@ -302,7 +305,7 @@ func SStxStakeOutputInfo(outs []*MinimalOutput) ([]bool, [][]byte, []int64,
 			spendLimits := make([]uint16, 2, 2)
 
 			// This bitflag is true/false.
-			feeLimitUint16 := binary.LittleEndian.Uint16(out.PkScript[30:32])
+			feeLimitUint16 := binary.LittleEndian.Uint16(out.PkScript[31:33])
 			spendRules[0] = (feeLimitUint16 & SStxVoteFractionFlag) ==
 				SStxVoteFractionFlag
 			spendRules[1] = (feeLimitUint16 & SStxRevFractionFlag) ==
@@ -325,14 +328,14 @@ func SStxStakeOutputInfo(outs []*MinimalOutput) ([]bool, [][]byte, []int64,
 	}
 
 	return isP2SH, addresses, amounts, changeAmounts, allSpendRules,
-		allSpendLimits
+		allSpendLimits ,addrSigType
 }
 
 // TxSStxStakeOutputInfo takes an SStx as input and scans through its outputs,
 // returning the pubkeyhashs and amounts for any NullDataTy's (future
 // commitments to stake generation rewards).
 func TxSStxStakeOutputInfo(tx *wire.MsgTx) ([]bool, [][]byte, []int64, []int64,
-	[][]bool, [][]uint16) {
+	[][]bool, [][]uint16,[]byte) {
 	return SStxStakeOutputInfo(ConvertToMinimalOutputs(tx))
 }
 
@@ -414,7 +417,8 @@ func TxSSGenStakeOutputInfo(tx *wire.MsgTx, params *chaincfg.Params) ([]bool,
 			if err != nil {
 				return nil, nil, nil, err
 			}
-			if !(subClass == txscript.PubKeyHashTy ||
+			if !(subClass == txscript.PubkeyHashAltTy ||
+				subClass == txscript.PubKeyHashTy ||
 				subClass == txscript.ScriptHashTy) {
 				return nil, nil, nil, fmt.Errorf("bad script type")
 			}
@@ -501,7 +505,8 @@ func TxSSRtxStakeOutputInfo(tx *wire.MsgTx, params *chaincfg.Params) ([]bool,
 		if err != nil {
 			return nil, nil, nil, err
 		}
-		if !(subClass == txscript.PubKeyHashTy ||
+		if !(subClass == txscript.PubkeyHashAltTy ||
+			subClass == txscript.PubKeyHashTy ||
 			subClass == txscript.ScriptHashTy) {
 			return nil, nil, nil, fmt.Errorf("bad script type")
 		}
@@ -852,8 +857,7 @@ func IsSStx(tx *wire.MsgTx) (bool, error) {
 		if outTxIndex%2 == 0 {
 			if txscript.GetScriptClass(scrVersion, rawScript) !=
 				txscript.StakeSubChangeTy {
-				str := fmt.Sprintf("SStx output at output index %d was not "+
-					"an sstx change output", outTxIndex)
+				str := fmt.Sprintf("SStx output at output index %d was not an sstx change output", outTxIndex)
 				return false, stakeRuleError(ErrSStxInvalidOutputs, str)
 			}
 			continue
@@ -863,8 +867,7 @@ func IsSStx(tx *wire.MsgTx) (bool, error) {
 		// NullDataTy output.
 		if txscript.GetScriptClass(scrVersion, rawScript) !=
 			txscript.NullDataTy {
-			str := fmt.Sprintf("SStx output at output index %d was not "+
-				"a NullData (OP_RETURN) push", outTxIndex)
+			str := fmt.Sprintf("SStx output at output index %d was not a NullData (OP_RETURN) push", outTxIndex)
 			return false, stakeRuleError(ErrSStxInvalidOutputs, str)
 		}
 

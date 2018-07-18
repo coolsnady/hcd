@@ -1306,6 +1306,7 @@ func CheckTransactionInputs(subsidyCache *SubsidyCache, tx *hcutil.Tx, txHeight 
 			}
 
 			if !(class == txscript.PubKeyHashTy ||
+				class == txscript.PubkeyHashAltTy ||
 				class == txscript.ScriptHashTy) {
 				errStr := fmt.Sprintf("SStx input using tx %v"+
 					", txout %v referenced a txout that "+
@@ -1320,7 +1321,7 @@ func CheckTransactionInputs(subsidyCache *SubsidyCache, tx *hcutil.Tx, txHeight 
 			sstxInAmts[idx] = utxoEntry.AmountByIndex(originTxIndex)
 		}
 
-		_, _, outAmt, chgAmt, _, _ := stake.TxSStxStakeOutputInfo(msgTx)
+		_, _, outAmt, chgAmt, _, _, _  := stake.TxSStxStakeOutputInfo(msgTx)
 		_, outAmtCalc, err := stake.SStxNullOutputAmounts(sstxInAmts,
 			chgAmt, msgTx.TxOut[0].Value)
 		if err != nil {
@@ -1426,7 +1427,7 @@ func CheckTransactionInputs(subsidyCache *SubsidyCache, tx *hcutil.Tx, txHeight 
 			return 0, AssertError("missing stake extra data for " +
 				"ticket used as input for vote")
 		}
-		sstxPayTypes, sstxPkhs, sstxAmts, _, sstxRules, sstxLimits :=
+		sstxPayTypes, sstxPkhs, sstxAmts, _, sstxRules, sstxLimits, _ :=
 			stake.SStxStakeOutputInfo(minOutsSStx)
 
 		ssgenPayTypes, ssgenPkhs, ssgenAmts, err :=
@@ -1549,7 +1550,7 @@ func CheckTransactionInputs(subsidyCache *SubsidyCache, tx *hcutil.Tx, txHeight 
 		}
 
 		minOutsSStx := ConvertUtxosToMinimalOutputs(utxoEntrySstx)
-		sstxPayTypes, sstxPkhs, sstxAmts, _, sstxRules, sstxLimits :=
+		sstxPayTypes, sstxPkhs, sstxAmts, _, sstxRules, sstxLimits, _ :=
 			stake.SStxStakeOutputInfo(minOutsSStx)
 
 		// This should be impossible to hit given the strict bytecode

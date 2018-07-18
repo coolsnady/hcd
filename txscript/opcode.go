@@ -39,7 +39,7 @@ type opcode struct {
 
 // These constants are the values of the official opcodes used on the btc wiki,
 // in bitcoin core and in most if not all other references and software related
-// to handling DCR scripts.
+// to handling HC scripts.
 const (
 	OP_0                   = 0x00 // 0
 	OP_FALSE               = 0x00 // 0 - AKA OP_0
@@ -2752,6 +2752,7 @@ func opcodeCheckMultiSigVerify(op *parsedOpcode, vm *Engine) error {
 // sign function to indicate the type of signature to generate.
 type sigTypes uint8
 
+var secp256k1 = sigTypes(chainec.ECTypeSecp256k1)
 var edwards = sigTypes(chainec.ECTypeEdwards)
 var secSchnorr = sigTypes(chainec.ECTypeSecSchnorr)
 var bliss = sigTypes(bs.BSTypeBliss)
@@ -2773,10 +2774,8 @@ func opcodeCheckSigAlt(op *parsedOpcode, vm *Engine) error {
 	}
 
 	switch sigTypes(sigType) {
-	case sigTypes(0):
-		// Zero case; pre-softfork clients will return 0 in this case as well.
-		vm.dstack.PushBool(false)
-		return nil
+	case secp256k1:
+		break
 	case edwards:
 		break
 	case secSchnorr:
@@ -2799,6 +2798,11 @@ func opcodeCheckSigAlt(op *parsedOpcode, vm *Engine) error {
 	// are allowed for secp256k1 Schnorr signatures, which 32 byte keys
 	// are used for Curve25519, and 897 byte keys are used for Bliss.
 	switch sigTypes(sigType) {
+	case secp256k1:
+		if len(pkBytes) != 33 {
+			vm.dstack.PushBool(false)
+			return nil
+		}
 	case edwards:
 		if len(pkBytes) != 32 {
 			vm.dstack.PushBool(false)
@@ -2825,6 +2829,11 @@ func opcodeCheckSigAlt(op *parsedOpcode, vm *Engine) error {
 	// Schnorr signatures are 65 bytes in length (64 bytes for [r,s] and
 	// 1 byte appened to the end for hashType).
 	switch sigTypes(sigType) {
+	case secp256k1:
+		if  len(fullSigBytes) < 70 || len(fullSigBytes) > 72   {  // length of fullSigBytes may be one of 70,71,72
+			vm.dstack.PushBool(false)
+			return nil
+		}
 	case edwards:
 		if len(fullSigBytes) != 65 {
 			vm.dstack.PushBool(false)
@@ -2885,6 +2894,13 @@ func opcodeCheckSigAlt(op *parsedOpcode, vm *Engine) error {
 	// Get the public key from bytes.
 	var pubKey chainec.PublicKey
 	switch sigTypes(sigType) {
+	case secp256k1:
+		pubKeyEd, err := chainec.Secp256k1.ParsePubKey(pkBytes)
+		if err != nil {
+			vm.dstack.PushBool(false)
+			return nil
+		}
+		pubKey = pubKeyEd
 	case edwards:
 		pubKeyEd, err := chainec.Edwards.ParsePubKey(pkBytes)
 		if err != nil {
@@ -2911,6 +2927,13 @@ func opcodeCheckSigAlt(op *parsedOpcode, vm *Engine) error {
 	// Get the signature from bytes.
 	var signature chainec.Signature
 	switch sigTypes(sigType) {
+	case secp256k1:
+		sigEd, err := chainec.Secp256k1.ParseSignature(sigBytes)
+		if err != nil {
+			vm.dstack.PushBool(false)
+			return nil
+		}
+		signature = sigEd
 	case edwards:
 		sigEd, err := chainec.Edwards.ParseSignature(sigBytes)
 		if err != nil {
@@ -2939,6 +2962,11 @@ func opcodeCheckSigAlt(op *parsedOpcode, vm *Engine) error {
 
 	// Attempt to validate the signature.
 	switch sigTypes(sigType) {
+	case secp256k1:
+		ok := chainec.Secp256k1.Verify(pubKey, hash, signature.GetR(),
+		signature.GetS())
+		vm.dstack.PushBool(ok)
+		return nil
 	case edwards:
 		ok := chainec.Edwards.Verify(pubKey, hash, signature.GetR(),
 			signature.GetS())
