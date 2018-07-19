@@ -174,12 +174,12 @@ func (b *BlockChain) ProcessBlock(block *hcutil.Block, flags BehaviorFlags) (boo
 	// used to eat memory, and ensuring expected (versus claimed) proof of
 	// work requirements since the previous checkpoint are met.
 	blockHeader := &block.MsgBlock().Header
-	//var extraCheck uint32 
-	//binary.LittleEndian.PutUint32(blockHeader.ExtraData[0:4], extraCheck)
-	//if !CheckExtraData(extraCheck) {
-	//	str := fmt.Sprintf("invalidate extradata")
-	//	return false, false, ruleError(ErrCheckExtraData, str)
-	//}
+	var extraCheck uint32 
+	binary.LittleEndian.PutUint32(blockHeader.ExtraData[0:4], extraCheck)
+	if !CheckExtraData(extraCheck) {
+		str := fmt.Sprintf("invalidate extradata")
+		return false, false, ruleError(ErrCheckExtraData, str)
+	}
 
 	checkpointBlock, err := b.findPreviousCheckpoint()
 	if err != nil {
@@ -255,10 +255,7 @@ func (b *BlockChain) ProcessBlock(block *hcutil.Block, flags BehaviorFlags) (boo
 	return isMainChain, false, nil
 }
 
-//extraData is in Header 144-148 
-//in dcr this is random number
 //in hsr this must pass the Check
-
 func CheckExtraData(extraData uint32) bool {
 	extraDataLowHigh := (uint32)(12 * 3000)
 	extraDataLow := extraData & 0xFFFF
