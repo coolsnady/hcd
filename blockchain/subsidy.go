@@ -94,30 +94,9 @@ func (s *SubsidyCache) CalcBlockSubsidy(height int64) int64 {
 	//S(n) = a1(1-q^n)/(1-q) + d[q(1-q^(n-1))/((1-q)^2) - (n-1)q^n/(1-q)]
 	//A(n) = A(n-1) *q + d*q^(n-1)
 
-	s.subsidyCacheLock.RLock()
-	cachedValue, existsInCache = s.subsidyCache[iteration-1]
-	s.subsidyCacheLock.RUnlock()
 	var q float64 = float64(s.params.MulSubsidy)/float64(s.params.DivSubsidy)
 	var temp float64 = 0.0
-	if existsInCache {
-		if iteration < 1682{
-			cachedValue *= s.params.MulSubsidy
-			cachedValue /= s.params.DivSubsidy
 
-			temp = float64(-5948 * s.params.BaseSubsidy) * math.Pow(q, float64(iteration))/10000000.0
-			cachedValue += int64(temp)
-		}else{//after 99 years
-			cachedValue = int64(100000000.0/float64(s.params.SubsidyReductionInterval) * math.Pow(0.1, float64(float64(iteration)-1681.0)))
-		}
-		s.subsidyCacheLock.Lock()
-		s.subsidyCache[iteration] = cachedValue
-		s.subsidyCacheLock.Unlock()
-		return cachedValue
-	}
-
-	// Calculate the subsidy from scratch and store in the
-	// cache. TODO If there's an older item in the cache,
-	// calculate it from that to save time.
 	if iteration < 1682 {
 		temp = float64(s.params.BaseSubsidy) * (1.0 - float64(iteration) * 5948.0 / 10000000.0) * math.Pow(q,float64(iteration))
 	}else{//after 99 years
