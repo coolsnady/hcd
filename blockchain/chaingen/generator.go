@@ -262,7 +262,7 @@ func (g *Generator) calcFullSubsidy(blockHeight uint32) hcutil.Amount {
 	var temp float64 = 0.0
 	
 	if iterations < 1682 {
-		temp = float64(g.params.BaseSubsidy) * (1.0 - float64(iterations) * 5948.0 / 10000000.0) * math.Pow(q,float64(iterations))
+		temp = float64(g.params.BaseSubsidy) * (1.0 - float64(iterations) * 59363.0 / 100000000.0) * math.Pow(q,float64(iterations))
 	}else{//after 99 years
 		temp = 100000000.0/float64(g.params.SubsidyReductionInterval) * math.Pow(0.1, float64(float64(iterations)-1681.0))
 	}

@@ -512,7 +512,7 @@ func estimateSupply(params *chaincfg.Params, height int64) int64 {
 
 	var temp float64 = 0.0
 	var q float64 = float64(params.MulSubsidy)/float64(params.DivSubsidy)
-	var d float64 = -5948.0 / 10000000.0
+	var d float64 = -59363.0 / 100000000.0
 	supply := params.BlockOneSubsidy()
 	reductions := int64(height) / params.SubsidyReductionInterval
 	subsidy := params.BaseSubsidy
@@ -529,7 +529,7 @@ func estimateSupply(params *chaincfg.Params, height int64) int64 {
 		sum := float64(subsidy * params.SubsidyReductionInterval) * (temp1 + temp2 - temp3)
 		supply += int64(sum);
 		//通项
-		temp = float64(params.BaseSubsidy) * (1.0 - float64(n) * 5948.0 / 10000000.0) * math.Pow(q,float64(n))
+		temp = float64(params.BaseSubsidy) * (1.0 - float64(n) * 59363.0 / 100000000.0) * math.Pow(q,float64(n))
 		subsidy = int64(temp)
 
 		if reductions > 1681{

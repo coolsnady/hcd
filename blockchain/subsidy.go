@@ -98,7 +98,7 @@ func (s *SubsidyCache) CalcBlockSubsidy(height int64) int64 {
 	var temp float64 = 0.0
 
 	if iteration < 1682 {
-		temp = float64(s.params.BaseSubsidy) * (1.0 - float64(iteration) * 5948.0 / 10000000.0) * math.Pow(q,float64(iteration))
+		temp = float64(s.params.BaseSubsidy) * (1.0 - float64(iteration) * 59363.0 / 100000000.0) * math.Pow(q,float64(iteration))
 	}else{//after 99 years
 		temp = 100000000.0/float64(s.params.SubsidyReductionInterval) * math.Pow(0.1, float64(float64(iteration)-1681.0))
 	}
