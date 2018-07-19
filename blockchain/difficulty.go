@@ -512,25 +512,36 @@ func estimateSupply(params *chaincfg.Params, height int64) int64 {
 
 	var temp float64 = 0.0
 	var q float64 = float64(params.MulSubsidy)/float64(params.DivSubsidy)
+	var d float64 = -5948.0 / 10000000.0
 	supply := params.BlockOneSubsidy()
 	reductions := int64(height) / params.SubsidyReductionInterval
 	subsidy := params.BaseSubsidy
-	
-	for i := int64(0); i < reductions && i<1681; i++ {
-		supply += params.SubsidyReductionInterval * subsidy
 
-		subsidy *= params.MulSubsidy
-		subsidy /= params.DivSubsidy
-
-		temp = float64(-5948 * params.SubsidyReductionInterval * params.BaseSubsidy) * math.Pow(q, float64(i+1))/10000000.0
-		subsidy += int64(temp)
-	}
-	for i:=int64(1681); i< reductions; i++{
-		supply += params.SubsidyReductionInterval * subsidy
-		temp = float64(100000000) * math.Pow(0.1, float64(i-1680))
+	if reductions > 0 {
+		n:= float64(reductions)
+		if reductions >= 1681 {
+			n = 1681.0
+		}
+		temp1 := (1 * (1-math.Pow(q,n)))/(1-q)
+		temp2 := (1-math.Pow(q,n-1))/(1-q)/(1-q)*d*q
+		temp3 := (n-1)*math.Pow(q,n)/(1-q)*d
+		//求和
+		sum := float64(subsidy * params.SubsidyReductionInterval) * (temp1 + temp2 - temp3)
+		supply += int64(sum);
+		//通项
+		temp = float64(params.BaseSubsidy) * (1.0 - float64(n) * 5948.0 / 10000000.0) * math.Pow(q,float64(n))
 		subsidy = int64(temp)
-	}
 
+		if reductions > 1681{
+			n := reductions - 1681
+			sum:= 0.1 *(1-math.Pow(0.1, float64(n)))/ (1-q) * float64(params.BaseSubsidy)
+			//求和
+			supply += int64(sum)
+			//通项
+			A := float64(params.BaseSubsidy) * math.Pow(0.1, float64(n))
+			subsidy = int64(A)
+		}
+	}
 	supply += (1 + int64(height)%params.SubsidyReductionInterval) * subsidy
 
 	// Blocks 0 and 1 have special subsidy amounts that have already been
