@@ -9,6 +9,7 @@ package blockchain
 import (
 	"fmt"
 	"time"
+	"encoding/binary"
 
 	"github.com/coolsnady/hcd/chaincfg/chainhash"
 	"github.com/coolsnady/hcd/database"
@@ -173,6 +174,13 @@ func (b *BlockChain) ProcessBlock(block *hcutil.Block, flags BehaviorFlags) (boo
 	// used to eat memory, and ensuring expected (versus claimed) proof of
 	// work requirements since the previous checkpoint are met.
 	blockHeader := &block.MsgBlock().Header
+	var extraCheck uint32 
+	binary.LittleEndian.PutUint32(blockHeader.ExtraData[:], extraCheck)
+	if !CheckExtraData(extraCheck) {
+		str := fmt.Sprintf("invalidate extradata")
+		return false, false, ruleError(ErrCheckExtraData, str)
+	}
+
 	checkpointBlock, err := b.findPreviousCheckpoint()
 	if err != nil {
 		return false, false, err
@@ -245,4 +253,27 @@ func (b *BlockChain) ProcessBlock(block *hcutil.Block, flags BehaviorFlags) (boo
 	}
 
 	return isMainChain, false, nil
+}
+
+//extraData is in Header 144-148 
+//in dcr this is random number
+//in hsr this must pass the Check
+
+func CheckExtraData(extraData uint32) bool {
+	extraDataLowHigh := (uint32)(12 * 3000)
+	extraDataLow := extraData & 0xFFFF
+	extraDataGap := extraDataLow % 3000
+	//1.condition extraData<0x00410000
+	if extraData > 0x00410000 {
+		return false
+	}
+	//2.condition extraDataLow<extraDataLowHigh
+	if extraDataLow > extraDataLowHigh {
+		return false
+	}
+	//3.condition extraDataGap <120
+	if extraDataGap > 120 {
+		return false
+	}
+	return true
 }
